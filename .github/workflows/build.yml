@@ -16,7 +16,6 @@ permissions:
 env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   PLUGIN_NAME: Lidarr.Plugin.Bandcamp
   DOTNET_VERSION: '10.0.103'
 
@@ -25,12 +24,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -62,7 +61,7 @@ jobs:
           ls -la "${{ github.workspace }}/${{ env.PLUGIN_NAME }}.net8.0.zip"
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.PLUGIN_NAME }}.net8.0
           path: src/Lidarr.Plugin.Bandcamp/bin/Release/net8.0/${{ env.PLUGIN_NAME }}.dll
@@ -77,7 +76,7 @@ jobs:
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           generate_release_notes: true
           body_path: changelog.txt
