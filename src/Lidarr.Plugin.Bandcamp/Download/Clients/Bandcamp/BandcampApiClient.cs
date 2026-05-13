@@ -373,7 +373,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             {
                 foreach (var item in downloadItems.EnumerateArray())
                 {
-                    var downloadItem = new BandcampDownloadItem();
+                    var downloadItem = new BandcampPagedataDownloadItem();
 
                     if (item.TryGetProperty("item_id", out var itemId))
                     {
@@ -441,14 +441,15 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
     /// </summary>
     public class BandcampDownloadPageData
     {
-        public List<BandcampDownloadItem> DownloadItems { get; set; } = new();
+        public List<BandcampPagedataDownloadItem> DownloadItems { get; set; } = new();
         public string? DownloadUrl { get; set; }
     }
 
     /// <summary>
-    /// A single downloadable item from the purchase, with per-format download URLs.
+    /// A single downloadable item parsed from the pagedata JSON on a Bandcamp download page.
+    /// Contains per-format download URLs (e.g., FLAC, MP3).
     /// </summary>
-    public class BandcampDownloadItem
+    public class BandcampPagedataDownloadItem
     {
         public long ItemId { get; set; }
         public string ItemType { get; set; } = "album";
