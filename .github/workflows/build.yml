@@ -1,0 +1,86 @@
+name: Build and Release Plugin
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  PLUGIN_NAME: Lidarr.Plugin.Bandcamp
+  DOTNET_VERSION: '10.0.103'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Clone Lidarr source
+        run: |
+          git clone --depth 1 --branch develop https://github.com/Lidarr/Lidarr.git ext/Lidarr
+
+      - name: Restore dependencies
+        run: dotnet restore Lidarr.Plugin.Bandcamp.slnx
+
+      - name: Build
+        run: dotnet build Lidarr.Plugin.Bandcamp.slnx -c Release --no-restore
+
+      - name: Run tests
+        run: dotnet test Lidarr.Plugin.Bandcamp.slnx --no-build -c Release --filter "FullyQualifiedName~Bandcamp"
+
+      - name: Verify plugin DLL
+        run: |
+          DLL="src/Lidarr.Plugin.Bandcamp/bin/Release/net8.0/${{ env.PLUGIN_NAME }}.dll"
+          test -f "$DLL" || { echo "ERROR: Plugin DLL not found at $DLL"; exit 1; }
+          echo "Plugin DLL: $DLL ($(stat -c%s "$DLL") bytes)"
+
+      - name: Zip plugin
+        run: |
+          cd src/Lidarr.Plugin.Bandcamp/bin/Release/net8.0
+          zip "${{ github.workspace }}/${{ env.PLUGIN_NAME }}.net8.0.zip" \
+            "${{ env.PLUGIN_NAME }}.dll"
+          echo "Created ${{ env.PLUGIN_NAME }}.net8.0.zip"
+          ls -la "${{ github.workspace }}/${{ env.PLUGIN_NAME }}.net8.0.zip"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PLUGIN_NAME }}.net8.0
+          path: src/Lidarr.Plugin.Bandcamp/bin/Release/net8.0/${{ env.PLUGIN_NAME }}.dll
+
+      - name: Generate changelog
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          echo "## Changelog" > changelog.txt
+          git log --oneline $(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")..HEAD | \
+            awk '{print "- " substr($0, index($0,$2))}' >> changelog.txt || true
+          cat changelog.txt
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body_path: changelog.txt
+          draft: false
+          prerelease: false
+          files: |
+            ${{ env.PLUGIN_NAME }}.net8.0.zip
