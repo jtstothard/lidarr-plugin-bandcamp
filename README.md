@@ -1,6 +1,6 @@
 # Lidarr Bandcamp Plugin
 
-[![Build and Release Plugin](https://github.com/lidarr-plugin-bandcamp/lidarr-plugin-bandcamp/actions/workflows/build.yml/badge.svg)](https://github.com/lidarr-plugin-bandcamp/lidarr-plugin-bandcamp/actions/workflows/build.yml)
+[![Build and Release Plugin](https://github.com/jtstothard/lidarr-plugin-bandcamp/actions/workflows/build.yml/badge.svg)](https://github.com/jtstothard/lidarr-plugin-bandcamp/actions/workflows/build.yml)
 
 Native Lidarr plugin that adds **Bandcamp** as both an indexer and a download client. Search the Bandcamp catalog for artists and releases, then download your purchased albums directly into Lidarr — no manual importing required.
 
@@ -25,7 +25,7 @@ Bandcamp has no official API, so the plugin uses cookie-based authentication to 
 1. Open Lidarr and navigate to **Settings → Plugins**.
 2. Paste the GitHub repository URL into the plugin installer:
    ```
-   https://github.com/lidarr-plugin-bandcamp/lidarr-plugin-bandcamp
+   https://github.com/jtstothard/lidarr-plugin-bandcamp
    ```
 3. Click **Install**. Lidarr will download and load the plugin automatically.
 4. Restart Lidarr if prompted.
