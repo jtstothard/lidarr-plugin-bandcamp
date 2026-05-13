@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/ext/" />
+  <Folder Name="/ext/Lidarr/" />
+  <Folder Name="/ext/Lidarr/src/" />
+  <Folder Name="/ext/Lidarr/src/NzbDrone.Common/">
+    <Project Path="ext/Lidarr/src/NzbDrone.Common/Lidarr.Common.csproj" />
+  </Folder>
+  <Folder Name="/ext/Lidarr/src/NzbDrone.Core/">
+    <Project Path="ext/Lidarr/src/NzbDrone.Core/Lidarr.Core.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Lidarr.Plugin.Bandcamp/Lidarr.Plugin.Bandcamp.csproj" />
+  </Folder>
+</Solution>
