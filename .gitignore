@@ -1,0 +1,36 @@
+# .gitignore
+
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.dll
+*.pdb
+
+## IDE
+.vs/
+.vscode/
+.idea/
+*.swp
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Build
+artifacts/
+TestResults/
+
+## Secrets
+*.cookies
+cookies.txt
+
+## GSD runtime (keep config, ignore transient)
+.gsd/runtime/
+.gsd/activity/
+.gsd/worktrees/
+.gsd/*.db
+.gsd/*.db-wal
+.gsd/*.db-shm
