@@ -111,7 +111,7 @@ namespace NzbDrone.Core.Indexers.Bandcamp
         /// Attempt to extract embedded JSON search data from Bandcamp's HTML page.
         /// Bandcamp injects search results as JSON in a script tag.
         /// </summary>
-        private List<BandcampSearchResult> TryParseJsonResults(string content)
+        private List<BandcampSearchResult>? TryParseJsonResults(string content)
         {
             try
             {
@@ -172,7 +172,7 @@ namespace NzbDrone.Core.Indexers.Bandcamp
             return results;
         }
 
-        private ReleaseInfo ParseHtmlResultBlock(string block)
+        private ReleaseInfo? ParseHtmlResultBlock(string block)
         {
             // Extract the album/track URL
             var urlMatch = ItemUrlRegex.Match(block);
@@ -229,7 +229,7 @@ namespace NzbDrone.Core.Indexers.Bandcamp
             };
         }
 
-        private ReleaseInfo MapJsonResultToReleaseInfo(BandcampSearchResult item)
+        private ReleaseInfo? MapJsonResultToReleaseInfo(BandcampSearchResult item)
         {
             if (item == null)
             {
