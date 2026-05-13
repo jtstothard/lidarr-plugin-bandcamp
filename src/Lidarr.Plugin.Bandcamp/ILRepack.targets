@@ -1,0 +1,31 @@
+<!--
+  Custom ILRepack targets for Bandcamp plugin.
+  Since the plugin has no third-party dependencies of its own
+  (all deps are provided by the Lidarr host at runtime), ILRepack
+  simply repacks the plugin DLL (no-op merge) and cleans up the output.
+
+  Uses unique target names to avoid being overridden by the NuGet package's
+  default targets (which would fail because Lidarr DLLs aren't in output
+  and can't be resolved due to non-deterministic versioning).
+-->
+<Project>
+    <Target Name="BandcampCleanOutput" AfterTargets="Build" Condition="$(Configuration.Contains('Release'))">
+        <!-- Delete all files from output that aren't our plugin DLL or PDB -->
+        <ItemGroup>
+            <_OutputCleanup Include="$(OutputPath)*.dll" Exclude="$(OutputPath)$(TargetName)$(TargetExt)"/>
+            <_OutputCleanup Include="$(OutputPath)*.pdb" Exclude="$(OutputPath)$(TargetName).pdb"/>
+            <_OutputCleanup Include="$(OutputPath)*.xml"/>
+            <_OutputCleanup Include="$(OutputPath)*.json" Exclude="$(OutputPath)Lidarr.Plugin.Bandcamp.runtimeconfig.json"/>
+            <_OutputCleanup Include="$(OutputPath)*.deps.json"/>
+        </ItemGroup>
+        <Delete Files="@(_OutputCleanup)" />
+        <!-- Remove empty subdirectories -->
+        <ItemGroup>
+            <_Dirs Include="$([System.IO.Directory]::GetDirectories('$(OutputPath)', '*', System.IO.SearchOption.AllDirectories))"/>
+            <_Dirs>
+                <FileCount>$([System.IO.Directory]::GetFiles("%(_Dirs.Identity)", "*", System.IO.SearchOption.AllDirectories).get_Length())</FileCount>
+            </_Dirs>
+        </ItemGroup>
+        <RemoveDir Directories="@(_Dirs)" Condition="%(_Dirs.FileCount)=='0'"/>
+    </Target>
+</Project>
