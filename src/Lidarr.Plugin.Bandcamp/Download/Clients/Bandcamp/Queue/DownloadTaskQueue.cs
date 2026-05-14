@@ -46,7 +46,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         /// Enqueues a download item for background processing.
         /// Returns the download ID immediately while processing continues.
         /// </summary>
-        /// <param name="item">The download to process (must have Cookies, AlbumUrl, OutputPath, MediaFormat set).</param>
+        /// <param name="item">The download to process (must have Cookies, AlbumUrl, and OutputPath set).</param>
         /// <returns>The download ID for tracking.</returns>
         public async Task<string> EnqueueAsync(BandcampDownloadItem item)
         {

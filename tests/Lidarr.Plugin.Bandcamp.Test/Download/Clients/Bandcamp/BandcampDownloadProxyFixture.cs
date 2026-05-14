@@ -125,8 +125,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             {
                 AlbumUrl = "https://bandcamp.com/download?type=album&id=111#format=flac",
                 Title = "Fresh - Fresh [FLAC]",
-                OutputPath = _tempRoot,
-                MediaFormat = "FLAC"
+                OutputPath = _tempRoot
             };
 
             typeof(BandcampDownloadItem)

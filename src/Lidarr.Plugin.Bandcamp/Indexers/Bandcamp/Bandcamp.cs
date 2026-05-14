@@ -142,9 +142,14 @@ namespace NzbDrone.Core.Indexers.Bandcamp
 
             var matches = collection
                 .Where(item => MatchesSearch(item, artistQuery, albumQuery))
+                .GroupBy(GetCollectionIdentity, StringComparer.OrdinalIgnoreCase)
+                .Select(group => group
+                    .OrderByDescending(item => !string.IsNullOrWhiteSpace(item.DownloadPageUrl))
+                    .ThenByDescending(item => item.ItemId)
+                    .First())
                 .ToList();
 
-            _logger.Debug("Bandcamp indexer: {0} downloadable collection item(s) matched query", matches.Count);
+            _logger.Debug("Bandcamp indexer: {0} unique downloadable collection item(s) matched query", matches.Count);
 
             foreach (var item in matches)
             {
@@ -232,6 +237,21 @@ namespace NzbDrone.Core.Indexers.Bandcamp
                 Size = size,
                 Source = "bandcamp"
             };
+        }
+
+        private static string GetCollectionIdentity(BandcampCollectionItem item)
+        {
+            if (!string.IsNullOrWhiteSpace(item.ItemUrl))
+            {
+                return item.ItemUrl!;
+            }
+
+            if (!string.IsNullOrWhiteSpace(item.DownloadPageUrl))
+            {
+                return item.DownloadPageUrl!;
+            }
+
+            return $"{item.ItemType}:{item.ItemId}";
         }
 
         private static bool MatchesSearch(BandcampCollectionItem item, string artistQuery, string? albumQuery)

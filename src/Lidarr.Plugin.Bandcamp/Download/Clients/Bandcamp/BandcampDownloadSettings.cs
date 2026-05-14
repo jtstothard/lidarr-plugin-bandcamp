@@ -30,7 +30,6 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         {
             DownloadPath = "";
             Cookies = "";
-            MediaFormat = "FLAC";
         }
 
         [FieldDefinition(0, Label = "Session Cookies", Type = FieldType.Textbox, HelpText = "Paste the 'identity' cookie value from your browser's Bandcamp cookies. In browser DevTools: Application → Cookies → bandcamp.com → copy the 'identity' value.", Privacy = PrivacyLevel.Password)]
@@ -39,33 +38,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         [FieldDefinition(1, Label = "Download Path", Type = FieldType.Path, HelpText = "Directory where Bandcamp downloads will be saved before import")]
         public string DownloadPath { get; set; }
 
-        // Deprecated: kept for backward compatibility with existing saved provider state.
-        // Lidarr chooses the preferred format via indexer results/quality selection now.
-        public string MediaFormat { get; set; }
-
         public NzbDroneValidationResult Validate()
         {
             return new NzbDroneValidationResult(Validator.Validate(this));
         }
-    }
-
-    public enum BandcampMediaFormat
-    {
-        [FieldOption(Label = "FLAC")]
-        flac,
-        [FieldOption(Label = "ALAC")]
-        alac,
-        [FieldOption(Label = "WAV")]
-        wav,
-        [FieldOption(Label = "AIFF")]
-        aiff,
-        [FieldOption(Label = "V0 MP3")]
-        mp3_v0,
-        [FieldOption(Label = "320 MP3")]
-        mp3_320,
-        [FieldOption(Label = "OGG Vorbis")]
-        ogg_vorbis,
-        [FieldOption(Label = "AAC")]
-        aac
     }
 }

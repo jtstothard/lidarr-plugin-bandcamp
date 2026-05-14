@@ -77,8 +77,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 AlbumUrl = albumUrl,
                 Title = title,
                 OutputPath = outputPath,
-                Cookies = Settings.Cookies,
-                MediaFormat = Settings.MediaFormat
+                Cookies = Settings.Cookies
             };
 
             var downloadId = await _taskQueue.EnqueueAsync(item).ConfigureAwait(false);

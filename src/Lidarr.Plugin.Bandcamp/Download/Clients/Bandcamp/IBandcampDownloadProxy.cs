@@ -15,7 +15,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         /// Updates the item's status, progress, and output path as it progresses.
         /// Called by the shared Bandcamp download queue for each enqueued item.
         /// </summary>
-        /// <param name="item">The download item with AlbumUrl, OutputPath, Cookies, and MediaFormat set.</param>
+        /// <param name="item">The download item with AlbumUrl, OutputPath, and Cookies set.</param>
         /// <param name="cancellationToken">Cancellation token for graceful shutdown.</param>
         Task ExecuteDownloadAsync(BandcampDownloadItem item, CancellationToken cancellationToken);
     }

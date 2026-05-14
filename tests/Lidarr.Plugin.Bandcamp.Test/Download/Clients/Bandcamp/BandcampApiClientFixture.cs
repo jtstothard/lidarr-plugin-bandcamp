@@ -325,8 +325,9 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
 
             // Assert
             Assert.NotNull(result);
-            Assert.Contains("s3.amazonaws.com", result);
-            Assert.Contains("album.zip", result);
+            Assert.NotNull(result!.DownloadUrl);
+            Assert.Contains("s3.amazonaws.com", result.DownloadUrl);
+            Assert.Contains("album.zip", result.DownloadUrl);
         }
 
         [Fact]
@@ -346,7 +347,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal("https://example.com/path/to/file.zip", result);
+            Assert.Equal("https://example.com/path/to/file.zip", result!.DownloadUrl);
         }
 
         [Fact]
@@ -366,7 +367,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
 
             // Assert
             Assert.NotNull(result);
-            Assert.Contains("&param=value", result);
+            Assert.Contains("&param=value", result!.DownloadUrl);
         }
 
         [Fact]
@@ -386,7 +387,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(directUrl.Trim(), result);
+            Assert.Equal(directUrl.Trim(), result!.DownloadUrl);
         }
 
         [Fact]
@@ -424,7 +425,10 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                 "flac");
 
             // Assert
-            Assert.Equal("https://bandcamp.com/statdownload/album/12345?sig=abc&.format=flac&.json=true", result);
+            Assert.NotNull(result);
+            Assert.Null(result!.DownloadUrl);
+            Assert.NotNull(result.DirectResponse);
+            Assert.Equal(response, result.DirectResponse);
         }
 
         #endregion

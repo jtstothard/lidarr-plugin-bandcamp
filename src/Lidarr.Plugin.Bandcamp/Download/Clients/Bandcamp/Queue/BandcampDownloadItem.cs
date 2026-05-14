@@ -25,15 +25,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         public string Title { get; set; } = string.Empty;
 
         /// <summary>
-        /// Directory where extracted files will be written.
+        /// Desired output directory for the extracted download.
         /// </summary>
         public string OutputPath { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Desired media format (e.g., "FLAC", "mp3-320").
-        /// Passed from settings through the queue to the download proxy.
-        /// </summary>
-        public string MediaFormat { get; set; } = "FLAC";
 
         /// <summary>
         /// Current status of the download.

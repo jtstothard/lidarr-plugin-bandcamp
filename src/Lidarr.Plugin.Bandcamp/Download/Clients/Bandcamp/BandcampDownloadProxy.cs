@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NLog;
+using NzbDrone.Common.Http;
 using NzbDrone.Core.Http.Bandcamp;
 
 namespace NzbDrone.Core.Download.Clients.Bandcamp
@@ -120,7 +121,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             var downloadEntry = purchase != null
                 ? pageData.DownloadItems.FirstOrDefault(i => i.ItemId == purchase.ItemId) ?? pageData.DownloadItems[0]
                 : pageData.DownloadItems[0];
-            var formatKey = requestedFormat ?? MapMediaFormat(item.MediaFormat);
+            var formatKey = requestedFormat ?? "flac";
 
             if (!downloadEntry.DownloadUrls.TryGetValue(formatKey, out var downloadUrl) &&
                 !downloadEntry.DownloadUrls.TryGetValue("flac", out downloadUrl))
@@ -146,10 +147,11 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var resolvedUrl = await _apiClient.ResolveStatdownloadUrlAsync(
+            var resolvedDownload = await _apiClient.ResolveStatdownloadUrlAsync(
                 cookies, downloadUrl, formatKey).ConfigureAwait(false);
 
-            if (string.IsNullOrWhiteSpace(resolvedUrl))
+            var resolvedUrl = resolvedDownload?.DownloadUrl;
+            if (string.IsNullOrWhiteSpace(resolvedUrl) && resolvedDownload?.DirectResponse == null)
             {
                 // Fall back to using the download URL directly
                 resolvedUrl = downloadUrl;
@@ -171,8 +173,16 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
             try
             {
-                await DownloadToFileAsync(cookies, resolvedUrl, tempFile, item, cancellationToken)
-                    .ConfigureAwait(false);
+                if (resolvedDownload?.DirectResponse != null)
+                {
+                    await WriteResponseToFileAsync(resolvedDownload.DirectResponse, tempFile, item, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                else
+                {
+                    await DownloadToFileAsync(cookies, resolvedUrl!, tempFile, item, cancellationToken)
+                        .ConfigureAwait(false);
+                }
             }
             catch
             {
@@ -214,7 +224,15 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
             // Use the API client's DownloadFileAsync which validates Content-Type
             var response = await _apiClient.DownloadFileAsync(cookies, fileUrl).ConfigureAwait(false);
+            await WriteResponseToFileAsync(response, tempFilePath, item, cancellationToken).ConfigureAwait(false);
+        }
 
+        private async Task WriteResponseToFileAsync(
+            HttpResponse response,
+            string tempFilePath,
+            BandcampDownloadItem item,
+            CancellationToken cancellationToken)
+        {
             var responseData = response.ResponseData;
             if (responseData == null || responseData.Length == 0)
             {
@@ -391,26 +409,6 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             }
 
             return null;
-        }
-
-        /// <summary>
-        /// Maps the MediaFormat setting value to the format key used in Bandcamp's
-        /// download page pagedata JSON. Bandcamp uses lowercase, hyphenated names.
-        /// </summary>
-        private static string MapMediaFormat(string mediaFormat)
-        {
-            return mediaFormat?.ToLowerInvariant() switch
-            {
-                "flac" => "flac",
-                "alac" => "alac",
-                "wav" => "wav",
-                "aiff" => "aiff-lossless",
-                "mp3_v0" => "mp3-v0",
-                "mp3_320" => "mp3-320",
-                "ogg_vorbis" => "vorbis",
-                "aac" => "aac-hi",
-                _ => "flac"
-            };
         }
 
         private static void PrepareOutputDirectory(string outputDir)

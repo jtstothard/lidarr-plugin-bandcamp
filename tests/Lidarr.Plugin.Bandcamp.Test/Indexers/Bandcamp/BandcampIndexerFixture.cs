@@ -142,6 +142,11 @@ namespace Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp
             Assert.Equal("MP3", mp3.Codec);
             Assert.Equal("MP3", mp3.Container);
             Assert.Contains("#format=mp3-320", mp3.DownloadUrl, StringComparison.OrdinalIgnoreCase);
+
+            _httpClientMock.Verify(c => c.ExecuteAsync(It.Is<HttpRequest>(r =>
+                r.Url.FullUri == "https://bandcamp.com/download?type=album&id=111")), Times.Once);
+            _httpClientMock.Verify(c => c.ExecuteAsync(It.Is<HttpRequest>(r =>
+                r.Url.FullUri == "https://fresh.bandcamp.com/album/fresh")), Times.Once);
         }
 
         private static HttpResponse CreateStringResponse(string content, HttpRequest request, HttpStatusCode statusCode = HttpStatusCode.OK)
