@@ -252,6 +252,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 {
                     _logger.Debug("Bandcamp download proxy: Extracting ZIP archive to {0}", outputDir);
                     ZipFile.ExtractToDirectory(archivePath, outputDir, overwriteFiles: true);
+                    NormalizeExtractedPermissions(outputDir);
                 }
                 else
                 {
@@ -262,6 +263,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
                     _logger.Debug("Bandcamp download proxy: Moving single file to {0}", destPath);
                     File.Move(archivePath, destPath, overwrite: true);
+                    NormalizeFilePermissions(destPath);
                 }
             }, cancellationToken).ConfigureAwait(false);
         }
@@ -412,6 +414,75 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 "aac" => "aac-hi",
                 _ => "flac"
             };
+        }
+
+        private static void NormalizeExtractedPermissions(string outputDir)
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                return;
+            }
+
+            try
+            {
+                NormalizeDirectoryPermissions(outputDir);
+
+                foreach (var directory in Directory.EnumerateDirectories(outputDir, "*", SearchOption.AllDirectories))
+                {
+                    NormalizeDirectoryPermissions(directory);
+                }
+
+                foreach (var file in Directory.EnumerateFiles(outputDir, "*", SearchOption.AllDirectories))
+                {
+                    NormalizeFilePermissions(file);
+                }
+            }
+            catch
+            {
+                // Best-effort normalization only; let the real extraction/import error surface.
+            }
+        }
+
+        private static void NormalizeDirectoryPermissions(string path)
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                return;
+            }
+
+            try
+            {
+                File.SetUnixFileMode(
+                    path,
+                    UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute |
+                    UnixFileMode.GroupRead | UnixFileMode.GroupExecute |
+                    UnixFileMode.OtherRead | UnixFileMode.OtherExecute);
+            }
+            catch
+            {
+                // Best effort.
+            }
+        }
+
+        private static void NormalizeFilePermissions(string path)
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                return;
+            }
+
+            try
+            {
+                File.SetUnixFileMode(
+                    path,
+                    UnixFileMode.UserRead | UnixFileMode.UserWrite |
+                    UnixFileMode.GroupRead |
+                    UnixFileMode.OtherRead);
+            }
+            catch
+            {
+                // Best effort.
+            }
         }
 
         private static void TryDeleteFile(string path)

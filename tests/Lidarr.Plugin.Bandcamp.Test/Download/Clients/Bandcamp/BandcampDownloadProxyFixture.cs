@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -27,6 +28,37 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             var apiClient = new BandcampApiClient(bandcampHttpClient, logger);
             _subject = new BandcampDownloadProxy(apiClient, bandcampHttpClient, logger);
             _tempRoot = Path.Combine(Path.GetTempPath(), "bandcamp-proxy-tests", Guid.NewGuid().ToString("N"));
+        }
+
+        [Fact]
+        public void NormalizeExtractedPermissions_Unix_MakesFilesReadable()
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                return;
+            }
+
+            Directory.CreateDirectory(_tempRoot);
+            var nestedDir = Path.Combine(_tempRoot, "album");
+            Directory.CreateDirectory(nestedDir);
+            var trackPath = Path.Combine(nestedDir, "01 - Test.flac");
+            File.WriteAllBytes(trackPath, new byte[] { 1, 2, 3, 4 });
+
+            File.SetUnixFileMode(nestedDir, UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            File.SetUnixFileMode(trackPath, UnixFileMode.UserWrite);
+
+            var normalizeMethod = typeof(BandcampDownloadProxy)
+                .GetMethod("NormalizeExtractedPermissions", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+
+            Assert.NotNull(normalizeMethod);
+            normalizeMethod!.Invoke(null, new object[] { _tempRoot });
+
+            var fileMode = File.GetUnixFileMode(trackPath);
+            var dirMode = File.GetUnixFileMode(nestedDir);
+
+            Assert.True(fileMode.HasFlag(UnixFileMode.UserRead));
+            Assert.True(dirMode.HasFlag(UnixFileMode.UserRead));
+            Assert.True(dirMode.HasFlag(UnixFileMode.UserExecute));
         }
 
         [Fact]
