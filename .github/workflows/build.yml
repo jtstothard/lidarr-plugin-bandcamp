@@ -18,6 +18,11 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   PLUGIN_NAME: Lidarr.Plugin.Bandcamp
   DOTNET_VERSION: '10.0.103'
+  # Fixed AssemblyVersion for Lidarr references — prevents binding failures at runtime.
+  # Lidarr uses non-deterministic 10.0.0.* which changes every build. We pin to a
+  # stable minimum version so the plugin DLL references Lidarr.Core/Common at a version
+  # Lidarr's runtime can resolve via assembly unification. Pattern from TrevTV plugins.
+  MINIMUM_LIDARR_VERSION: 10.0.0.4200
 
 jobs:
   build:
@@ -36,6 +41,16 @@ jobs:
       - name: Clone Lidarr source
         run: |
           git clone --depth 1 --branch develop https://github.com/Lidarr/Lidarr.git ext/Lidarr
+
+      - name: Pin Lidarr assembly versions
+        run: |
+          # Overwrite Lidarr's non-deterministic AssemblyVersion (10.0.0.*) with a fixed
+          # minimum version. This ensures our plugin DLL references Lidarr.Core/Common at a
+          # stable version that Lidarr's runtime can resolve. Without this, the plugin fails
+          # to load with "Could not load file or assembly 'Lidarr.Core, Version=10.0.0.XXXXX'".
+          sed -i'' -e "s/<AssemblyVersion>10\.0\.0\.\*<\/AssemblyVersion>/<AssemblyVersion>$MINIMUM_LIDARR_VERSION<\/AssemblyVersion>/g" ext/Lidarr/src/Directory.Build.props
+          echo "Pinned Lidarr AssemblyVersion to $MINIMUM_LIDARR_VERSION"
+          grep AssemblyVersion ext/Lidarr/src/Directory.Build.props
 
       - name: Restore dependencies
         run: dotnet restore Lidarr.Plugin.Bandcamp.slnx
