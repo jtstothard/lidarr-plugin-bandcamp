@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using FluentValidation.Results;
 using NLog;
@@ -218,7 +219,7 @@ namespace NzbDrone.Core.Indexers.Bandcamp
             var artistName = item.BandName ?? "Unknown Artist";
             var albumTitle = item.Title ?? "Unknown Album";
             var formatLabel = FormatLabel(formatKey, size, albumDurationSeconds);
-            var title = $"{artistName} - {albumTitle} [{formatLabel}]";
+            var title = BuildReleaseTitle(artistName, albumTitle, formatLabel);
             var publishDate = ParsePublishDate(item.ReleaseDate);
             var downloadUrl = AddFormatFragment(item.DownloadPageUrl!, formatKey);
 
@@ -226,8 +227,8 @@ namespace NzbDrone.Core.Indexers.Bandcamp
             {
                 Guid = $"bandcamp-{item.ItemUrl}-{formatKey}",
                 Title = title,
-                Artist = artistName,
-                Album = albumTitle,
+                Artist = NormalizeReleaseComponent(artistName),
+                Album = NormalizeAlbumTitle(artistName, albumTitle),
                 PublishDate = publishDate,
                 InfoUrl = item.ItemUrl!,
                 DownloadUrl = downloadUrl,
@@ -298,6 +299,109 @@ namespace NzbDrone.Core.Indexers.Bandcamp
         {
             var separator = downloadPageUrl.Contains('#') ? "&" : "#";
             return $"{downloadPageUrl}{separator}format={Uri.EscapeDataString(formatKey)}";
+        }
+
+        internal static string BuildReleaseTitle(string? artistName, string? albumTitle, string formatLabel)
+        {
+            var normalizedArtist = NormalizeReleaseComponent(artistName);
+            var normalizedAlbum = NormalizeAlbumTitle(normalizedArtist, albumTitle);
+            return $"{normalizedArtist} - {normalizedAlbum} [{formatLabel}]";
+        }
+
+        internal static string NormalizeAlbumTitle(string? artistName, string? albumTitle)
+        {
+            var normalizedArtist = NormalizeReleaseComponent(artistName);
+            var normalizedAlbum = NormalizeReleaseComponent(albumTitle);
+
+            normalizedAlbum = StripDuplicateArtistPrefix(normalizedAlbum, normalizedArtist);
+            normalizedAlbum = StripTrailingReleaseTypeSuffix(normalizedAlbum);
+
+            return normalizedAlbum;
+        }
+
+        internal static string NormalizeReleaseComponent(string? value)
+        {
+            if (value.IsNullOrWhiteSpace())
+            {
+                return string.Empty;
+            }
+
+            value = value!
+                .Replace('“', '"')
+                .Replace('”', '"')
+                .Replace('‘', '\'')
+                .Replace('’', '\'');
+
+            value = Regex.Replace(value.Trim(), @"\s+", " ");
+
+            if (value.Length >= 2)
+            {
+                if ((value[0] == '"' && value[^1] == '"') ||
+                    (value[0] == '\'' && value[^1] == '\''))
+                {
+                    value = value[1..^1].Trim();
+                }
+            }
+
+            return value;
+        }
+
+        private static string StripDuplicateArtistPrefix(string albumTitle, string artistName)
+        {
+            if (artistName.IsNullOrWhiteSpace() || albumTitle.IsNullOrWhiteSpace())
+            {
+                return albumTitle;
+            }
+
+            var prefix = artistName + " - ";
+            while (albumTitle.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                albumTitle = albumTitle[prefix.Length..].TrimStart();
+            }
+
+            return albumTitle;
+        }
+
+        private static string StripTrailingReleaseTypeSuffix(string albumTitle)
+        {
+            if (albumTitle.IsNullOrWhiteSpace())
+            {
+                return albumTitle;
+            }
+
+            string[] suffixes =
+            {
+                " - Single",
+                " - EP",
+                " - LP",
+                " - Digital Album",
+                " (Single)",
+                " (EP)",
+                " (LP)",
+                " [Single]",
+                " [EP]",
+                " [LP]"
+            };
+
+            var changed = true;
+            while (changed)
+            {
+                changed = false;
+
+                foreach (var suffix in suffixes)
+                {
+                    if (!albumTitle.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    albumTitle = albumTitle[..^suffix.Length].TrimEnd();
+                    changed = true;
+                    break;
+                }
+            }
+
+            return albumTitle;
         }
 
         private static string FormatLabel(string formatKey, long size, double? albumDurationSeconds)

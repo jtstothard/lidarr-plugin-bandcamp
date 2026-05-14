@@ -2,11 +2,13 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using NLog;
 using NzbDrone.Common.Http;
 using NzbDrone.Core.Http.Bandcamp;
+using NzbDrone.Core.MediaFiles;
 
 namespace NzbDrone.Core.Download.Clients.Bandcamp
 {
@@ -198,6 +200,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             try
             {
                 await ExtractDownloadAsync(tempFile, item.OutputPath, cancellationToken).ConfigureAwait(false);
+                NormalizeExtractedMetadata(item.OutputPath, item);
             }
             finally
             {
@@ -281,6 +284,190 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                     NormalizeFilePermissions(destPath);
                 }
             }, cancellationToken).ConfigureAwait(false);
+        }
+
+        private void NormalizeExtractedMetadata(string outputDir, BandcampDownloadItem item)
+        {
+            if (item.RetagContext == null)
+            {
+                return;
+            }
+
+            var audioFiles = Directory
+                .EnumerateFiles(outputDir, "*", SearchOption.AllDirectories)
+                .Where(IsSupportedAudioFile)
+                .Select(path => new
+                {
+                    Path = path,
+                    ExistingTag = SafeReadAudioTag(path)
+                })
+                .OrderBy(f => f.ExistingTag?.Track > 0 ? 0 : 1)
+                .ThenBy(f => f.ExistingTag?.Track ?? int.MaxValue)
+                .ThenBy(f => f.Path, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (audioFiles.Count == 0)
+            {
+                return;
+            }
+
+            for (var i = 0; i < audioFiles.Count; i++)
+            {
+                try
+                {
+                    ApplyCanonicalTagsToFile(audioFiles[i].Path, item.RetagContext, i, audioFiles.Count, audioFiles[i].ExistingTag);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug(ex, "Bandcamp download proxy [{0}]: Failed to normalize tags for {1}", item.DownloadId, audioFiles[i].Path);
+                }
+            }
+        }
+
+        internal static void ApplyCanonicalTagsToFile(string path,
+                                                      BandcampRetagContext context,
+                                                      int fileIndex,
+                                                      int totalFiles,
+                                                      AudioTag? existingTag = null)
+        {
+            existingTag ??= SafeReadAudioTag(path);
+            var tag = existingTag?.IsValid == true ? existingTag : new AudioTag();
+            var trackContext = ResolveTrackContext(context, tag, path, fileIndex, totalFiles);
+
+            tag.Title = trackContext?.Title ?? tag.Title ?? Path.GetFileNameWithoutExtension(path);
+            tag.Performers = new[] { context.ArtistName };
+            tag.AlbumArtists = new[] { context.ArtistName };
+            tag.Album = context.AlbumTitle;
+            tag.Track = (uint)(trackContext?.AbsoluteTrackNumber ?? (int)tag.Track);
+            tag.TrackCount = (uint)Math.Max(context.Tracks.Count, (int)tag.TrackCount);
+            tag.Disc = (uint)Math.Max(trackContext?.MediumNumber ?? (int)tag.Disc, 1);
+            tag.DiscCount = (uint)Math.Max(context.PreferredRelease?.DiscCount ?? (int)tag.DiscCount, 1);
+            tag.Media = ResolveMedia(context, trackContext?.MediumNumber) ?? tag.Media;
+            tag.Date = context.PreferredRelease?.ReleaseDate ?? context.AlbumReleaseDate ?? tag.Date;
+            tag.Year = (uint)((context.AlbumReleaseDate ?? tag.Date)?.Year ?? (int)tag.Year);
+            tag.OriginalReleaseDate = context.AlbumReleaseDate ?? tag.OriginalReleaseDate;
+            tag.OriginalYear = (uint)(context.AlbumReleaseDate?.Year ?? (int)tag.OriginalYear);
+            tag.Publisher = context.PreferredRelease?.Label ?? tag.Publisher;
+            tag.Genres = context.Genres.Any() ? context.Genres : tag.Genres;
+            tag.MusicBrainzReleaseStatus = context.PreferredRelease?.ReleaseStatus?.ToLowerInvariant() ?? tag.MusicBrainzReleaseStatus;
+            tag.MusicBrainzReleaseType = context.AlbumType?.ToLowerInvariant() ?? tag.MusicBrainzReleaseType;
+            tag.MusicBrainzReleaseId = context.PreferredRelease?.ReleaseMusicBrainzId ?? tag.MusicBrainzReleaseId;
+            tag.MusicBrainzArtistId = context.ArtistMusicBrainzId ?? tag.MusicBrainzArtistId;
+            tag.MusicBrainzReleaseArtistId = context.PreferredRelease?.ReleaseArtistMusicBrainzId ?? context.ArtistMusicBrainzId ?? tag.MusicBrainzReleaseArtistId;
+            tag.MusicBrainzReleaseGroupId = context.AlbumMusicBrainzId ?? tag.MusicBrainzReleaseGroupId;
+            tag.MusicBrainzTrackId = trackContext?.RecordingMusicBrainzId ?? tag.MusicBrainzTrackId;
+            tag.MusicBrainzReleaseTrackId = trackContext?.ReleaseTrackMusicBrainzId ?? tag.MusicBrainzReleaseTrackId;
+            tag.MusicBrainzAlbumComment = context.AlbumDisambiguation ?? tag.MusicBrainzAlbumComment;
+            tag.Write(path);
+        }
+
+        private static BandcampRetagTrackContext? ResolveTrackContext(BandcampRetagContext context,
+                                                                      AudioTag tag,
+                                                                      string path,
+                                                                      int fileIndex,
+                                                                      int totalFiles)
+        {
+            if (context.Tracks.Count == 0)
+            {
+                return null;
+            }
+
+            if (context.Tracks.Count == 1 && totalFiles == 1)
+            {
+                return context.Tracks[0];
+            }
+
+            if (tag.Track > 0)
+            {
+                var byNumber = context.Tracks.FirstOrDefault(t => t.AbsoluteTrackNumber == tag.Track);
+                if (byNumber != null)
+                {
+                    return byNumber;
+                }
+            }
+
+            var fileTrackNumber = ExtractLeadingTrackNumber(path);
+            if (fileTrackNumber > 0)
+            {
+                var byFileName = context.Tracks.FirstOrDefault(t => t.AbsoluteTrackNumber == fileTrackNumber);
+                if (byFileName != null)
+                {
+                    return byFileName;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(tag.Title))
+            {
+                var matches = context.Tracks
+                    .Where(t => string.Equals(NormalizeTrackKey(t.Title), NormalizeTrackKey(tag.Title), StringComparison.Ordinal))
+                    .ToList();
+
+                if (matches.Count == 1)
+                {
+                    return matches[0];
+                }
+            }
+
+            if (context.Tracks.Count == totalFiles)
+            {
+                return context.Tracks[fileIndex];
+            }
+
+            return null;
+        }
+
+        private static AudioTag? SafeReadAudioTag(string path)
+        {
+            try
+            {
+                return new AudioTag(path);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static bool IsSupportedAudioFile(string path)
+        {
+            var extension = Path.GetExtension(path);
+            return extension.Equals(".flac", StringComparison.OrdinalIgnoreCase) ||
+                   extension.Equals(".mp3", StringComparison.OrdinalIgnoreCase) ||
+                   extension.Equals(".ogg", StringComparison.OrdinalIgnoreCase) ||
+                   extension.Equals(".m4a", StringComparison.OrdinalIgnoreCase) ||
+                   extension.Equals(".wav", StringComparison.OrdinalIgnoreCase) ||
+                   extension.Equals(".aiff", StringComparison.OrdinalIgnoreCase) ||
+                   extension.Equals(".aif", StringComparison.OrdinalIgnoreCase) ||
+                   extension.Equals(".opus", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string? ResolveMedia(BandcampRetagContext context, int? mediumNumber)
+        {
+            if (mediumNumber == null || context.PreferredRelease == null)
+            {
+                return null;
+            }
+
+            return context.PreferredRelease.MediaByDisc.TryGetValue(mediumNumber.Value, out var media)
+                ? media
+                : null;
+        }
+
+        private static int ExtractLeadingTrackNumber(string path)
+        {
+            var match = Regex.Match(Path.GetFileNameWithoutExtension(path), @"^(?<track>\d{1,3})\b");
+            if (match.Success && int.TryParse(match.Groups["track"].Value, out var track))
+            {
+                return track;
+            }
+
+            return 0;
+        }
+
+        private static string NormalizeTrackKey(string value)
+        {
+            return Regex.Replace(value, @"[^a-z0-9]+", string.Empty, RegexOptions.IgnoreCase)
+                .ToLowerInvariant();
         }
 
         /// <summary>

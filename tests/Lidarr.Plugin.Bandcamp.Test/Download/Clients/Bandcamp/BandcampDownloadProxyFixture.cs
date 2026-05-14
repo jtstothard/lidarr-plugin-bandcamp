@@ -10,6 +10,7 @@ using NLog;
 using NzbDrone.Common.Http;
 using NzbDrone.Core.Download.Clients.Bandcamp;
 using NzbDrone.Core.Http.Bandcamp;
+using NzbDrone.Core.MediaFiles;
 using Xunit;
 
 namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
@@ -84,6 +85,70 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             Assert.True(fileMode.HasFlag(UnixFileMode.UserRead));
             Assert.True(dirMode.HasFlag(UnixFileMode.UserRead));
             Assert.True(dirMode.HasFlag(UnixFileMode.UserExecute));
+        }
+
+        [Fact]
+        public void ApplyCanonicalTagsToFile_WritesCanonicalAlbumAndMusicBrainzMetadata()
+        {
+            Directory.CreateDirectory(_tempRoot);
+            var source = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "ext", "Lidarr", "src", "NzbDrone.Core.Test", "Files", "Media", "nin.flac");
+            var path = Path.Combine(_tempRoot, "01 - test.flac");
+            File.Copy(source, path, overwrite: true);
+
+            var context = new BandcampRetagContext
+            {
+                ArtistName = "Artist Name",
+                ArtistMusicBrainzId = "artist-mbid",
+                AlbumTitle = "Album Title",
+                AlbumMusicBrainzId = "release-group-mbid",
+                AlbumType = "Album",
+                AlbumDisambiguation = "Deluxe",
+                AlbumReleaseDate = new DateTime(2024, 5, 1),
+                Genres = new[] { "Indie Rock" },
+                PreferredRelease = new BandcampRetagReleaseContext
+                {
+                    ReleaseMusicBrainzId = "release-mbid",
+                    ReleaseArtistMusicBrainzId = "artist-mbid",
+                    ReleaseStatus = "Official",
+                    Label = "Label Name",
+                    ReleaseDate = new DateTime(2024, 5, 1),
+                    DiscCount = 1,
+                    MediaByDisc = { [1] = "Digital Media" }
+                },
+                Tracks =
+                {
+                    new BandcampRetagTrackContext
+                    {
+                        AbsoluteTrackNumber = 1,
+                        MediumNumber = 1,
+                        Title = "Track Title",
+                        RecordingMusicBrainzId = "recording-mbid",
+                        ReleaseTrackMusicBrainzId = "release-track-mbid"
+                    }
+                }
+            };
+
+            BandcampDownloadProxy.ApplyCanonicalTagsToFile(path, context, 0, 1);
+
+            var tag = new AudioTag(path);
+            Assert.True(tag.IsValid);
+            Assert.Equal("Track Title", tag.Title);
+            Assert.Equal("Album Title", tag.Album);
+            Assert.Equal("Artist Name", Assert.Single(tag.Performers));
+            Assert.Equal("Artist Name", Assert.Single(tag.AlbumArtists));
+            Assert.Equal((uint)1, tag.Track);
+            Assert.Equal((uint)1, tag.TrackCount);
+            Assert.Equal((uint)1, tag.Disc);
+            Assert.Equal((uint)1, tag.DiscCount);
+            Assert.Equal("Digital Media", tag.Media);
+            Assert.Equal("Label Name", tag.Publisher);
+            Assert.Equal("release-mbid", tag.MusicBrainzReleaseId);
+            Assert.Equal("artist-mbid", tag.MusicBrainzArtistId);
+            Assert.Equal("artist-mbid", tag.MusicBrainzReleaseArtistId);
+            Assert.Equal("release-group-mbid", tag.MusicBrainzReleaseGroupId);
+            Assert.Equal("recording-mbid", tag.MusicBrainzTrackId);
+            Assert.Equal("release-track-mbid", tag.MusicBrainzReleaseTrackId);
+            Assert.Equal("Deluxe", tag.MusicBrainzAlbumComment);
         }
 
         [Fact]

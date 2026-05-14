@@ -12,6 +12,7 @@ using NzbDrone.Core.Download.Clients.Bandcamp;
 using NzbDrone.Core.Http.Bandcamp;
 using NzbDrone.Core.Indexers;
 using NzbDrone.Core.Localization;
+using NzbDrone.Core.Music;
 using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.RemotePathMappings;
 using Xunit;
@@ -59,6 +60,9 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             var client = new BandcampDownloadClient(
                 queue,
                 apiClient,
+                Mock.Of<IAlbumService>(),
+                Mock.Of<IReleaseService>(),
+                Mock.Of<ITrackService>(),
                 Mock.Of<IConfigService>(),
                 Mock.Of<IDiskProvider>(),
                 Mock.Of<IRemotePathMappingService>(),

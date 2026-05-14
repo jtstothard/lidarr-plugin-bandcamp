@@ -9,6 +9,7 @@ using NzbDrone.Common.Http;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Indexers;
 using NzbDrone.Core.Localization;
+using NzbDrone.Core.Music;
 using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.RemotePathMappings;
 
@@ -31,6 +32,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
     {
         private readonly IBandcampDownloadQueue _taskQueue;
         private readonly BandcampApiClient _apiClient;
+        private readonly IAlbumService _albumService;
+        private readonly IReleaseService _releaseService;
+        private readonly ITrackService _trackService;
 
         public override string Name => "Bandcamp";
         public override string Protocol => nameof(BandcampDownloadProtocol);
@@ -38,6 +42,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         public BandcampDownloadClient(
             IBandcampDownloadQueue taskQueue,
             BandcampApiClient apiClient,
+            IAlbumService albumService,
+            IReleaseService releaseService,
+            ITrackService trackService,
             IConfigService configService,
             IDiskProvider diskProvider,
             IRemotePathMappingService remotePathMappingService,
@@ -47,6 +54,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         {
             _taskQueue = taskQueue;
             _apiClient = apiClient;
+            _albumService = albumService;
+            _releaseService = releaseService;
+            _trackService = trackService;
         }
 
         /// <summary>
@@ -67,11 +77,15 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
             var title = remoteAlbum.Release.Title ?? remoteAlbum.Release.Album ?? albumUrl;
             var downloadId = Guid.NewGuid().ToString("N");
+            var retagContext = BuildRetagContext(remoteAlbum);
 
             // Build a unique working directory under the configured download root so retries
             // and concurrent grabs never delete or overwrite each other's extracted files.
             var downloadPath = Settings.DownloadPath;
-            var albumDir = MakeValidDirectoryName(title);
+            var folderTitle = retagContext != null
+                ? $"{retagContext.ArtistName} - {retagContext.AlbumTitle}"
+                : title;
+            var albumDir = MakeValidDirectoryName(folderTitle);
             var outputPath = System.IO.Path.Combine(downloadPath, $"{albumDir}-{downloadId[..8]}");
 
             var item = new BandcampDownloadItem
@@ -80,7 +94,8 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 AlbumUrl = albumUrl,
                 Title = title,
                 OutputPath = outputPath,
-                Cookies = Settings.Cookies
+                Cookies = Settings.Cookies,
+                RetagContext = retagContext
             };
 
             await _taskQueue.EnqueueAsync(item).ConfigureAwait(false);
@@ -243,6 +258,102 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 failures.Add(new ValidationFailure("DownloadPath", "Unable to create download path: " + ex.Message));
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Builds a conservative retagging context from Lidarr's matched album metadata.
+        /// We always carry canonical artist/album information. Release-level MBIDs are only
+        /// included when we can identify a single preferred release safely.
+        /// </summary>
+        private BandcampRetagContext? BuildRetagContext(RemoteAlbum remoteAlbum)
+        {
+            if (remoteAlbum.Artist == null || remoteAlbum.Albums == null || remoteAlbum.Albums.Count != 1)
+            {
+                return null;
+            }
+
+            var album = _albumService.GetAlbum(remoteAlbum.Albums[0].Id);
+            var artist = _albumService.GetAlbum(album.Id).Artist?.Value ?? remoteAlbum.Artist;
+            var release = SelectPreferredRelease(album.Id);
+            var tracks = BuildTrackContexts(album.Id, release?.Id);
+
+            return new BandcampRetagContext
+            {
+                ArtistName = artist.Name,
+                ArtistMusicBrainzId = artist.ForeignArtistId,
+                AlbumTitle = album.Title,
+                AlbumMusicBrainzId = album.ForeignAlbumId,
+                AlbumType = album.AlbumType,
+                AlbumDisambiguation = album.Disambiguation,
+                AlbumReleaseDate = album.ReleaseDate,
+                Genres = album.Genres.Any() ? album.Genres.ToArray() : Array.Empty<string>(),
+                PreferredRelease = release == null ? null : new BandcampRetagReleaseContext
+                {
+                    ReleaseMusicBrainzId = release.ForeignReleaseId,
+                    ReleaseArtistMusicBrainzId = artist.ForeignArtistId,
+                    ReleaseStatus = release.Status,
+                    Label = release.Label.FirstOrDefault(),
+                    ReleaseDate = release.ReleaseDate,
+                    DiscCount = release.Media.Count,
+                    MediaByDisc = release.Media.ToDictionary(m => m.Number, m => m.Format)
+                },
+                Tracks = tracks
+            };
+        }
+
+        private AlbumRelease? SelectPreferredRelease(int albumId)
+        {
+            var releases = _releaseService.GetReleasesByAlbum(albumId);
+            if (releases.Count == 1)
+            {
+                return releases[0];
+            }
+
+            var monitored = releases.Where(r => r.Monitored).ToList();
+            if (monitored.Count == 1)
+            {
+                return monitored[0];
+            }
+
+            return null;
+        }
+
+        private List<BandcampRetagTrackContext> BuildTrackContexts(int albumId, int? preferredReleaseId)
+        {
+            var tracks = preferredReleaseId.HasValue
+                ? _trackService.GetTracksByRelease(preferredReleaseId.Value)
+                : _trackService.GetTracksByAlbum(albumId);
+
+            return tracks
+                .GroupBy(t => t.AbsoluteTrackNumber)
+                .Select(g =>
+                {
+                    var distinctTitles = g.Select(t => t.Title).Where(t => !string.IsNullOrWhiteSpace(t)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                    if (distinctTitles.Count > 1)
+                    {
+                        return null;
+                    }
+
+                    var distinctRecordings = g.Select(t => t.ForeignRecordingId).Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                    if (distinctRecordings.Count > 1)
+                    {
+                        return null;
+                    }
+
+                    var track = g.OrderBy(t => t.MediumNumber).ThenBy(t => t.AbsoluteTrackNumber).First();
+                    return new BandcampRetagTrackContext
+                    {
+                        AbsoluteTrackNumber = track.AbsoluteTrackNumber,
+                        MediumNumber = track.MediumNumber,
+                        Title = track.Title,
+                        RecordingMusicBrainzId = distinctRecordings.SingleOrDefault(),
+                        ReleaseTrackMusicBrainzId = preferredReleaseId.HasValue ? track.ForeignTrackId : null
+                    };
+                })
+                .Where(t => t != null)
+                .OrderBy(t => t!.AbsoluteTrackNumber)
+                .Select(t => t!)
+                .ToList();
         }
 
         /// <summary>

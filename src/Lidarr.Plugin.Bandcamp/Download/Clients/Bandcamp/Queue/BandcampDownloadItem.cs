@@ -70,6 +70,13 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         public string Phase { get; set; } = "queued";
 
         /// <summary>
+        /// Internal: canonical metadata to apply to extracted files before Lidarr import.
+        /// Built from Lidarr's matched album context at grab time so we can normalize
+        /// tags without guessing from Bandcamp metadata alone.
+        /// </summary>
+        internal BandcampRetagContext? RetagContext { get; set; }
+
+        /// <summary>
         /// Internal: session cookies for authenticating with Bandcamp.
         /// Not exposed to Lidarr — used only during download processing.
         /// </summary>

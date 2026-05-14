@@ -149,6 +149,98 @@ namespace Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp
                 r.Url.FullUri == "https://fresh.bandcamp.com/album/fresh")), Times.Once);
         }
 
+        [Fact]
+        public async Task Fetch_AlbumSearch_NormalizesParserHostileBandcampTitles()
+        {
+            _httpClientMock
+                .Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
+                .ReturnsAsync((HttpRequest request) =>
+                {
+                    return request.Url.FullUri switch
+                    {
+                        "https://bandcamp.com" => CreateStringResponse(
+                            @"<html><body><div id=""HomepageApp"" data-blob=""{&quot;pageContext&quot;:{&quot;identity&quot;:{&quot;fanId&quot;:12345678,&quot;isLoggedIn&quot;:true}}}""></div></body></html>",
+                            request),
+                        "https://bandcamp.com/api/fancollection/1/collection_items" => CreateStringResponse(
+                            @"{
+                                ""redownload_urls"": {
+                                    ""a111"": ""https://bandcamp.com/download?type=album&id=111""
+                                },
+                                ""items"": [
+                                    {
+                                        ""item_id"": 111,
+                                        ""item_type"": ""album"",
+                                        ""sale_item_type"": ""a"",
+                                        ""sale_item_id"": 111,
+                                        ""token"": ""tok-111"",
+                                        ""item_url"": ""https://artist.bandcamp.com/album/album-title"",
+                                        ""item_title"": ""Artist Name - Album Title - Single"",
+                                        ""band_name"": ""Artist Name"",
+                                        ""release_date"": null
+                                    }
+                                ]
+                            }",
+                            request),
+                        "https://bandcamp.com/download?type=album&id=111" => CreateStringResponse(
+                            @"<html><body><div id=""pagedata"" data-blob=""{&quot;digital_items&quot;:[{&quot;item_id&quot;:111,&quot;item_type&quot;:&quot;album&quot;,&quot;title&quot;:&quot;Album Title&quot;,&quot;downloads&quot;:{&quot;flac&quot;:{&quot;url&quot;:&quot;https://bandcamp.com/statdownload/album/111?sig=flac&quot;,&quot;size_mb&quot;:&quot;123MB&quot;}}}]}""></div></body></html>",
+                            request),
+                        "https://artist.bandcamp.com/album/album-title" => CreateStringResponse(
+                            @"<html><body><script data-tralbum=""{&quot;trackinfo&quot;:[{&quot;duration&quot;:200.0}]}""></script></body></html>",
+                            request),
+                        _ => CreateStringResponse(@"{""items"": []}", request)
+                    };
+                });
+
+            var criteria = new AlbumSearchCriteria
+            {
+                Artist = new Artist { Name = "Artist Name" },
+                AlbumTitle = "Album Title"
+            };
+
+            var result = Assert.Single(await _subject.Fetch(criteria));
+
+            Assert.Equal("Artist Name - Album Title [FLAC]", result.Title);
+            Assert.Equal("Artist Name", result.Artist);
+            Assert.Equal("Album Title", result.Album);
+        }
+
+        [Theory]
+        [InlineData("Artist Name", "Artist Name - Album Title", "FLAC", "Artist Name - Album Title [FLAC]", "Artist Name", "Album Title")]
+        [InlineData("Artist Name", "\"Album Title\"", "FLAC", "Artist Name - Album Title [FLAC]", "Artist Name", "Album Title")]
+        [InlineData("Artist Name", "Album Title - Single", "FLAC", "Artist Name - Album Title [FLAC]", "Artist Name", "Album Title")]
+        [InlineData("Artist Name", "Album Title (EP)", "FLAC", "Artist Name - Album Title [FLAC]", "Artist Name", "Album Title")]
+        [InlineData("Bartees Strange", "Province / Ever New", "FLAC", "Bartees Strange - Province / Ever New [FLAC]", "Bartees Strange", "Province / Ever New")]
+        [InlineData("Troye Sivan", "We're My OTP", "MP3 320", "Troye Sivan - We're My OTP [MP3 320]", "Troye Sivan", "We're My OTP")]
+        public void BuildReleaseTitle_ShouldProduceParserFriendlyTitles(string artistName,
+                                                                        string albumTitle,
+                                                                        string formatLabel,
+                                                                        string expectedTitle,
+                                                                        string expectedArtist,
+                                                                        string expectedAlbum)
+        {
+            var title = BandcampIndexer.BuildReleaseTitle(artistName, albumTitle, formatLabel);
+
+            Assert.Equal(expectedTitle, title);
+
+            var parsed = Parser.ParseAlbumTitle(title);
+
+            Assert.NotNull(parsed);
+            Assert.Equal(expectedArtist, parsed!.ArtistName);
+            Assert.Equal(expectedAlbum, parsed.AlbumTitle);
+        }
+
+        [Theory]
+        [InlineData("Artist Name", "Artist Name - Album Title", "Album Title")]
+        [InlineData("Artist Name", "Album Title - Single", "Album Title")]
+        [InlineData("Artist Name", "Album Title [EP]", "Album Title")]
+        [InlineData("Artist Name", "\"Album Title\"", "Album Title")]
+        public void NormalizeAlbumTitle_ShouldStripParserHostileNoise(string artistName, string albumTitle, string expected)
+        {
+            var normalized = BandcampIndexer.NormalizeAlbumTitle(artistName, albumTitle);
+
+            Assert.Equal(expected, normalized);
+        }
+
         private static HttpResponse CreateStringResponse(string content, HttpRequest request, HttpStatusCode statusCode = HttpStatusCode.OK)
         {
             return new HttpResponse(request, new HttpHeader(), content, statusCode);
