@@ -148,6 +148,22 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         #region GetDownloadPageDataAsync Tests (Pagedata Extraction)
 
         [Fact]
+        public async Task GetAlbumDurationSecondsAsync_DataTralbum_ReturnsSummedDurations()
+        {
+            // Arrange
+            var html = @"<html><body><script data-tralbum=""{&quot;trackinfo&quot;:[{&quot;duration&quot;:113.078},{&quot;duration&quot;:87.1942},{&quot;duration&quot;:41.3711}]}""></script></body></html>";
+            SetupGetAsync(CreateStringResponse(html));
+            var client = CreateClient();
+
+            // Act
+            var duration = await client.GetAlbumDurationSecondsAsync("identity=testcookie", "https://fresh.bandcamp.com/album/fresh");
+
+            // Assert
+            Assert.NotNull(duration);
+            Assert.InRange(duration!.Value, 241.64, 241.65);
+        }
+
+        [Fact]
         public async Task GetDownloadPageDataAsync_ValidPagedata_ReturnsDownloadItems()
         {
             // Arrange — simulate a download page with data-blob containing download URLs

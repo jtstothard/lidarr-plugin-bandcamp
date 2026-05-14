@@ -30,6 +30,14 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             @"data-blob=""(.+?)""",
             RegexOptions.Compiled | RegexOptions.Singleline);
 
+        private static readonly Regex DataTralbumRegex = new(
+            @"data-tralbum=""(.+?)""",
+            RegexOptions.Compiled | RegexOptions.Singleline);
+
+        private static readonly Regex TralbumDataRegex = new(
+            @"var\s+TralbumData\s*=\s*(\{.*?\})\s*;",
+            RegexOptions.Compiled | RegexOptions.Singleline);
+
         private static readonly Regex StatdownloadUrlRegex = new(
             @"""url""\s*:\s*""([^""]+)""",
             RegexOptions.Compiled);
@@ -275,8 +283,24 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             return null;
         }
 
-        /// <summary>
-        /// Fetches the download page for a purchased album and extracts the download
+        public async Task<double?> GetAlbumDurationSecondsAsync(string cookies, string albumUrl)
+        {
+            var builder = _httpClient.CreateRequestBuilder(albumUrl, cookies);
+            var request = builder.Build();
+            var response = await _httpClient.ExecuteAsync(request);
+            var content = response.Content ?? string.Empty;
+
+            try
+            {
+                return ParseAlbumDurationSeconds(content);
+            }
+            catch (Exception ex)
+            {
+                _logger.Debug(ex, "Bandcamp API: Failed to parse album duration from page {0}", albumUrl);
+                return null;
+            }
+        }
+
         /// URL from the embedded pagedata JSON. The download page contains signed URLs
         /// for each format (FLAC, MP3, etc.).
         /// </summary>
@@ -418,6 +442,60 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
             _logger.Debug("Bandcamp API: File download response received (Content-Type: {0})", contentType);
             return response;
+        }
+
+        private static double? ParseAlbumDurationSeconds(string content)
+        {
+            JsonElement root;
+
+            var dataTralbumMatch = DataTralbumRegex.Match(content);
+            if (dataTralbumMatch.Success)
+            {
+                var tralbumJson = System.Net.WebUtility.HtmlDecode(dataTralbumMatch.Groups[1].Value);
+                using var doc = JsonDocument.Parse(tralbumJson);
+                root = doc.RootElement.Clone();
+                return SumTrackDurations(root);
+            }
+
+            var tralbumDataMatch = TralbumDataRegex.Match(content);
+            if (tralbumDataMatch.Success)
+            {
+                using var doc = JsonDocument.Parse(tralbumDataMatch.Groups[1].Value);
+                root = doc.RootElement.Clone();
+                return SumTrackDurations(root);
+            }
+
+            return null;
+        }
+
+        private static double? SumTrackDurations(JsonElement root)
+        {
+            if (!root.TryGetProperty("trackinfo", out var trackInfo) || trackInfo.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            double total = 0;
+            var found = false;
+            foreach (var track in trackInfo.EnumerateArray())
+            {
+                if (track.TryGetProperty("duration", out var duration))
+                {
+                    if (duration.ValueKind == JsonValueKind.Number)
+                    {
+                        total += duration.GetDouble();
+                        found = true;
+                    }
+                    else if (duration.ValueKind == JsonValueKind.String &&
+                             double.TryParse(duration.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed))
+                    {
+                        total += parsed;
+                        found = true;
+                    }
+                }
+            }
+
+            return found && total > 0 ? total : null;
         }
 
         private static string CreateInitialCollectionToken()

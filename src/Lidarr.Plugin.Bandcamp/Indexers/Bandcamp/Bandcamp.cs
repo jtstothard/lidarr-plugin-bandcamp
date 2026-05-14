@@ -172,6 +172,8 @@ namespace NzbDrone.Core.Indexers.Bandcamp
 
             var pageData = await _apiClient.GetDownloadPageDataAsync(Settings.Cookies, item.DownloadPageUrl!)
                 .ConfigureAwait(false);
+            var albumDurationSeconds = await _apiClient.GetAlbumDurationSecondsAsync(Settings.Cookies, item.ItemUrl!)
+                .ConfigureAwait(false);
 
             if (pageData == null)
             {
@@ -200,17 +202,17 @@ namespace NzbDrone.Core.Indexers.Bandcamp
                     continue;
                 }
 
-                releases.Add(ToReleaseInfo(item, format.Key, size));
+                releases.Add(ToReleaseInfo(item, format.Key, size, albumDurationSeconds));
             }
 
             return releases;
         }
 
-        private ReleaseInfo ToReleaseInfo(BandcampCollectionItem item, string formatKey, long size)
+        private ReleaseInfo ToReleaseInfo(BandcampCollectionItem item, string formatKey, long size, double? albumDurationSeconds)
         {
             var artistName = item.BandName ?? "Unknown Artist";
             var albumTitle = item.Title ?? "Unknown Album";
-            var formatLabel = FormatLabel(formatKey);
+            var formatLabel = FormatLabel(formatKey, size, albumDurationSeconds);
             var title = $"{artistName} - {albumTitle} [{formatLabel}]";
             var publishDate = ParsePublishDate(item.ReleaseDate);
             var downloadUrl = AddFormatFragment(item.DownloadPageUrl!, formatKey);
@@ -278,17 +280,46 @@ namespace NzbDrone.Core.Indexers.Bandcamp
             return $"{downloadPageUrl}{separator}format={Uri.EscapeDataString(formatKey)}";
         }
 
-        private static string FormatLabel(string formatKey)
+        private static string FormatLabel(string formatKey, long size, double? albumDurationSeconds)
         {
             return formatKey switch
             {
-                "mp3-v0" => "MP3 V0",
+                "mp3-v0" => "MP3 VBR V0",
                 "mp3-320" => "MP3 320",
-                "vorbis" or "ogg-vorbis" => "OGG Vorbis",
+                "vorbis" or "ogg-vorbis" => InferVorbisLabel(size, albumDurationSeconds),
                 "aac-hi" => "AAC",
                 "aiff-lossless" => "AIFF Lossless",
                 _ => formatKey.Replace('-', ' ').ToUpperInvariant()
             };
+        }
+
+        private static string InferVorbisLabel(long sizeBytes, double? albumDurationSeconds)
+        {
+            var bitrate = InferBitrateKbps(sizeBytes, albumDurationSeconds);
+            if (bitrate == null)
+            {
+                return "OGG Vorbis";
+            }
+
+            return bitrate.Value switch
+            {
+                < 176 => "Vorbis Q5",
+                < 208 => "Vorbis Q6",
+                < 240 => "Vorbis Q7",
+                < 288 => "Vorbis Q8",
+                < 410 => "Vorbis Q9",
+                _ => "Vorbis Q10"
+            };
+        }
+
+        private static int? InferBitrateKbps(long sizeBytes, double? durationSeconds)
+        {
+            if (durationSeconds == null || durationSeconds <= 0 || sizeBytes <= 0)
+            {
+                return null;
+            }
+
+            return (int)Math.Round((sizeBytes * 8d) / durationSeconds.Value / 1000d);
         }
 
         private static string CodecForFormat(string formatKey)

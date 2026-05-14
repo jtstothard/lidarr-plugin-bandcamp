@@ -94,7 +94,10 @@ namespace Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp
                             }",
                             request),
                         "https://bandcamp.com/download?type=album&id=111" => CreateStringResponse(
-                            @"<html><body><div id=""pagedata"" data-blob=""{&quot;digital_items&quot;:[{&quot;item_id&quot;:111,&quot;item_type&quot;:&quot;album&quot;,&quot;title&quot;:&quot;Fresh&quot;,&quot;downloads&quot;:{&quot;flac&quot;:{&quot;url&quot;:&quot;https://bandcamp.com/statdownload/album/111?sig=flac&quot;,&quot;size_mb&quot;:&quot;123MB&quot;},&quot;mp3-320&quot;:{&quot;url&quot;:&quot;https://bandcamp.com/statdownload/album/111?sig=mp3&quot;,&quot;size_mb&quot;:&quot;88.5MB&quot;},&quot;vorbis&quot;:{&quot;url&quot;:&quot;https://bandcamp.com/statdownload/album/111?sig=ogg&quot;,&quot;size_mb&quot;:&quot;0MB&quot;}}}]}""></div></body></html>",
+                            @"<html><body><div id=""pagedata"" data-blob=""{&quot;digital_items&quot;:[{&quot;item_id&quot;:111,&quot;item_type&quot;:&quot;album&quot;,&quot;title&quot;:&quot;Fresh&quot;,&quot;downloads&quot;:{&quot;mp3-v0&quot;:{&quot;url&quot;:&quot;https://bandcamp.com/statdownload/album/111?sig=v0&quot;,&quot;size_mb&quot;:&quot;41.2MB&quot;},&quot;flac&quot;:{&quot;url&quot;:&quot;https://bandcamp.com/statdownload/album/111?sig=flac&quot;,&quot;size_mb&quot;:&quot;123MB&quot;},&quot;mp3-320&quot;:{&quot;url&quot;:&quot;https://bandcamp.com/statdownload/album/111?sig=mp3&quot;,&quot;size_mb&quot;:&quot;88.5MB&quot;},&quot;vorbis&quot;:{&quot;url&quot;:&quot;https://bandcamp.com/statdownload/album/111?sig=ogg&quot;,&quot;size_mb&quot;:&quot;28MB&quot;}}}]}""></div></body></html>",
+                            request),
+                        "https://fresh.bandcamp.com/album/fresh" => CreateStringResponse(
+                            @"<html><body><script data-tralbum=""{&quot;trackinfo&quot;:[{&quot;duration&quot;:113.078},{&quot;duration&quot;:87.1942},{&quot;duration&quot;:41.3711},{&quot;duration&quot;:147.081},{&quot;duration&quot;:151.816},{&quot;duration&quot;:84.0},{&quot;duration&quot;:89.0},{&quot;duration&quot;:93.0},{&quot;duration&quot;:110.0},{&quot;duration&quot;:140.0},{&quot;duration&quot;:178.958}]}""></script></body></html>",
                             request),
                         _ => CreateStringResponse(@"{""items"": []}", request)
                     };
@@ -108,7 +111,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp
 
             var results = await _subject.Fetch(criteria);
 
-            Assert.Equal(2, results.Count);
+            Assert.Equal(4, results.Count);
             Assert.All(results, r => Assert.StartsWith("42_bandcamp-https://fresh.bandcamp.com/album/fresh-", r.Guid));
             Assert.All(results, r => Assert.Equal("Bandcamp", r.Indexer));
             Assert.All(results, r => Assert.Equal(nameof(BandcampDownloadProtocol), r.DownloadProtocol));
@@ -116,11 +119,23 @@ namespace Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp
             Assert.All(results, r => Assert.Equal("Fresh", r.Album));
             Assert.DoesNotContain(results, r => r.Title.Contains("OGG", StringComparison.OrdinalIgnoreCase));
 
+            var v0 = Assert.Single(results.Where(r => r.Title.Contains("[MP3 VBR V0]", StringComparison.OrdinalIgnoreCase)));
+            Assert.Equal((long)(41.2 * 1024 * 1024), v0.Size);
+            Assert.Equal("MP3", v0.Codec);
+            Assert.Equal("MP3", v0.Container);
+            Assert.Contains("#format=mp3-v0", v0.DownloadUrl, StringComparison.OrdinalIgnoreCase);
+
             var flac = Assert.Single(results.Where(r => r.Title.Contains("[FLAC]", StringComparison.OrdinalIgnoreCase)));
             Assert.Equal(123L * 1024 * 1024, flac.Size);
             Assert.Equal("FLAC", flac.Codec);
             Assert.Equal("FLAC", flac.Container);
             Assert.Contains("#format=flac", flac.DownloadUrl, StringComparison.OrdinalIgnoreCase);
+
+            var vorbis = Assert.Single(results.Where(r => r.Title.Contains("[Vorbis Q6]", StringComparison.OrdinalIgnoreCase)));
+            Assert.Equal(28L * 1024 * 1024, vorbis.Size);
+            Assert.Equal("OGG", vorbis.Codec);
+            Assert.Equal("OGG", vorbis.Container);
+            Assert.Contains("#format=vorbis", vorbis.DownloadUrl, StringComparison.OrdinalIgnoreCase);
 
             var mp3 = Assert.Single(results.Where(r => r.Title.Contains("[MP3 320]", StringComparison.OrdinalIgnoreCase)));
             Assert.Equal((long)(88.5 * 1024 * 1024), mp3.Size);
