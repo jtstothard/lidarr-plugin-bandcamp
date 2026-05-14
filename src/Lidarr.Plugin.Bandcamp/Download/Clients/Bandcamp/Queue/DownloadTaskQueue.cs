@@ -12,19 +12,23 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
     /// producer/consumer semantics. Downloads are enqueued via EnqueueAsync() and
     /// processed sequentially with rate limiting. The queue runs until disposed.
     /// </summary>
-    public class DownloadTaskQueue : IDisposable
+    public class DownloadTaskQueue : IBandcampDownloadQueue
     {
         private readonly Channel<BandcampDownloadItem> _channel;
-        private readonly ConcurrentDictionary<string, BandcampDownloadItem> _activeItems = new();
         private readonly CancellationTokenSource _cts = new();
         private readonly IBandcampDownloadProxy _downloadProxy;
+        private readonly IBandcampDownloadRegistry _registry;
         private readonly Logger _logger;
         private readonly Task _consumerTask;
         private bool _disposed;
 
-        public DownloadTaskQueue(IBandcampDownloadProxy downloadProxy, Logger logger)
+        public DownloadTaskQueue(
+            IBandcampDownloadProxy downloadProxy,
+            IBandcampDownloadRegistry registry,
+            Logger logger)
         {
             _downloadProxy = downloadProxy;
+            _registry = registry;
             _logger = logger;
 
             // Bounded channel to limit memory pressure; writers block when full
@@ -55,7 +59,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             item.QueuedAt = DateTime.UtcNow;
             item.Phase = "queued";
 
-            _activeItems[item.DownloadId] = item;
+            _registry.Upsert(item);
 
             await _channel.Writer.WriteAsync(item, _cts.Token).ConfigureAwait(false);
 
@@ -71,7 +75,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         /// </summary>
         public ConcurrentDictionary<string, BandcampDownloadItem> GetItems()
         {
-            return _activeItems;
+            return _registry.GetItems();
         }
 
         /// <summary>
@@ -79,7 +83,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         /// </summary>
         public void RemoveItem(string downloadId)
         {
-            _activeItems.TryRemove(downloadId, out _);
+            _registry.Remove(downloadId);
             _logger.Debug("Bandcamp download queue: Removed item {0}", downloadId);
         }
 

@@ -29,16 +29,14 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
     /// </summary>
     public class BandcampDownloadClient : DownloadClientBase<BandcampDownloadSettings>
     {
-        private readonly IBandcampDownloadProxy _downloadProxy;
-        private readonly DownloadTaskQueue _taskQueue;
+        private readonly IBandcampDownloadQueue _taskQueue;
         private readonly BandcampApiClient _apiClient;
 
         public override string Name => "Bandcamp";
         public override string Protocol => nameof(BandcampDownloadProtocol);
 
         public BandcampDownloadClient(
-            IBandcampDownloadProxy downloadProxy,
-            DownloadTaskQueue taskQueue,
+            IBandcampDownloadQueue taskQueue,
             BandcampApiClient apiClient,
             IConfigService configService,
             IDiskProvider diskProvider,
@@ -47,7 +45,6 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             Logger logger)
             : base(configService, diskProvider, remotePathMappingService, localizationService, logger)
         {
-            _downloadProxy = downloadProxy;
             _taskQueue = taskQueue;
             _apiClient = apiClient;
         }
@@ -134,10 +131,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             _logger.Debug("Bandcamp download client: Removing item {0} (deleteData={1})",
                 item.DownloadId, deleteData);
 
-            // Remove from the proxy's tracking dictionary
-            _downloadProxy.RemoveItem(item.DownloadId);
-
-            // Also remove from the task queue's active items
+            // Remove from the shared queue/registry state
             _taskQueue.RemoveItem(item.DownloadId);
 
             if (deleteData)

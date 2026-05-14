@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -28,7 +27,6 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
         private readonly BandcampApiClient _apiClient;
         private readonly BandcampHttpClient _httpClient;
-        private readonly ConcurrentDictionary<string, BandcampDownloadItem> _items = new();
         private readonly Logger _logger;
 
         public BandcampDownloadProxy(
@@ -39,19 +37,6 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             _apiClient = apiClient;
             _httpClient = httpClient;
             _logger = logger;
-        }
-
-        /// <inheritdoc />
-        public ConcurrentDictionary<string, BandcampDownloadItem> GetAllItems()
-        {
-            return _items;
-        }
-
-        /// <inheritdoc />
-        public void RemoveItem(string downloadId)
-        {
-            _items.TryRemove(downloadId, out _);
-            _logger.Debug("Bandcamp download proxy: Removed item {0}", downloadId);
         }
 
         /// <inheritdoc />
