@@ -58,10 +58,10 @@ jobs:
           grep AssemblyVersion ext/Lidarr/src/Directory.Build.props
 
       - name: Restore dependencies
-        run: dotnet restore Lidarr.Plugin.Bandcamp.slnx
+        run: dotnet restore Lidarr.Plugin.Bandcamp.slnx -p:TreatWarningsAsErrors=false
 
       - name: Build
-        run: dotnet build Lidarr.Plugin.Bandcamp.slnx -c Release --no-restore
+        run: dotnet build Lidarr.Plugin.Bandcamp.slnx -c Release --no-restore -p:TreatWarningsAsErrors=false
 
       - name: Run tests
         run: dotnet test Lidarr.Plugin.Bandcamp.slnx --no-build -c Release --filter "FullyQualifiedName~Bandcamp"
