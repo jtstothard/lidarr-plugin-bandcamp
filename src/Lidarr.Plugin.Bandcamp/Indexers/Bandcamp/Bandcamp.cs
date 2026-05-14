@@ -1,7 +1,13 @@
 using System;
+using System.Linq;
+using System.Threading.Tasks;
+using FluentValidation.Results;
 using NLog;
+using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Http;
 using NzbDrone.Core.Configuration;
+using NzbDrone.Core.IndexerSearch.Definitions;
+using NzbDrone.Core.Music;
 using NzbDrone.Core.Parser;
 
 namespace NzbDrone.Core.Indexers.Bandcamp
@@ -36,6 +42,55 @@ namespace NzbDrone.Core.Indexers.Bandcamp
         public override IParseIndexerResponse GetParser()
         {
             return new BandcampParser(Settings, _logger);
+        }
+
+        /// <summary>
+        /// Bandcamp is search-only and intentionally has no RSS/recent feed.
+        /// Lidarr's base HttpIndexerBase test always probes GetRecentRequests(),
+        /// which produces the misleading "No rss feed query available" failure for
+        /// search-only plugins. Validate by running a small real artist search instead.
+        /// </summary>
+        protected override async Task<ValidationFailure> TestConnection()
+        {
+            if (Settings.Cookies.IsNullOrWhiteSpace())
+            {
+                return new ValidationFailure("Cookies", "Bandcamp identity cookie is required for search.");
+            }
+
+            try
+            {
+                var parser = GetParser();
+                var generator = GetRequestGenerator();
+                var criteria = new ArtistSearchCriteria
+                {
+                    Artist = new Artist
+                    {
+                        Name = "Radiohead"
+                    }
+                };
+
+                var firstRequest = generator.GetSearchRequests(criteria).GetAllTiers().FirstOrDefault()?.FirstOrDefault();
+
+                if (firstRequest == null)
+                {
+                    return new ValidationFailure(string.Empty, "No Bandcamp search query could be generated.");
+                }
+
+                var releases = await FetchPage(firstRequest, parser).ConfigureAwait(false);
+
+                if (releases.Empty())
+                {
+                    return new ValidationFailure(string.Empty, "Bandcamp search completed, but no results were parsed. Check the identity cookie and Bandcamp response format.");
+                }
+
+                _logger.Debug("Bandcamp indexer: Search test passed with {0} parsed result(s)", releases.Count);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.Warn(ex, "Bandcamp indexer search test failed");
+                return new ValidationFailure(string.Empty, "Unable to connect to Bandcamp indexer. " + ex.Message);
+            }
         }
     }
 }
