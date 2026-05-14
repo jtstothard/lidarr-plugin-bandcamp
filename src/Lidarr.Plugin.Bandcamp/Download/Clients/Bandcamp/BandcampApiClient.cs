@@ -150,22 +150,15 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             _logger.Debug("Bandcamp API: Querying collection for fan_id (token={0})",
                 olderThanToken != null ? "present" : "none");
 
-            // Build the collection API URL
             var url = $"{BandcampBaseUrl}/api/fancollection/1/collection_items";
-            if (!string.IsNullOrEmpty(olderThanToken))
-            {
-                url += $"?older_than_token={Uri.EscapeDataString(olderThanToken)}";
-            }
-
             var builder = _httpClient.CreateRequestBuilder(url, cookies);
             builder.Method = System.Net.Http.HttpMethod.Post;
 
-            // The POST body requires fan_id and other fields
             var payload = new
             {
                 fan_id = fanId,
                 older_than_token = olderThanToken ?? string.Empty,
-                count = 50
+                count = 100
             };
 
             builder.Headers.ContentType = "application/json";
@@ -185,6 +178,51 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 _logger.Debug(ex, "Bandcamp API: Failed to parse collection response");
                 return new List<BandcampCollectionItem>();
             }
+        }
+
+        public async Task<List<BandcampCollectionItem>> GetDownloadableCollectionAsync(
+            string cookies, long fanId, int maxPages = 20)
+        {
+            var results = new List<BandcampCollectionItem>();
+            var seenKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            string? olderThanToken = null;
+
+            for (var page = 0; page < maxPages; page++)
+            {
+                var items = await GetCollectionAsync(cookies, fanId, olderThanToken).ConfigureAwait(false);
+                if (items.Count == 0)
+                {
+                    break;
+                }
+
+                foreach (var item in items)
+                {
+                    if (!item.IsDownloadable)
+                    {
+                        continue;
+                    }
+
+                    var key = !string.IsNullOrWhiteSpace(item.DownloadPageUrl)
+                        ? item.DownloadPageUrl!
+                        : $"{item.ItemType}:{item.ItemId}";
+
+                    if (seenKeys.Add(key))
+                    {
+                        results.Add(item);
+                    }
+                }
+
+                var nextToken = items.LastOrDefault(i => !string.IsNullOrWhiteSpace(i.Token))?.Token;
+                if (string.IsNullOrWhiteSpace(nextToken) || string.Equals(nextToken, olderThanToken, StringComparison.Ordinal))
+                {
+                    break;
+                }
+
+                olderThanToken = nextToken;
+            }
+
+            _logger.Debug("Bandcamp API: Loaded {0} downloadable collection item(s)", results.Count);
+            return results;
         }
 
         /// <summary>
@@ -370,6 +408,8 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             using var doc = JsonDocument.Parse(content);
             var root = doc.RootElement;
 
+            var redownloadUrls = ParseRedownloadUrls(root);
+
             // The collection API returns items in "items" or "tralbums" array
             var itemsElement = root.TryGetProperty("items", out var itemsEl) ? itemsEl :
                 root.TryGetProperty("tralbums", out var tralbums) ? tralbums :
@@ -394,6 +434,16 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                     if (item.TryGetProperty("band_id", out var bandId))
                     {
                         collectionItem.BandId = bandId.GetInt64();
+                    }
+
+                    if (item.TryGetProperty("sale_item_type", out var saleItemType))
+                    {
+                        collectionItem.SaleItemType = saleItemType.GetString();
+                    }
+
+                    if (item.TryGetProperty("sale_item_id", out var saleItemId) && saleItemId.ValueKind == JsonValueKind.Number)
+                    {
+                        collectionItem.SaleItemId = saleItemId.GetInt64();
                     }
 
                     if (item.TryGetProperty("token", out var token))
@@ -431,12 +481,60 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                         collectionItem.BandName = artist.GetString();
                     }
 
+                    if (item.TryGetProperty("num_tracks", out var numTracks) && numTracks.ValueKind == JsonValueKind.Number)
+                    {
+                        collectionItem.TrackCount = numTracks.GetInt32();
+                    }
+
+                    if (item.TryGetProperty("release_date", out var releaseDate))
+                    {
+                        collectionItem.ReleaseDate = releaseDate.GetString();
+                    }
+                    else if (item.TryGetProperty("item_release_date", out var itemReleaseDate))
+                    {
+                        collectionItem.ReleaseDate = itemReleaseDate.GetString();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(collectionItem.SaleItemType) && collectionItem.SaleItemId > 0)
+                    {
+                        var redownloadKey = $"{collectionItem.SaleItemType}{collectionItem.SaleItemId}";
+                        if (redownloadUrls.TryGetValue(redownloadKey, out var downloadPageUrl))
+                        {
+                            collectionItem.DownloadPageUrl = downloadPageUrl;
+                        }
+                    }
+
                     items.Add(collectionItem);
                 }
             }
 
             _logger.Debug("Bandcamp API: Parsed {0} collection items", items.Count);
             return items;
+        }
+
+        private static Dictionary<string, string> ParseRedownloadUrls(JsonElement root)
+        {
+            var urls = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            if (!root.TryGetProperty("redownload_urls", out var redownloadUrls) ||
+                redownloadUrls.ValueKind != JsonValueKind.Object)
+            {
+                return urls;
+            }
+
+            foreach (var property in redownloadUrls.EnumerateObject())
+            {
+                if (property.Value.ValueKind == JsonValueKind.String)
+                {
+                    var url = property.Value.GetString();
+                    if (!string.IsNullOrWhiteSpace(url))
+                    {
+                        urls[property.Name] = url;
+                    }
+                }
+            }
+
+            return urls;
         }
 
         private BandcampDownloadPageData ParseDownloadPagedata(string json)
@@ -480,6 +578,12 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                                 formatProp.Value.TryGetProperty("url", out var urlEl))
                             {
                                 downloadItem.DownloadUrls[formatProp.Name] = urlEl.GetString() ?? string.Empty;
+
+                                if (formatProp.Value.TryGetProperty("size_mb", out var sizeMbEl) &&
+                                    sizeMbEl.ValueKind == JsonValueKind.Number)
+                                {
+                                    downloadItem.DownloadSizes[formatProp.Name] = (long)(sizeMbEl.GetDouble() * 1024 * 1024);
+                                }
                             }
                         }
                     }
@@ -515,10 +619,16 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         public long ItemId { get; set; }
         public string ItemType { get; set; } = "album";
         public long BandId { get; set; }
+        public string? SaleItemType { get; set; }
+        public long SaleItemId { get; set; }
         public string Token { get; set; } = string.Empty;
         public string? ItemUrl { get; set; }
+        public string? DownloadPageUrl { get; set; }
         public string? Title { get; set; }
         public string? BandName { get; set; }
+        public int TrackCount { get; set; }
+        public string? ReleaseDate { get; set; }
+        public bool IsDownloadable => !string.IsNullOrWhiteSpace(DownloadPageUrl);
     }
 
     /// <summary>
@@ -541,6 +651,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         public string ItemType { get; set; } = "album";
         public string? Title { get; set; }
         public Dictionary<string, string> DownloadUrls { get; set; } = new();
+        public Dictionary<string, long> DownloadSizes { get; set; } = new();
     }
 
     /// <summary>

@@ -187,7 +187,11 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             Assert.Equal("Test Album", item.Title);
             Assert.True(item.DownloadUrls.ContainsKey("flac"));
             Assert.Equal(downloadUrl, item.DownloadUrls["flac"]);
+            Assert.True(item.DownloadSizes.ContainsKey("flac"));
+            Assert.Equal(150L * 1024 * 1024, item.DownloadSizes["flac"]);
             Assert.True(item.DownloadUrls.ContainsKey("mp3-v0"));
+            Assert.True(item.DownloadSizes.ContainsKey("mp3-v0"));
+            Assert.Equal(50L * 1024 * 1024, item.DownloadSizes["mp3-v0"]);
         }
 
         [Fact]
@@ -484,6 +488,64 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         }
 
         [Fact]
+        public async Task GetCollectionAsync_RedownloadUrls_Metadata_AndDownloadableState_AreParsed()
+        {
+            // Arrange
+            var collectionJson = @"{
+                ""redownload_urls"": {
+                    ""a555"": ""https://bandcamp.com/download?type=album&id=555""
+                },
+                ""items"": [
+                    {
+                        ""item_id"": 555,
+                        ""item_type"": ""album"",
+                        ""band_id"": 200,
+                        ""sale_item_type"": ""a"",
+                        ""sale_item_id"": 555,
+                        ""token"": ""abc123"",
+                        ""item_url"": ""https://fresh.bandcamp.com/album/fresh"",
+                        ""item_title"": ""Fresh"",
+                        ""band_name"": ""Fresh"",
+                        ""num_tracks"": 8,
+                        ""release_date"": ""2024-01-02T00:00:00Z""
+                    },
+                    {
+                        ""item_id"": 777,
+                        ""item_type"": ""album"",
+                        ""band_id"": 201,
+                        ""sale_item_type"": ""a"",
+                        ""sale_item_id"": 777,
+                        ""token"": ""def456"",
+                        ""item_url"": ""https://fresh.bandcamp.com/album/no-download"",
+                        ""item_title"": ""No Download"",
+                        ""band_name"": ""Fresh""
+                    }
+                ]
+            }";
+
+            SetupGetAsync(CreateStringResponse(collectionJson));
+            var client = CreateClient();
+
+            // Act
+            var items = await client.GetCollectionAsync("identity=testcookie", 12345678);
+
+            // Assert
+            Assert.Equal(2, items.Count);
+
+            var downloadable = items[0];
+            Assert.Equal("a", downloadable.SaleItemType);
+            Assert.Equal(555, downloadable.SaleItemId);
+            Assert.Equal("https://bandcamp.com/download?type=album&id=555", downloadable.DownloadPageUrl);
+            Assert.Equal(8, downloadable.TrackCount);
+            Assert.Equal("2024-01-02T00:00:00Z", downloadable.ReleaseDate);
+            Assert.True(downloadable.IsDownloadable);
+
+            var nonDownloadable = items[1];
+            Assert.False(nonDownloadable.IsDownloadable);
+            Assert.Null(nonDownloadable.DownloadPageUrl);
+        }
+
+        [Fact]
         public async Task GetCollectionAsync_EmptyItems_ReturnsEmptyList()
         {
             // Arrange
@@ -497,6 +559,64 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
 
             // Assert
             Assert.Empty(items);
+        }
+
+        [Fact]
+        public async Task GetDownloadableCollectionAsync_SkipsNonDownloadable_AndDeduplicatesByDownloadPage()
+        {
+            // Arrange
+            var firstPage = @"{
+                ""redownload_urls"": {
+                    ""a100"": ""https://bandcamp.com/download?type=album&id=100"",
+                    ""a101"": ""https://bandcamp.com/download?type=album&id=100""
+                },
+                ""items"": [
+                    {
+                        ""item_id"": 100,
+                        ""item_type"": ""album"",
+                        ""sale_item_type"": ""a"",
+                        ""sale_item_id"": 100,
+                        ""token"": ""tok-100"",
+                        ""item_title"": ""Fresh"",
+                        ""band_name"": ""Fresh""
+                    },
+                    {
+                        ""item_id"": 101,
+                        ""item_type"": ""album"",
+                        ""sale_item_type"": ""a"",
+                        ""sale_item_id"": 101,
+                        ""token"": ""tok-101"",
+                        ""item_title"": ""Fresh Duplicate"",
+                        ""band_name"": ""Fresh""
+                    },
+                    {
+                        ""item_id"": 102,
+                        ""item_type"": ""album"",
+                        ""sale_item_type"": ""a"",
+                        ""sale_item_id"": 102,
+                        ""token"": ""tok-102"",
+                        ""item_title"": ""No Download"",
+                        ""band_name"": ""Fresh""
+                    }
+                ]
+            }";
+
+            var secondPage = @"{""items"": []}";
+
+            _innerHttpClientMock
+                .SetupSequence(c => c.GetAsync(It.IsAny<HttpRequest>()))
+                .ReturnsAsync(CreateStringResponse(firstPage))
+                .ReturnsAsync(CreateStringResponse(secondPage));
+
+            var client = CreateClient();
+
+            // Act
+            var items = await client.GetDownloadableCollectionAsync("identity=testcookie", 12345678, maxPages: 5);
+
+            // Assert
+            Assert.Single(items);
+            Assert.Equal(100, items[0].ItemId);
+            Assert.Equal("https://bandcamp.com/download?type=album&id=100", items[0].DownloadPageUrl);
         }
 
         [Fact]

@@ -65,6 +65,8 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             }
 
             var cookies = item.Cookies!;
+            var requestedFormat = ExtractFormatFragment(item.AlbumUrl);
+            var lookupUrl = StripFragment(item.AlbumUrl);
 
             // Phase 1: Resolve fan_id
             item.Phase = "fan_id_resolution";
@@ -81,23 +83,38 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
             // Phase 2: Find purchase in collection
             item.Phase = "purchase_resolution";
-            _logger.Debug("Bandcamp download proxy [{0}]: Phase 2 — Finding purchase for album URL: {1}",
-                item.DownloadId, item.AlbumUrl);
+            _logger.Debug("Bandcamp download proxy [{0}]: Phase 2 — Resolving download page for URL: {1}",
+                item.DownloadId, lookupUrl);
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var purchase = await _apiClient.FindPurchaseByUrlAsync(
-                cookies, fanId.Value, item.AlbumUrl).ConfigureAwait(false);
+            BandcampCollectionItem? purchase = null;
+            string downloadPageUrl;
 
-            if (purchase == null)
+            if (IsDownloadPageUrl(lookupUrl))
             {
-                throw new DownloadException(
-                    $"Failed to resolve purchase for album URL '{item.AlbumUrl}'. " +
-                    "The album may not be in your Bandcamp collection.");
+                downloadPageUrl = lookupUrl;
+                _logger.Debug("Bandcamp download proxy [{0}]: Using indexer-provided redownload URL", item.DownloadId);
             }
+            else
+            {
+                purchase = await _apiClient.FindPurchaseByUrlAsync(
+                    cookies, fanId.Value, lookupUrl).ConfigureAwait(false);
 
-            _logger.Debug("Bandcamp download proxy [{0}]: Found purchase — item_id={1}, type={2}",
-                item.DownloadId, purchase.ItemId, purchase.ItemType);
+                if (purchase == null)
+                {
+                    throw new DownloadException(
+                        $"Failed to resolve purchase for album URL '{lookupUrl}'. " +
+                        "The album may not be in your Bandcamp collection.");
+                }
+
+                _logger.Debug("Bandcamp download proxy [{0}]: Found purchase — item_id={1}, type={2}",
+                    item.DownloadId, purchase.ItemId, purchase.ItemType);
+
+                downloadPageUrl = !string.IsNullOrWhiteSpace(purchase.DownloadPageUrl)
+                    ? purchase.DownloadPageUrl!
+                    : BuildDownloadPageUrl(purchase);
+            }
 
             // Phase 3: Get download page data
             item.Phase = "download_url_extraction";
@@ -105,7 +122,6 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var downloadPageUrl = BuildDownloadPageUrl(purchase);
             var pageData = await _apiClient.GetDownloadPageDataAsync(
                 cookies, downloadPageUrl).ConfigureAwait(false);
 
@@ -116,8 +132,10 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             }
 
             // Find the download URL for the requested format
-            var downloadEntry = pageData.DownloadItems[0];
-            var formatKey = MapMediaFormat(item.MediaFormat);
+            var downloadEntry = purchase != null
+                ? pageData.DownloadItems.FirstOrDefault(i => i.ItemId == purchase.ItemId) ?? pageData.DownloadItems[0]
+                : pageData.DownloadItems[0];
+            var formatKey = requestedFormat ?? MapMediaFormat(item.MediaFormat);
 
             if (!downloadEntry.DownloadUrls.TryGetValue(formatKey, out var downloadUrl) &&
                 !downloadEntry.DownloadUrls.TryGetValue("flac", out downloadUrl))
@@ -355,6 +373,40 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         {
             var itemType = purchase.ItemType ?? "album";
             return $"{BandcampDownloadBaseUrl}?type={itemType}&id={purchase.ItemId}";
+        }
+
+        private static bool IsDownloadPageUrl(string url)
+        {
+            return Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
+                   uri.Host.EndsWith("bandcamp.com", StringComparison.OrdinalIgnoreCase) &&
+                   uri.AbsolutePath.Equals("/download", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string StripFragment(string url)
+        {
+            var hashIndex = url.IndexOf('#');
+            return hashIndex >= 0 ? url[..hashIndex] : url;
+        }
+
+        private static string? ExtractFormatFragment(string url)
+        {
+            var hashIndex = url.IndexOf('#');
+            if (hashIndex < 0 || hashIndex == url.Length - 1)
+            {
+                return null;
+            }
+
+            var fragment = url[(hashIndex + 1)..];
+            foreach (var part in fragment.Split('&', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var split = part.Split('=', 2);
+                if (split.Length == 2 && string.Equals(split[0], "format", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Uri.UnescapeDataString(split[1]);
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
