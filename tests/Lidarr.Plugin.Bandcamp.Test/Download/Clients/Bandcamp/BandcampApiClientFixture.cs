@@ -50,6 +50,10 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             _innerHttpClientMock
                 .Setup(c => c.GetAsync(It.IsAny<HttpRequest>()))
                 .ReturnsAsync(response);
+
+            _innerHttpClientMock
+                .Setup(c => c.ExecuteAsync(It.Is<HttpRequest>(r => r.Method == System.Net.Http.HttpMethod.Get)))
+                .ReturnsAsync(response);
         }
 
         /// <summary>
@@ -146,30 +150,12 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         [Fact]
         public async Task GetDownloadPageDataAsync_ValidPagedata_ReturnsDownloadItems()
         {
-            // Arrange — simulate a download page with pagedata containing download URLs
+            // Arrange — simulate a download page with data-blob containing download URLs
             var downloadUrl = "https://bandcamp.com/statdownload/album/12345?sig=abc123&token=xyz";
             var html = $@"
-                <html><head>
-                <script type=""text/javascript"">
-                var pagedata = {{
-                    ""download_items"": [{{
-                        ""item_id"": 99999,
-                        ""item_type"": ""album"",
-                        ""title"": ""Test Album"",
-                        ""downloads"": {{
-                            ""flac"": {{
-                                ""url"": ""{downloadUrl}"",
-                                ""size_mb"": 150
-                            }},
-                            ""mp3-v0"": {{
-                                ""url"": ""https://bandcamp.com/statdownload/album/12345?sig=mp3sig"",
-                                ""size_mb"": 50
-                            }}
-                        }}
-                    }}]
-                }};
-                </script>
-                </head><body></body></html>";
+                <html><body>
+                <div id=""pagedata"" data-blob=""{{&quot;digital_items&quot;:[{{&quot;item_id&quot;:99999,&quot;item_type&quot;:&quot;album&quot;,&quot;title&quot;:&quot;Test Album&quot;,&quot;downloads&quot;:{{&quot;flac&quot;:{{&quot;url&quot;:&quot;{downloadUrl}&quot;,&quot;size_mb&quot;:&quot;150MB&quot;}},&quot;mp3-v0&quot;:{{&quot;url&quot;:&quot;https://bandcamp.com/statdownload/album/12345?sig=mp3sig&quot;,&quot;size_mb&quot;:&quot;50.5MB&quot;}}}}}}]}}""></div>
+                </body></html>";
 
             SetupGetAsync(CreateStringResponse(html));
             var client = CreateClient();
@@ -191,7 +177,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             Assert.Equal(150L * 1024 * 1024, item.DownloadSizes["flac"]);
             Assert.True(item.DownloadUrls.ContainsKey("mp3-v0"));
             Assert.True(item.DownloadSizes.ContainsKey("mp3-v0"));
-            Assert.Equal(50L * 1024 * 1024, item.DownloadSizes["mp3-v0"]);
+            Assert.Equal((long)(50.5 * 1024 * 1024), item.DownloadSizes["mp3-v0"]);
         }
 
         [Fact]
@@ -404,6 +390,27 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             Assert.Null(result);
         }
 
+        [Fact]
+        public async Task ResolveStatdownloadUrlAsync_BinaryArchiveResponse_ReturnsStatdownloadUrl()
+        {
+            // Arrange — some Bandcamp statdownload endpoints return archive bytes directly
+            var request = new HttpRequest("https://bandcamp.com/statdownload/album/12345");
+            var headers = new HttpHeader { { "Content-Type", "application/zip" } };
+            var response = new HttpResponse(request, headers, new byte[] { 0x50, 0x4B, 0x03, 0x04, 0x00 }, HttpStatusCode.OK);
+
+            SetupExecuteAsync(response);
+            var client = CreateClient();
+
+            // Act
+            var result = await client.ResolveStatdownloadUrlAsync(
+                "identity=testcookie",
+                "https://bandcamp.com/statdownload/album/12345?sig=abc",
+                "flac");
+
+            // Assert
+            Assert.Equal("https://bandcamp.com/statdownload/album/12345?sig=abc&.format=flac&.json=true", result);
+        }
+
         #endregion
 
         #region DownloadFileAsync Tests
@@ -437,6 +444,31 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         #region GetCollectionAsync Tests
 
         [Fact]
+        public async Task GetCollectionAsync_UsesInitialOlderThanTokenWhenNotProvided()
+        {
+            // Arrange
+            HttpRequest? capturedRequest = null;
+            SetupExecuteAsync(CreateStringResponse(@"{""items"": []}"));
+
+            _innerHttpClientMock
+                .Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
+                .Callback<HttpRequest>(req => capturedRequest = req)
+                .ReturnsAsync(CreateStringResponse(@"{""items"": []}"));
+
+            var client = CreateClient();
+
+            // Act
+            await client.GetCollectionAsync("identity=testcookie", 12345678);
+
+            // Assert
+            Assert.NotNull(capturedRequest);
+            var body = System.Text.Encoding.UTF8.GetString(capturedRequest!.ContentData);
+            Assert.Contains("\"older_than_token\":\"", body);
+            Assert.DoesNotContain("\"older_than_token\":\"\"", body);
+            Assert.Contains(":0:a::", body);
+        }
+
+        [Fact]
         public async Task GetCollectionAsync_ValidResponse_ReturnsItems()
         {
             // Arrange
@@ -463,7 +495,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                 ]
             }";
 
-            SetupGetAsync(CreateStringResponse(collectionJson));
+            SetupExecuteAsync(CreateStringResponse(collectionJson));
             var client = CreateClient();
 
             // Act
@@ -523,7 +555,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                 ]
             }";
 
-            SetupGetAsync(CreateStringResponse(collectionJson));
+            SetupExecuteAsync(CreateStringResponse(collectionJson));
             var client = CreateClient();
 
             // Act
@@ -551,7 +583,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             // Arrange
             var collectionJson = @"{""items"": []}";
 
-            SetupGetAsync(CreateStringResponse(collectionJson));
+            SetupExecuteAsync(CreateStringResponse(collectionJson));
             var client = CreateClient();
 
             // Act
@@ -604,7 +636,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             var secondPage = @"{""items"": []}";
 
             _innerHttpClientMock
-                .SetupSequence(c => c.GetAsync(It.IsAny<HttpRequest>()))
+                .SetupSequence(c => c.ExecuteAsync(It.Is<HttpRequest>(r => r.Method == System.Net.Http.HttpMethod.Post)))
                 .ReturnsAsync(CreateStringResponse(firstPage))
                 .ReturnsAsync(CreateStringResponse(secondPage));
 
@@ -623,7 +655,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         public async Task GetCollectionAsync_InvalidJson_ReturnsEmptyList()
         {
             // Arrange — garbled response should not throw
-            SetupGetAsync(CreateStringResponse("not valid json"));
+            SetupExecuteAsync(CreateStringResponse("not valid json"));
             var client = CreateClient();
 
             // Act
@@ -650,7 +682,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                 ]
             }";
 
-            SetupGetAsync(CreateStringResponse(collectionJson));
+            SetupExecuteAsync(CreateStringResponse(collectionJson));
             var client = CreateClient();
 
             // Act

@@ -162,7 +162,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             cancellationToken.ThrowIfCancellationRequested();
 
             var resolvedUrl = await _apiClient.ResolveStatdownloadUrlAsync(
-                cookies, downloadUrl, item.MediaFormat).ConfigureAwait(false);
+                cookies, downloadUrl, formatKey).ConfigureAwait(false);
 
             if (string.IsNullOrWhiteSpace(resolvedUrl))
             {
@@ -420,10 +420,10 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 "flac" => "flac",
                 "alac" => "alac",
                 "wav" => "wav",
-                "aiff" => "aiff",
+                "aiff" => "aiff-lossless",
                 "mp3_v0" => "mp3-v0",
                 "mp3_320" => "mp3-320",
-                "ogg_vorbis" => "ogg-vorbis",
+                "ogg_vorbis" => "vorbis",
                 "aac" => "aac-hi",
                 _ => "flac"
             };

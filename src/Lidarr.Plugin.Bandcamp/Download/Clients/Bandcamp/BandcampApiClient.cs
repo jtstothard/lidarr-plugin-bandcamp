@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -147,8 +148,12 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         public async Task<List<BandcampCollectionItem>> GetCollectionAsync(
             string cookies, long fanId, string? olderThanToken = null)
         {
+            var effectiveToken = string.IsNullOrWhiteSpace(olderThanToken)
+                ? CreateInitialCollectionToken()
+                : olderThanToken;
+
             _logger.Debug("Bandcamp API: Querying collection for fan_id (token={0})",
-                olderThanToken != null ? "present" : "none");
+                string.IsNullOrWhiteSpace(olderThanToken) ? "initial" : "present");
 
             var url = $"{BandcampBaseUrl}/api/fancollection/1/collection_items";
             var builder = _httpClient.CreateRequestBuilder(url, cookies);
@@ -157,7 +162,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             var payload = new
             {
                 fan_id = fanId,
-                older_than_token = olderThanToken ?? string.Empty,
+                older_than_token = effectiveToken,
                 count = 100
             };
 
@@ -368,6 +373,20 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 return content.Trim();
             }
 
+            // Some Bandcamp statdownload responses stream the archive directly.
+            // In that case, keep using the statdownload URL we just probed.
+            var responseData = response.ResponseData;
+            if (responseData != null && responseData.Length >= 4)
+            {
+                // ZIP local file header: PK\x03\x04
+                if (responseData[0] == 0x50 && responseData[1] == 0x4B &&
+                    responseData[2] == 0x03 && responseData[3] == 0x04)
+                {
+                    _logger.Debug("Bandcamp API: Statdownload returned archive bytes directly");
+                    return url;
+                }
+            }
+
             _logger.Debug("Bandcamp API: Failed to parse statdownload response");
             return null;
         }
@@ -399,6 +418,11 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
             _logger.Debug("Bandcamp API: File download response received (Content-Type: {0})", contentType);
             return response;
+        }
+
+        private static string CreateInitialCollectionToken()
+        {
+            return $"{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}:0:a::";
         }
 
         private List<BandcampCollectionItem> ParseCollectionResponse(string content)
@@ -537,6 +561,38 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             return urls;
         }
 
+        private static long ParseSizeBytes(JsonElement sizeMbEl)
+        {
+            try
+            {
+                if (sizeMbEl.ValueKind == JsonValueKind.Number)
+                {
+                    return (long)(sizeMbEl.GetDouble() * 1024 * 1024);
+                }
+
+                if (sizeMbEl.ValueKind == JsonValueKind.String)
+                {
+                    var raw = sizeMbEl.GetString();
+                    if (string.IsNullOrWhiteSpace(raw))
+                    {
+                        return 0;
+                    }
+
+                    var normalized = raw.Trim().Replace("MB", string.Empty, StringComparison.OrdinalIgnoreCase).Trim();
+                    if (double.TryParse(normalized, NumberStyles.Float, CultureInfo.InvariantCulture, out var mb))
+                    {
+                        return (long)(mb * 1024 * 1024);
+                    }
+                }
+            }
+            catch
+            {
+                // Ignore malformed size values and treat them as unknown.
+            }
+
+            return 0;
+        }
+
         private BandcampDownloadPageData ParseDownloadPagedata(string json)
         {
             using var doc = JsonDocument.Parse(json);
@@ -579,10 +635,13 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                             {
                                 downloadItem.DownloadUrls[formatProp.Name] = urlEl.GetString() ?? string.Empty;
 
-                                if (formatProp.Value.TryGetProperty("size_mb", out var sizeMbEl) &&
-                                    sizeMbEl.ValueKind == JsonValueKind.Number)
+                                if (formatProp.Value.TryGetProperty("size_mb", out var sizeMbEl))
                                 {
-                                    downloadItem.DownloadSizes[formatProp.Name] = (long)(sizeMbEl.GetDouble() * 1024 * 1024);
+                                    var parsedSize = ParseSizeBytes(sizeMbEl);
+                                    if (parsedSize > 0)
+                                    {
+                                        downloadItem.DownloadSizes[formatProp.Name] = parsedSize;
+                                    }
                                 }
                             }
                         }

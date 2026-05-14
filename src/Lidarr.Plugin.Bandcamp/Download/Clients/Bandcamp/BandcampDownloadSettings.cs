@@ -39,7 +39,8 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         [FieldDefinition(1, Label = "Download Path", Type = FieldType.Path, HelpText = "Directory where Bandcamp downloads will be saved before import")]
         public string DownloadPath { get; set; }
 
-        [FieldDefinition(2, Label = "Media Format", Type = FieldType.Select, SelectOptions = typeof(BandcampMediaFormat), HelpText = "Audio format to request from Bandcamp")]
+        // Deprecated: kept for backward compatibility with existing saved provider state.
+        // Lidarr chooses the preferred format via indexer results/quality selection now.
         public string MediaFormat { get; set; }
 
         public NzbDroneValidationResult Validate()

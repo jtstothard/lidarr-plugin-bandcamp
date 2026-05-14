@@ -149,7 +149,13 @@ namespace NzbDrone.Core.Indexers.Bandcamp
             foreach (var item in matches)
             {
                 var releases = await BuildReleaseInfosForCollectionItem(item).ConfigureAwait(false);
-                results.AddRange(releases);
+                foreach (var release in releases)
+                {
+                    if (results.All(existing => !string.Equals(existing.Guid, release.Guid, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        results.Add(release);
+                    }
+                }
             }
 
             return results;
@@ -211,7 +217,7 @@ namespace NzbDrone.Core.Indexers.Bandcamp
 
             return new ReleaseInfo
             {
-                Guid = $"bandcamp-{item.ItemId}-{formatKey}",
+                Guid = $"bandcamp-{item.ItemUrl}-{formatKey}",
                 Title = title,
                 Artist = artistName,
                 Album = albumTitle,
@@ -278,8 +284,9 @@ namespace NzbDrone.Core.Indexers.Bandcamp
             {
                 "mp3-v0" => "MP3 V0",
                 "mp3-320" => "MP3 320",
-                "ogg-vorbis" => "OGG Vorbis",
+                "vorbis" or "ogg-vorbis" => "OGG Vorbis",
                 "aac-hi" => "AAC",
+                "aiff-lossless" => "AIFF Lossless",
                 _ => formatKey.Replace('-', ' ').ToUpperInvariant()
             };
         }
@@ -291,9 +298,9 @@ namespace NzbDrone.Core.Indexers.Bandcamp
                 "flac" => "FLAC",
                 "alac" => "ALAC",
                 "wav" => "WAV",
-                "aiff" => "AIFF",
+                "aiff" or "aiff-lossless" => "AIFF",
                 "mp3-v0" or "mp3-320" => "MP3",
-                "ogg-vorbis" => "OGG",
+                "vorbis" or "ogg-vorbis" => "OGG",
                 "aac-hi" => "AAC",
                 _ => string.Empty
             };
@@ -306,9 +313,9 @@ namespace NzbDrone.Core.Indexers.Bandcamp
                 "flac" => "FLAC",
                 "alac" => "ALAC",
                 "wav" => "WAV",
-                "aiff" => "AIFF",
+                "aiff" or "aiff-lossless" => "AIFF",
                 "mp3-v0" or "mp3-320" => "MP3",
-                "ogg-vorbis" => "OGG",
+                "vorbis" or "ogg-vorbis" => "OGG",
                 "aac-hi" => "M4A",
                 _ => string.Empty
             };

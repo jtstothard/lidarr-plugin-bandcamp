@@ -33,7 +33,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         public async Task ExecuteDownloadAsync_DownloadPageUrlWithFormatFragment_DoesNotQueryCollection()
         {
             _httpClientMock
-                .Setup(c => c.GetAsync(It.IsAny<HttpRequest>()))
+                .Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
                 .ReturnsAsync((HttpRequest request) =>
                 {
                     return request.Url.FullUri switch
@@ -56,18 +56,13 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                         "https://bandcamp.com/statdownload/album/111?sig=flac&.format=flac&.json=true" => CreateStringResponse(
                             @"{""url"":""https://files.example.com/fresh.flac""}",
                             request),
+                        "https://files.example.com/fresh.flac" => CreateBinaryResponse(
+                            new byte[] { 0x66, 0x4C, 0x61, 0x43, 0x00, 0x00, 0x00, 0x22 },
+                            request,
+                            "audio/flac"),
                         _ => CreateStringResponse(@"{""items"": []}", request)
                     };
                 });
-
-            var fileRequest = new HttpRequest("https://files.example.com/fresh.flac");
-            var fileHeaders = new HttpHeader { { "Content-Type", "audio/flac" } };
-            var fileBytes = new byte[] { 0x66, 0x4C, 0x61, 0x43, 0x00, 0x00, 0x00, 0x22 };
-            var fileResponse = new HttpResponse(fileRequest, fileHeaders, fileBytes, HttpStatusCode.OK);
-
-            _httpClientMock
-                .Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
-                .ReturnsAsync(fileResponse);
 
             var item = new BandcampDownloadItem
             {
@@ -87,7 +82,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             Assert.Single(files);
             Assert.EndsWith(".flac", files[0], StringComparison.OrdinalIgnoreCase);
 
-            _httpClientMock.Verify(c => c.GetAsync(It.Is<HttpRequest>(r =>
+            _httpClientMock.Verify(c => c.ExecuteAsync(It.Is<HttpRequest>(r =>
                 r.Url.FullUri.Contains("/api/fancollection/1/collection_items", StringComparison.OrdinalIgnoreCase))), Times.Never);
         }
 
@@ -104,6 +99,12 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             {
                 // best effort cleanup
             }
+        }
+
+        private static HttpResponse CreateBinaryResponse(byte[] data, HttpRequest request, string contentType, HttpStatusCode statusCode = HttpStatusCode.OK)
+        {
+            var headers = new HttpHeader { { "Content-Type", contentType } };
+            return new HttpResponse(request, headers, data, statusCode);
         }
 
         private static HttpResponse CreateStringResponse(string content, HttpRequest request, HttpStatusCode statusCode = HttpStatusCode.OK)
