@@ -164,11 +164,8 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Ensure output directory exists
-            if (!Directory.Exists(item.OutputPath))
-            {
-                Directory.CreateDirectory(item.OutputPath);
-            }
+            // Ensure output directory exists and doesn't contain stale unreadable files from prior attempts.
+            PrepareOutputDirectory(item.OutputPath);
 
             var tempFile = Path.Combine(item.OutputPath, $"{item.DownloadId}.tmp");
 
@@ -414,6 +411,19 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 "aac" => "aac-hi",
                 _ => "flac"
             };
+        }
+
+        private static void PrepareOutputDirectory(string outputDir)
+        {
+            if (!Directory.Exists(outputDir))
+            {
+                Directory.CreateDirectory(outputDir);
+                return;
+            }
+
+            NormalizeExtractedPermissions(outputDir);
+            Directory.Delete(outputDir, recursive: true);
+            Directory.CreateDirectory(outputDir);
         }
 
         private static void NormalizeExtractedPermissions(string outputDir)

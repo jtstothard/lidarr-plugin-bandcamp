@@ -31,6 +31,31 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         }
 
         [Fact]
+        public void PrepareOutputDirectory_RecreatesDirectoryAndRemovesStaleFiles()
+        {
+            Directory.CreateDirectory(_tempRoot);
+            var outputDir = Path.Combine(_tempRoot, "album");
+            Directory.CreateDirectory(outputDir);
+            var staleFile = Path.Combine(outputDir, "stale.flac");
+            File.WriteAllBytes(staleFile, new byte[] { 1, 2, 3, 4 });
+
+            if (!OperatingSystem.IsWindows())
+            {
+                File.SetUnixFileMode(outputDir, UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+                File.SetUnixFileMode(staleFile, UnixFileMode.UserWrite);
+            }
+
+            var prepareMethod = typeof(BandcampDownloadProxy)
+                .GetMethod("PrepareOutputDirectory", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+
+            Assert.NotNull(prepareMethod);
+            prepareMethod!.Invoke(null, new object[] { outputDir });
+
+            Assert.True(Directory.Exists(outputDir));
+            Assert.Empty(Directory.GetFileSystemEntries(outputDir));
+        }
+
+        [Fact]
         public void NormalizeExtractedPermissions_Unix_MakesFilesReadable()
         {
             if (OperatingSystem.IsWindows())
