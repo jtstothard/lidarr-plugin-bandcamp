@@ -4,6 +4,6 @@ namespace NzbDrone.Core.Plugins
     {
         public override string Name => "Bandcamp";
         public override string Owner => "lidarr-plugin-bandcamp";
-        public override string GithubUrl => "https://github.com/lidarr-plugin-bandcamp/lidarr-plugin-bandcamp";
+        public override string GithubUrl => "https://github.com/jtstothard/lidarr-plugin-bandcamp";
     }
 }
