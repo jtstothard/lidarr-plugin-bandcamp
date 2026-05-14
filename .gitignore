@@ -27,13 +27,10 @@ TestResults/
 *.cookies
 cookies.txt
 
-## GSD runtime (keep config, ignore transient)
-.gsd/runtime/
-.gsd/activity/
-.gsd/worktrees/
-.gsd/*.db
-.gsd/*.db-wal
-.gsd/*.db-shm
+## GSD / agent-local artifacts
+.gsd/
+CLAUDE.md
+PROJECT.md
 
 ## Lidarr source reference
 ext/

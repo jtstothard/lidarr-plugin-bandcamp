@@ -66,21 +66,24 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             }
 
             var title = remoteAlbum.Release.Title ?? remoteAlbum.Release.Album ?? albumUrl;
+            var downloadId = Guid.NewGuid().ToString("N");
 
-            // Build the download directory: DownloadPath / Artist - Album (sanitized)
+            // Build a unique working directory under the configured download root so retries
+            // and concurrent grabs never delete or overwrite each other's extracted files.
             var downloadPath = Settings.DownloadPath;
             var albumDir = MakeValidDirectoryName(title);
-            var outputPath = System.IO.Path.Combine(downloadPath, albumDir);
+            var outputPath = System.IO.Path.Combine(downloadPath, $"{albumDir}-{downloadId[..8]}");
 
             var item = new BandcampDownloadItem
             {
+                DownloadId = downloadId,
                 AlbumUrl = albumUrl,
                 Title = title,
                 OutputPath = outputPath,
                 Cookies = Settings.Cookies
             };
 
-            var downloadId = await _taskQueue.EnqueueAsync(item).ConfigureAwait(false);
+            await _taskQueue.EnqueueAsync(item).ConfigureAwait(false);
 
             _logger.Debug("Bandcamp download client: Enqueued download {0} for '{1}' -> {2}",
                 downloadId, title, outputPath);
