@@ -50,10 +50,18 @@ namespace NzbDrone.Core.Http.Bandcamp
             builder.Headers.Set("Accept-Language", "en-US,en;q=0.9");
 
             // Inject cookies via the Cookie header (not via builder.Cookies dictionary)
-            // so they're sent as-is without per-cookie parsing
+            // so they're sent as-is without per-cookie parsing.
+            // Users may paste just the identity cookie value, or the full cookie string.
+            // If it doesn't contain '=', assume it's just the identity value.
             if (!string.IsNullOrWhiteSpace(cookies))
             {
-                builder.Headers.Set("Cookie", cookies);
+                var cookieHeader = cookies.Trim();
+                if (!cookieHeader.Contains('='))
+                {
+                    cookieHeader = $"identity={cookieHeader}";
+                }
+
+                builder.Headers.Set("Cookie", cookieHeader);
             }
 
             return builder;

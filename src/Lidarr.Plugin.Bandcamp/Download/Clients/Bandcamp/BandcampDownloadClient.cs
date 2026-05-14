@@ -182,7 +182,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 if (fanId == null)
                 {
                     failures.Add(new ValidationFailure("Cookies",
-                        "Failed to authenticate with Bandcamp. Session cookies may be invalid or expired."));
+                        "Could not verify session cookies. Make sure you're pasting the 'identity' cookie " +
+                        "value from your browser's Bandcamp cookies (not the full cookie header). " +
+                        "The cookie value should be a long string starting with '%22' or containing 't%3D'."));
                     _logger.Debug("Bandcamp download client: Cookie auth test failed — fan_id could not be resolved");
                 }
                 else

@@ -25,9 +25,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             @"var\s+pagedata\s*=\s*(\{.*?\})\s*;",
             RegexOptions.Compiled | RegexOptions.Singleline);
 
-        private static readonly Regex FanIdRegex = new(
-            @"""fan_id""\s*:\s*(\d+)",
-            RegexOptions.Compiled);
+        private static readonly Regex DataBlobRegex = new(
+            @"data-blob=""(.+?)""",
+            RegexOptions.Compiled | RegexOptions.Singleline);
 
         private static readonly Regex StatdownloadUrlRegex = new(
             @"""url""\s*:\s*""([^""]+)""",
@@ -44,13 +44,15 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
         /// <summary>
         /// Resolves the fan_id for the authenticated user by fetching the Bandcamp
-        /// homepage and extracting it from the embedded pagedata JSON.
+        /// homepage and extracting it from the embedded data-blob JSON.
+        /// Bandcamp's homepage uses a data-blob attribute on a div element containing
+        /// pageContext.identity.fanId (camelCase). Falls back to var pagedata for other pages.
         /// </summary>
         /// <param name="cookies">Session cookies from browser.</param>
         /// <returns>The fan_id, or null if resolution fails.</returns>
         public async Task<long?> ResolveFanIdAsync(string cookies)
         {
-            _logger.Debug("Bandcamp API: Resolving fan_id from homepage pagedata");
+            _logger.Debug("Bandcamp API: Resolving fan_id from homepage");
 
             var builder = _httpClient.CreateRequestBuilder(BandcampBaseUrl, cookies);
             var request = builder.Build();
@@ -58,16 +60,79 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
             var content = response.Content ?? string.Empty;
 
-            // Extract fan_id from pagedata — it appears as "fan_id": 12345
-            var match = FanIdRegex.Match(content);
-            if (match.Success && long.TryParse(match.Groups[1].Value, out var fanId))
+            // Approach 1: Parse data-blob attribute (Bandcamp homepage format)
+            // The homepage embeds JSON in data-blob="..." on a div element
+            var blobMatch = DataBlobRegex.Match(content);
+            if (blobMatch.Success)
             {
-                _logger.Trace("Bandcamp API: Resolved fan_id {0}", fanId);
-                _logger.Debug("Bandcamp API: fan_id resolution successful");
-                return fanId;
+                try
+                {
+                    // HTML-decode the blob content (it's double-encoded)
+                    var blobJson = System.Net.WebUtility.HtmlDecode(
+                        System.Net.WebUtility.HtmlDecode(blobMatch.Groups[1].Value));
+
+                    using var doc = JsonDocument.Parse(blobJson);
+                    var root = doc.RootElement;
+
+                    // Navigate: pageContext -> identity -> fanId
+                    if (root.TryGetProperty("pageContext", out var pageContext) &&
+                        pageContext.TryGetProperty("identity", out var identity) &&
+                        identity.TryGetProperty("fanId", out var fanIdEl))
+                    {
+                        if (fanIdEl.ValueKind == JsonValueKind.Number)
+                        {
+                            var fanId = fanIdEl.GetInt64();
+                            _logger.Debug("Bandcamp API: Resolved fan_id {0} from data-blob", fanId);
+                            return fanId;
+                        }
+
+                        if (fanIdEl.ValueKind == JsonValueKind.Null)
+                        {
+                            _logger.Debug("Bandcamp API: fan_id is null in data-blob — cookies may be invalid or expired");
+                            return null;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug(ex, "Bandcamp API: Failed to parse data-blob JSON");
+                }
             }
 
-            _logger.Debug("Bandcamp API: Failed to resolve fan_id from homepage pagedata");
+            // Approach 2: Parse var pagedata (older/alternate Bandcamp page format)
+            var pagedataMatch = PagedataRegex.Match(content);
+            if (pagedataMatch.Success)
+            {
+                try
+                {
+                    using var doc = JsonDocument.Parse(pagedataMatch.Groups[1].Value);
+                    var root = doc.RootElement;
+
+                    // Check pageContext.identity.fanId (camelCase)
+                    if (root.TryGetProperty("pageContext", out var pageContext) &&
+                        pageContext.TryGetProperty("identity", out var identity) &&
+                        identity.TryGetProperty("fanId", out var fanIdEl) &&
+                        fanIdEl.ValueKind == JsonValueKind.Number)
+                    {
+                        var fanId = fanIdEl.GetInt64();
+                        _logger.Debug("Bandcamp API: Resolved fan_id {0} from pagedata", fanId);
+                        return fanId;
+                    }
+
+                    // Also check for fan_id (snake_case) in some page formats
+                    if (root.TryGetProperty("fan_id", out var fanIdSnake) &&
+                        fanIdSnake.ValueKind == JsonValueKind.Number)
+                    {
+                        return fanIdSnake.GetInt64();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug(ex, "Bandcamp API: Failed to parse pagedata JSON");
+                }
+            }
+
+            _logger.Debug("Bandcamp API: Failed to resolve fan_id — no valid identity found in page");
             return null;
         }
 
@@ -186,23 +251,38 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
             var content = response.Content ?? string.Empty;
 
-            // Extract the pagedata JSON blob from the page
-            var pagedataMatch = PagedataRegex.Match(content);
-            if (!pagedataMatch.Success)
+            // Try data-blob format first (current Bandcamp format on download pages)
+            var blobMatch = DataBlobRegex.Match(content);
+            if (blobMatch.Success)
             {
-                _logger.Debug("Bandcamp API: Failed to extract pagedata from download page");
-                return null;
+                try
+                {
+                    var blobJson = System.Net.WebUtility.HtmlDecode(
+                        System.Net.WebUtility.HtmlDecode(blobMatch.Groups[1].Value));
+                    return ParseDownloadPagedata(blobJson);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug(ex, "Bandcamp API: Failed to parse data-blob from download page");
+                }
             }
 
-            try
+            // Fall back to var pagedata format (older pages)
+            var pagedataMatch = PagedataRegex.Match(content);
+            if (pagedataMatch.Success)
             {
-                return ParseDownloadPagedata(pagedataMatch.Groups[1].Value);
+                try
+                {
+                    return ParseDownloadPagedata(pagedataMatch.Groups[1].Value);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug(ex, "Bandcamp API: Failed to parse pagedata from download page");
+                }
             }
-            catch (Exception ex)
-            {
-                _logger.Debug(ex, "Bandcamp API: Failed to parse download pagedata JSON");
-                return null;
-            }
+
+            _logger.Debug("Bandcamp API: Failed to extract pagedata from download page");
+            return null;
         }
 
         /// <summary>
@@ -367,11 +447,17 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             var data = new BandcampDownloadPageData();
 
             // Extract download URL and item info from the nested pagedata structure
-            // pagedata typically has: download_items -> [0] -> downloads -> {format} -> url
-            if (root.TryGetProperty("download_items", out var downloadItems) &&
-                downloadItems.ValueKind == JsonValueKind.Array)
+            // Download pages use: digital_items -> [0] -> downloads -> {format} -> url
+            // (bandcampsync reference confirms "digital_items" as the correct key)
+            var itemsArray = root.TryGetProperty("digital_items", out var digitalItems)
+                ? digitalItems
+                : root.TryGetProperty("download_items", out var downloadItems)
+                    ? downloadItems
+                    : default;
+
+            if (itemsArray.ValueKind == JsonValueKind.Array)
             {
-                foreach (var item in downloadItems.EnumerateArray())
+                foreach (var item in itemsArray.EnumerateArray())
                 {
                     var downloadItem = new BandcampPagedataDownloadItem();
 

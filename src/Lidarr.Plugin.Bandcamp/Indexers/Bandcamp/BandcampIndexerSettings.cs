@@ -25,7 +25,7 @@ namespace NzbDrone.Core.Indexers.Bandcamp
             BaseUrl = "https://bandcamp.com";
         }
 
-        [FieldDefinition(0, Label = "Session Cookies", Type = FieldType.Textbox, HelpText = "Bandcamp session cookies from browser (identity cookie)", Privacy = PrivacyLevel.Password)]
+        [FieldDefinition(0, Label = "Session Cookies", Type = FieldType.Textbox, HelpText = "Paste the 'identity' cookie value from your browser's Bandcamp cookies. In browser DevTools: Application → Cookies → bandcamp.com → copy the 'identity' value.", Privacy = PrivacyLevel.Password)]
         public string Cookies { get; set; } = "";
 
         [FieldDefinition(1, Label = "Base URL", Type = FieldType.Url, HelpText = "Bandcamp base URL", Advanced = true)]
