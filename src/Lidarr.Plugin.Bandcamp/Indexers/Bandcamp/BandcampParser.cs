@@ -36,6 +36,14 @@ namespace NzbDrone.Core.Indexers.Bandcamp
             @"href=""(?<url>https?://[^""]+\.bandcamp\.com/album/[^""]+)""",
             RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+        private static readonly Regex ItemUrlTextRegex = new(
+            @"<div\s+class=""itemurl""[^>]*>\s*(?:<a[^>]*>)?\s*(?<url>https?://[^<\s]+\.bandcamp\.com/album/[^<\s]+|[^<\s]+\.bandcamp\.com/album/[^<\s]+)",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        private static readonly Regex ItemTypeRegex = new(
+            @"<div\s+class=""itemtype""[^>]*>\s*(?<type>[^<]+)\s*</div>",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
         private readonly BandcampIndexerSettings _settings;
         private readonly Logger _logger;
 
@@ -60,6 +68,13 @@ namespace NzbDrone.Core.Indexers.Bandcamp
             {
                 _logger.Debug("Bandcamp search returned empty content");
                 return results;
+            }
+
+            if (content.Contains("Client Challenge", StringComparison.OrdinalIgnoreCase) ||
+                content.Contains("/_fs-ch-", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new IndexerException(indexerResponse,
+                    "Bandcamp returned its Fastly client challenge page. Re-copy the current 'identity' cookie from your browser and make sure the indexer cookie field contains either the raw identity value or 'identity=<value>'.");
             }
 
             // Attempt JSON extraction first (Bandcamp embeds search data in script tags)
@@ -174,25 +189,48 @@ namespace NzbDrone.Core.Indexers.Bandcamp
 
         private ReleaseInfo? ParseHtmlResultBlock(string block)
         {
-            // Extract the album/track URL
-            var urlMatch = ItemUrlRegex.Match(block);
-            if (!urlMatch.Success)
+            var itemTypeMatch = ItemTypeRegex.Match(block);
+            if (itemTypeMatch.Success &&
+                !string.Equals(itemTypeMatch.Groups["type"].Value.Trim(), "album", StringComparison.OrdinalIgnoreCase))
             {
                 return null;
             }
 
-            var albumUrl = urlMatch.Groups["url"].Value;
-
-            // Extract title from heading
+            // Extract title and primary URL from heading. Current Bandcamp search
+            // HTML places album URL in `.heading a` and repeats it as text under
+            // `.itemurl`; older fixtures had the URL as an href under `.itemurl`.
             var headingMatch = HeadingRegex.Match(block);
             var albumTitle = headingMatch.Success
                 ? System.Net.WebUtility.HtmlDecode(headingMatch.Groups["title"].Value.Trim())
                 : "Unknown Album";
 
-            // If the heading URL is more complete, prefer it
-            if (headingMatch.Success)
+            var albumUrl = headingMatch.Success ? headingMatch.Groups["url"].Value.Trim() : string.Empty;
+
+            if (albumUrl.IsNullOrWhiteSpace())
             {
-                albumUrl = headingMatch.Groups["url"].Value;
+                var urlMatch = ItemUrlRegex.Match(block);
+                if (urlMatch.Success)
+                {
+                    albumUrl = urlMatch.Groups["url"].Value.Trim();
+                }
+            }
+
+            if (albumUrl.IsNullOrWhiteSpace())
+            {
+                var urlTextMatch = ItemUrlTextRegex.Match(block);
+                if (urlTextMatch.Success)
+                {
+                    albumUrl = urlTextMatch.Groups["url"].Value.Trim();
+                    if (!albumUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                    {
+                        albumUrl = "https://" + albumUrl;
+                    }
+                }
+            }
+
+            if (albumUrl.IsNullOrWhiteSpace() || !albumUrl.Contains(".bandcamp.com/album/", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
             }
 
             // Extract artist from subhead

@@ -53,18 +53,24 @@ namespace NzbDrone.Core.Http.Bandcamp
             // so they're sent as-is without per-cookie parsing.
             // Users may paste just the identity cookie value, or the full cookie string.
             // If it doesn't contain '=', assume it's just the identity value.
-            if (!string.IsNullOrWhiteSpace(cookies))
+            var cookieHeader = NormalizeCookieHeader(cookies);
+            if (!string.IsNullOrWhiteSpace(cookieHeader))
             {
-                var cookieHeader = cookies.Trim();
-                if (!cookieHeader.Contains('='))
-                {
-                    cookieHeader = $"identity={cookieHeader}";
-                }
-
                 builder.Headers.Set("Cookie", cookieHeader);
             }
 
             return builder;
+        }
+
+        public static string NormalizeCookieHeader(string cookies)
+        {
+            if (string.IsNullOrWhiteSpace(cookies))
+            {
+                return string.Empty;
+            }
+
+            var cookieHeader = cookies.Trim();
+            return cookieHeader.Contains('=') ? cookieHeader : $"identity={cookieHeader}";
         }
 
         /// <summary>

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using NLog;
+using NzbDrone.Core.Http.Bandcamp;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Http;
 using NzbDrone.Core.IndexerSearch.Definitions;
@@ -73,10 +74,10 @@ namespace NzbDrone.Core.Indexers.Bandcamp
 
             var request = new IndexerRequest(searchUrl, HttpAccept.Html);
 
-            // Inject cookies from settings
-            if (!string.IsNullOrWhiteSpace(_settings.Cookies))
+            var cookieHeader = BandcampHttpClient.NormalizeCookieHeader(_settings.Cookies);
+            if (!string.IsNullOrWhiteSpace(cookieHeader))
             {
-                request.HttpRequest.Headers.Set("Cookie", _settings.Cookies);
+                request.HttpRequest.Headers.Set("Cookie", cookieHeader);
             }
 
             // Browser-like headers to get full search results

@@ -84,7 +84,7 @@ namespace NzbDrone.Core.Indexers.Bandcamp
                 }
 
                 _logger.Debug("Bandcamp indexer: Search test passed with {0} parsed result(s)", releases.Count);
-                return null;
+                return default!;
             }
             catch (Exception ex)
             {
