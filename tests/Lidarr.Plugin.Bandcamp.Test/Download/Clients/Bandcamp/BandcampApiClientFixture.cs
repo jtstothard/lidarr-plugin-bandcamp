@@ -67,18 +67,10 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         [Fact]
         public async Task ResolveFanIdAsync_ValidPagedata_ReturnsFanId()
         {
-            // Arrange — simulate a Bandcamp homepage with pagedata containing fan_id
-            var html = @"
-                <html><head>
-                <script type=""text/javascript"">
-                var pagedata = {
-                    ""fan_data"": {
-                        ""fan_id"": 12345678,
-                        ""name"": ""TestUser""
-                    }
-                };
-                </script>
-                </head><body></body></html>";
+            // Arrange — simulate a Bandcamp homepage with data-blob containing fanId
+            var html = @"<html><head></head><body>
+                <div id=""HomepageApp"" data-blob=""{&quot;pageContext&quot;:{&quot;identity&quot;:{&quot;fanId&quot;:12345678,&quot;isLoggedIn&quot;:true}}}""></div>
+                </body></html>";
 
             SetupGetAsync(CreateStringResponse(html));
             var client = CreateClient();
@@ -131,17 +123,10 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         [Fact]
         public async Task ResolveFanIdAsync_LargeFanId_ParsesCorrectly()
         {
-            // Arrange — very large fan_id (64-bit)
-            var html = @"
-                <html><head>
-                <script type=""text/javascript"">
-                var pagedata = {
-                    ""fan_data"": {
-                        ""fan_id"": 9999999999999
-                    }
-                };
-                </script>
-                </head><body></body></html>";
+            // Arrange — very large fan_id (64-bit) in data-blob format
+            var html = @"<html><head></head><body>
+                <div id=""HomepageApp"" data-blob=""{&quot;pageContext&quot;:{&quot;identity&quot;:{&quot;fanId&quot;:9999999999999,&quot;isLoggedIn&quot;:true}}}""></div>
+                </body></html>";
 
             SetupGetAsync(CreateStringResponse(html));
             var client = CreateClient();
