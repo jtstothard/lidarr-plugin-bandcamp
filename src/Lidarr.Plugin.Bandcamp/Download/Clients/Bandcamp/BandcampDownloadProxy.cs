@@ -54,7 +54,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
             var cookies = item.Cookies!;
             var requestedFormat = ExtractFormatFragment(item.AlbumUrl);
-            var lookupUrl = StripFragment(item.AlbumUrl);
+            var lookupUrl = NormalizeUrl(StripFragment(item.AlbumUrl));
 
             // Phase 1: Resolve fan_id
             item.Phase = "fan_id_resolution";
@@ -81,7 +81,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
             if (IsDownloadPageUrl(lookupUrl))
             {
-                downloadPageUrl = lookupUrl;
+                downloadPageUrl = NormalizeUrl(lookupUrl);
                 _logger.Debug("Bandcamp download proxy [{0}]: Using indexer-provided redownload URL", item.DownloadId);
             }
             else
@@ -100,7 +100,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                     item.DownloadId, purchase.ItemId, purchase.ItemType);
 
                 downloadPageUrl = !string.IsNullOrWhiteSpace(purchase.DownloadPageUrl)
-                    ? purchase.DownloadPageUrl!
+                    ? NormalizeUrl(purchase.DownloadPageUrl!)
                     : BuildDownloadPageUrl(purchase);
             }
 
@@ -152,7 +152,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             var resolvedDownload = await _apiClient.ResolveStatdownloadUrlAsync(
                 cookies, downloadUrl, formatKey).ConfigureAwait(false);
 
-            var resolvedUrl = resolvedDownload?.DownloadUrl;
+            var resolvedUrl = NormalizeUrl(resolvedDownload?.DownloadUrl ?? string.Empty);
             if (string.IsNullOrWhiteSpace(resolvedUrl) && resolvedDownload?.DirectResponse == null)
             {
                 // Fall back to using the download URL directly
@@ -562,6 +562,22 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         {
             var itemType = purchase.ItemType ?? "album";
             return $"{BandcampDownloadBaseUrl}?type={itemType}&id={purchase.ItemId}";
+        }
+
+        /// <summary>
+        /// Normalizes URLs to use forward slashes, preventing Windows backslash
+        /// path bugs that break on Linux hosts. Handles URLs from Bandcamp's
+        /// JSON API which may inconsistently use backslashes in some contexts.
+        /// </summary>
+        private static string NormalizeUrl(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                return url;
+            }
+
+            // Replace backslashes with forward slashes for cross-platform compatibility
+            return url.Replace('\\', '/');
         }
 
         private static bool IsDownloadPageUrl(string url)
