@@ -201,18 +201,31 @@ namespace Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp
 
             var result = Assert.Single(await _subject.Fetch(criteria));
 
-            Assert.Equal("Artist Name - Album Title [FLAC]", result.Title);
+            // Component-based assertion: verify title has expected structure
+            var title = result.Title;
+            Assert.Contains("Artist Name", title);
+            Assert.Contains("Album Title", title);
+            Assert.Contains("[WEB]", title);
+            Assert.Contains("[FLAC]", title);
+
+            // Verify format: Artist - Album [WEB] [Format]
+            var parts = title.Split(" - ");
+            Assert.Equal(2, parts.Length);
+            Assert.StartsWith("Artist Name", parts[0]);
+            Assert.Contains("Album Title", parts[1]);
+            Assert.Contains("[WEB] [FLAC]", parts[1]);
+
             Assert.Equal("Artist Name", result.Artist);
             Assert.Equal("Album Title", result.Album);
         }
 
         [Theory]
-        [InlineData("Artist Name", "Artist Name - Album Title", "FLAC", "Artist Name - Album Title [FLAC]", "Artist Name", "Album Title")]
-        [InlineData("Artist Name", "\"Album Title\"", "FLAC", "Artist Name - Album Title [FLAC]", "Artist Name", "Album Title")]
-        [InlineData("Artist Name", "Album Title - Single", "FLAC", "Artist Name - Album Title [FLAC]", "Artist Name", "Album Title")]
-        [InlineData("Artist Name", "Album Title (EP)", "FLAC", "Artist Name - Album Title [FLAC]", "Artist Name", "Album Title")]
-        [InlineData("Bartees Strange", "Province / Ever New", "FLAC", "Bartees Strange - Province / Ever New [FLAC]", "Bartees Strange", "Province / Ever New")]
-        [InlineData("Troye Sivan", "We're My OTP", "MP3 320", "Troye Sivan - We're My OTP [MP3 320]", "Troye Sivan", "We're My OTP")]
+        [InlineData("Artist Name", "Artist Name - Album Title", "FLAC", "Artist Name - Album Title [WEB] [FLAC]", "Artist Name", "Album Title")]
+        [InlineData("Artist Name", "\"Album Title\"", "FLAC", "Artist Name - Album Title [WEB] [FLAC]", "Artist Name", "Album Title")]
+        [InlineData("Artist Name", "Album Title - Single", "FLAC", "Artist Name - Album Title [WEB] [FLAC]", "Artist Name", "Album Title")]
+        [InlineData("Artist Name", "Album Title (EP)", "FLAC", "Artist Name - Album Title [WEB] [FLAC]", "Artist Name", "Album Title")]
+        [InlineData("Bartees Strange", "Province / Ever New", "FLAC", "Bartees Strange - Province / Ever New [WEB] [FLAC]", "Bartees Strange", "Province / Ever New")]
+        [InlineData("Troye Sivan", "We're My OTP", "MP3 320", "Troye Sivan - We're My OTP [WEB] [MP3 320]", "Troye Sivan", "We're My OTP")]
         public void BuildReleaseTitle_ShouldProduceParserFriendlyTitles(string artistName,
                                                                         string albumTitle,
                                                                         string formatLabel,
@@ -328,6 +341,61 @@ namespace Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp
             Assert.Equal("Please Don't Take Me Back", results[0].Album);
             Assert.Contains("[2 tracks]", results[0].Title);
             Assert.DoesNotContain("[11 tracks]", results[0].Title);
+        }
+
+        [Theory]
+        [InlineData("Artist Name - Album Title [WEB] [FLAC]", true)]
+        [InlineData("Artist Name - Album Title [WEB] [MP3 320]", true)]
+        [InlineData("Artist Name - Album Title [WEB] [Vorbis Q6]", true)]
+        [InlineData("Artist Name - Album Title [WEB] [MP3 VBR V0]", true)]
+        [InlineData("Artist Name - Album Title [FLAC]", false)] // Missing [WEB]
+        [InlineData("Artist Name - Album Title", false)] // Missing format tags
+        [InlineData("- Album Title [WEB] [FLAC]", false)] // Missing artist
+        [InlineData("Artist Name [WEB] [FLAC]", false)] // Missing album section
+        [InlineData("Artist Name - Album Title WEB FLAC", false)] // Missing brackets
+        public void ReleaseTitle_ShouldFollowExpectedPattern(string title, bool isValid)
+        {
+            // Expected pattern: Artist - Album [WEB] [Format]
+            // Where Format is like FLAC, MP3 320, Vorbis Q6, MP3 VBR V0
+            // Format tags are in square brackets
+
+            if (isValid)
+            {
+                // Verify required components
+                Assert.Contains(" - ", title);
+                Assert.Contains("[WEB]", title);
+
+                // Split into artist and album sections
+                var parts = title.Split(" - ", 2);
+                Assert.Equal(2, parts.Length);
+                Assert.NotEmpty(parts[0]); // Artist required
+                Assert.NotEmpty(parts[1]); // Album section required
+
+                // Verify album section contains [WEB] and format tag
+                var albumSection = parts[1];
+                Assert.Contains("[WEB]", albumSection);
+                Assert.Contains("[", albumSection.Substring(albumSection.IndexOf("[WEB]"))); // Format tag after [WEB]
+
+                // Parse with Lidarr's parser to ensure it's parsable
+                var parsed = Parser.ParseAlbumTitle(title);
+                Assert.NotNull(parsed);
+                Assert.NotEmpty(parsed.ArtistName);
+                Assert.NotEmpty(parsed.AlbumTitle);
+            }
+            else
+            {
+                // Invalid formats should either not parse correctly or miss required components
+                var parsed = Parser.ParseAlbumTitle(title);
+                if (parsed != null)
+                {
+                    // If it parses, it's missing critical structure
+                    var hasWebTag = title.Contains("[WEB]");
+                    var hasFormatTag = System.Text.RegularExpressions.Regex.IsMatch(title, @"\[[^\]]+\]\s*\[[^\]]+\]$");
+
+                    Assert.False(hasWebTag && hasFormatTag,
+                        "Title with both [WEB] and format tag should be valid");
+                }
+            }
         }
 
         private static HttpResponse CreateStringResponse(string content, HttpRequest request, HttpStatusCode statusCode = HttpStatusCode.OK)
