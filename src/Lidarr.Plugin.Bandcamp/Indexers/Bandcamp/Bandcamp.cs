@@ -525,7 +525,9 @@ namespace NzbDrone.Core.Indexers.Bandcamp
                 "mp3-320" => "MP3 320",
                 "vorbis" or "ogg-vorbis" => InferVorbisLabel(size, albumDurationSeconds),
                 "aac-hi" => "AAC",
-                "aiff-lossless" => "AIFF Lossless",
+                "aiff-lossless" or "aiff" => "FLAC",
+                "wav" => "FLAC",
+                "alac" => "FLAC",
                 _ => formatKey.Replace('-', ' ').ToUpperInvariant()
             };
         }
