@@ -254,7 +254,7 @@ namespace NzbDrone.Core.Indexers.Bandcamp
             return new ReleaseInfo
             {
                 Guid = $"bandcamp-{albumUrl.GetHashCode():x}",
-                Title = $"{artistName} - {albumTitle}",
+                Title = $"{artistName} - {albumTitle} [WEB] [FLAC]",
                 Artist = artistName,
                 Album = albumTitle,
                 PublishDate = publishDate == DateTime.MinValue ? DateTime.UtcNow : publishDate.ToUniversalTime(),
@@ -294,7 +294,7 @@ namespace NzbDrone.Core.Indexers.Bandcamp
             return new ReleaseInfo
             {
                 Guid = $"bandcamp-{albumUrl.GetHashCode():x}",
-                Title = $"{artistName} - {albumTitle}",
+                Title = $"{artistName} - {albumTitle} [WEB] [FLAC]",
                 Artist = artistName,
                 Album = albumTitle,
                 PublishDate = publishDate == DateTime.MinValue ? DateTime.UtcNow : publishDate.ToUniversalTime(),

@@ -416,7 +416,9 @@ namespace NzbDrone.Core.Indexers.Bandcamp
                 baseTitle += $" [{trackCount} tracks]";
             }
 
-            return $"{baseTitle} [{formatLabel}]";
+            // Add WEB for custom format matching - Bandcamp is a web source
+            // This ensures releases match WEB custom format requirements in quality profiles
+            return $"{baseTitle} [WEB] [{formatLabel}]";
         }
 
         internal static string NormalizeAlbumTitle(string? artistName, string? albumTitle)
