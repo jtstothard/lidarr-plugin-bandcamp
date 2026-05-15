@@ -207,6 +207,65 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                 r.Url.FullUri.Contains("/api/fancollection/1/collection_items", StringComparison.OrdinalIgnoreCase))), Times.Never);
         }
 
+        [Theory]
+        [InlineData("https://bandcamp.com\\album\\test", "https://bandcamp.com/album/test")]
+        [InlineData("https://bandcamp.com/album/test", "https://bandcamp.com/album/test")]
+        [InlineData("https://bandcamp.com\\album/test", "https://bandcamp.com/album/test")]
+        [InlineData("https://bandcamp.com/album\\test?param=value", "https://bandcamp.com/album/test?param=value")]
+        [InlineData("https://bandcamp.com/album/test#fragment", "https://bandcamp.com/album/test#fragment")]
+        [InlineData("https://bandcamp.com\\artist\\album\\track", "https://bandcamp.com/artist/album/track")]
+        [InlineData("", "")]
+        public void NormalizeUrl_ShouldReplaceBackslashesWithForwardSlashes(string input, string expected)
+        {
+            var normalizeUrlMethod = typeof(BandcampDownloadProxy)
+                .GetMethod("NormalizeUrl", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+
+            var result = normalizeUrlMethod!.Invoke(null, new object[] { input });
+
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData("https://bandcamp.com/album/test")]
+        [InlineData("https://bandcamp.com/album/test?param=value&other=val")]
+        [InlineData("https://bandcamp.com/album/test#fragment")]
+        [InlineData("https://s3.amazonaws.com/bucket/path/to/file.zip?AWSAccessKeyId=xxx&Signature=yyy")]
+        public void NormalizeUrl_WithValidForwardSlashUrls_ShouldReturnUnchanged(string url)
+        {
+            var normalizeUrlMethod = typeof(BandcampDownloadProxy)
+                .GetMethod("NormalizeUrl", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+
+            var result = normalizeUrlMethod!.Invoke(null, new object[] { url });
+
+            Assert.Equal(url, result);
+        }
+
+        [Theory]
+        [InlineData("https://bandcamp.com\\/album\\/test")] // JSON-escaped forward slashes
+        [InlineData("https://bandcamp.com\\\\album\\\\test")] // Double backslashes
+        public void NormalizeUrl_ShouldHandleJsonEscapedSlashes(string url)
+        {
+            var normalizeUrlMethod = typeof(BandcampDownloadProxy)
+                .GetMethod("NormalizeUrl", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+
+            var result = normalizeUrlMethod!.Invoke(null, new object[] { url }) as string;
+
+            Assert.NotNull(result);
+            Assert.DoesNotContain("\\", result);
+            Assert.Contains("/", result);
+        }
+
+        [Fact]
+        public void NormalizeUrl_WithNull_ShouldReturnNull()
+        {
+            var normalizeUrlMethod = typeof(BandcampDownloadProxy)
+                .GetMethod("NormalizeUrl", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+
+            var result = normalizeUrlMethod!.Invoke(null, new object[] { default(string?) });
+
+            Assert.Null(result);
+        }
+
         public void Dispose()
         {
             try

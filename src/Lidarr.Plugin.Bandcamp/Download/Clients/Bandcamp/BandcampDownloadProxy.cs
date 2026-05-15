@@ -81,7 +81,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
             if (IsDownloadPageUrl(lookupUrl))
             {
-                downloadPageUrl = NormalizeUrl(lookupUrl);
+                downloadPageUrl = lookupUrl; // Already normalized on line 57
                 _logger.Debug("Bandcamp download proxy [{0}]: Using indexer-provided redownload URL", item.DownloadId);
             }
             else
@@ -152,7 +152,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             var resolvedDownload = await _apiClient.ResolveStatdownloadUrlAsync(
                 cookies, downloadUrl, formatKey).ConfigureAwait(false);
 
-            var resolvedUrl = NormalizeUrl(resolvedDownload?.DownloadUrl ?? string.Empty);
+            var rawResolvedUrl = resolvedDownload?.DownloadUrl;
+            var resolvedUrl = rawResolvedUrl != null ? NormalizeUrl(rawResolvedUrl) : null;
+
             if (string.IsNullOrWhiteSpace(resolvedUrl) && resolvedDownload?.DirectResponse == null)
             {
                 // Fall back to using the download URL directly
@@ -566,8 +568,22 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
         /// <summary>
         /// Normalizes URLs to use forward slashes, preventing Windows backslash
-        /// path bugs that break on Linux hosts. Handles URLs from Bandcamp's
-        /// JSON API which may inconsistently use backslashes in some contexts.
+        /// path bugs that break on Linux hosts.
+        ///
+        /// Bandcamp's JSON API may return URLs with backslashes (e.g., from Windows
+        /// systems) in fields like item_url, download_page_url, or statdownload responses.
+        /// Example problematic URL from Charli xcx album:
+        ///   "https://charlixcx.bandcamp.com\\album\\crash"
+        ///
+        /// These backslashes break path resolution on Linux hosts where Lidarr typically
+        /// runs in Docker, causing download failures with path not found errors.
+        ///
+        /// Handles:
+        /// - Single backslashes: "https://bandcamp.com\album\test" → "https://bandcamp.com/album/test"
+        /// - JSON-escaped forward slashes: "https://bandcamp.com\/album\/test" → "https://bandcamp.com/album/test"
+        /// - Double backslashes: "https://bandcamp.com\\album\\test" → "https://bandcamp.com/album/test"
+        /// - Preserves existing forward slashes (no-op)
+        /// - Preserves query parameters and fragments
         /// </summary>
         private static string NormalizeUrl(string url)
         {
@@ -577,6 +593,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             }
 
             // Replace backslashes with forward slashes for cross-platform compatibility
+            // This handles both Windows path separators and JSON-escaped sequences
             return url.Replace('\\', '/');
         }
 
