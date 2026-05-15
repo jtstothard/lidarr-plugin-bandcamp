@@ -261,7 +261,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             var normalizeUrlMethod = typeof(BandcampDownloadProxy)
                 .GetMethod("NormalizeUrl", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
 
-            var result = normalizeUrlMethod!.Invoke(null, new object[] { default(string?) });
+            var result = normalizeUrlMethod!.Invoke(null, new object[] { null! });
 
             Assert.Null(result);
         }
