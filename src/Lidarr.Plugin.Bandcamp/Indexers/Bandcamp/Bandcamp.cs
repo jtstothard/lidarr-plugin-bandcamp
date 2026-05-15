@@ -69,9 +69,7 @@ namespace NzbDrone.Core.Indexers.Bandcamp
                 return Array.Empty<ReleaseInfo>();
             }
 
-            var releases = await FetchCollectionReleases(
-                searchCriteria.CleanArtistQuery,
-                searchCriteria.CleanAlbumQuery).ConfigureAwait(false);
+            var releases = await FetchCollectionReleases(searchCriteria).ConfigureAwait(false);
 
             return CleanupReleases(releases);
         }
@@ -128,6 +126,48 @@ namespace NzbDrone.Core.Indexers.Bandcamp
             }
         }
 
+        private async Task<List<ReleaseInfo>> FetchCollectionReleases(AlbumSearchCriteria searchCriteria)
+        {
+            var results = new List<ReleaseInfo>();
+            var fanId = await _apiClient.ResolveFanIdAsync(Settings.Cookies).ConfigureAwait(false);
+            if (fanId == null)
+            {
+                _logger.Debug("Bandcamp indexer: Cannot search collection because fan_id could not be resolved");
+                return results;
+            }
+
+            var collection = await _apiClient.GetDownloadableCollectionAsync(Settings.Cookies, fanId.Value)
+                .ConfigureAwait(false);
+
+            // Extract expected track counts from search criteria for release specificity
+            var expectedTrackCounts = ExtractExpectedTrackCounts(searchCriteria);
+
+            var matches = collection
+                .Where(item => MatchesSearch(item, searchCriteria, expectedTrackCounts))
+                .GroupBy(GetCollectionIdentity, StringComparer.OrdinalIgnoreCase)
+                .Select(group => group
+                    .OrderByDescending(item => !string.IsNullOrWhiteSpace(item.DownloadPageUrl))
+                    .ThenByDescending(item => item.ItemId)
+                    .First())
+                .ToList();
+
+            _logger.Debug("Bandcamp indexer: {0} unique downloadable collection item(s) matched query", matches.Count);
+
+            foreach (var item in matches)
+            {
+                var releases = await BuildReleaseInfosForCollectionItem(item, expectedTrackCounts).ConfigureAwait(false);
+                foreach (var release in releases)
+                {
+                    if (results.All(existing => !string.Equals(existing.Guid, release.Guid, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        results.Add(release);
+                    }
+                }
+            }
+
+            return results;
+        }
+
         private async Task<List<ReleaseInfo>> FetchCollectionReleases(string artistQuery, string? albumQuery)
         {
             var results = new List<ReleaseInfo>();
@@ -167,7 +207,7 @@ namespace NzbDrone.Core.Indexers.Bandcamp
             return results;
         }
 
-        private async Task<List<ReleaseInfo>> BuildReleaseInfosForCollectionItem(BandcampCollectionItem item)
+        private async Task<List<ReleaseInfo>> BuildReleaseInfosForCollectionItem(BandcampCollectionItem item, HashSet<int>? expectedTrackCounts = null)
         {
             var releases = new List<ReleaseInfo>();
 
@@ -208,18 +248,18 @@ namespace NzbDrone.Core.Indexers.Bandcamp
                     continue;
                 }
 
-                releases.Add(ToReleaseInfo(item, format.Key, size, albumDurationSeconds));
+                releases.Add(ToReleaseInfo(item, format.Key, size, albumDurationSeconds, expectedTrackCounts));
             }
 
             return releases;
         }
 
-        private ReleaseInfo ToReleaseInfo(BandcampCollectionItem item, string formatKey, long size, double? albumDurationSeconds)
+        private ReleaseInfo ToReleaseInfo(BandcampCollectionItem item, string formatKey, long size, double? albumDurationSeconds, HashSet<int>? expectedTrackCounts = null)
         {
             var artistName = item.BandName ?? "Unknown Artist";
             var albumTitle = item.Title ?? "Unknown Album";
             var formatLabel = FormatLabel(formatKey, size, albumDurationSeconds);
-            var title = BuildReleaseTitle(artistName, albumTitle, formatLabel);
+            var title = BuildReleaseTitle(artistName, albumTitle, formatLabel, item.TrackCount, expectedTrackCounts);
             var publishDate = ParsePublishDate(item.ReleaseDate);
             var downloadUrl = AddFormatFragment(item.DownloadPageUrl!, formatKey);
 
@@ -253,6 +293,69 @@ namespace NzbDrone.Core.Indexers.Bandcamp
             }
 
             return $"{item.ItemType}:{item.ItemId}";
+        }
+
+        /// <summary>
+        /// Extract expected track counts from AlbumSearchCriteria for release specificity.
+        /// Returns null if track count information is not available.
+        /// </summary>
+        private static HashSet<int>? ExtractExpectedTrackCounts(AlbumSearchCriteria searchCriteria)
+        {
+            if (searchCriteria.Albums == null || searchCriteria.Albums.Count == 0)
+            {
+                return null;
+            }
+
+            var trackCounts = new HashSet<int>();
+            foreach (var album in searchCriteria.Albums)
+            {
+                if (album.AlbumReleases?.Value != null)
+                {
+                    foreach (var release in album.AlbumReleases.Value)
+                    {
+                        if (release.TrackCount > 0)
+                        {
+                            trackCounts.Add(release.TrackCount);
+                        }
+                    }
+                }
+            }
+
+            return trackCounts.Count > 0 ? trackCounts : null;
+        }
+
+        /// <summary>
+        /// Matches collection items against search criteria with optional track count filtering.
+        /// When expectedTrackCounts is provided, filters releases to only those matching the expected track count.
+        /// </summary>
+        private static bool MatchesSearch(BandcampCollectionItem item, AlbumSearchCriteria searchCriteria, HashSet<int>? expectedTrackCounts)
+        {
+            var artist = NormalizeQueryValue(item.BandName);
+            var title = NormalizeQueryValue(item.Title);
+
+            if (!ContainsQuery(artist, searchCriteria.CleanArtistQuery))
+            {
+                return false;
+            }
+
+            if (!searchCriteria.CleanAlbumQuery.IsNullOrWhiteSpace())
+            {
+                if (!ContainsQuery(title, searchCriteria.CleanAlbumQuery!))
+                {
+                    return false;
+                }
+            }
+
+            // Filter by track count if we have expected track counts
+            if (expectedTrackCounts != null && expectedTrackCounts.Count > 0)
+            {
+                if (item.TrackCount > 0 && !expectedTrackCounts.Contains(item.TrackCount))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static bool MatchesSearch(BandcampCollectionItem item, string artistQuery, string? albumQuery)
@@ -301,11 +404,19 @@ namespace NzbDrone.Core.Indexers.Bandcamp
             return $"{downloadPageUrl}{separator}format={Uri.EscapeDataString(formatKey)}";
         }
 
-        internal static string BuildReleaseTitle(string? artistName, string? albumTitle, string formatLabel)
+        internal static string BuildReleaseTitle(string? artistName, string? albumTitle, string formatLabel, int trackCount = 0, HashSet<int>? expectedTrackCounts = null)
         {
             var normalizedArtist = NormalizeReleaseComponent(artistName);
             var normalizedAlbum = NormalizeAlbumTitle(normalizedArtist, albumTitle);
-            return $"{normalizedArtist} - {normalizedAlbum} [{formatLabel}]";
+            var baseTitle = $"{normalizedArtist} - {normalizedAlbum}";
+
+            // Append track count for observability when we have it
+            if (trackCount > 0)
+            {
+                baseTitle += $" [{trackCount} tracks]";
+            }
+
+            return $"{baseTitle} [{formatLabel}]";
         }
 
         internal static string NormalizeAlbumTitle(string? artistName, string? albumTitle)

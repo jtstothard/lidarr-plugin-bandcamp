@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -6,6 +7,7 @@ using Moq;
 using NLog;
 using NzbDrone.Common.Http;
 using NzbDrone.Core.Configuration;
+using NzbDrone.Core.Datastore;
 using NzbDrone.Core.Download.Clients.Bandcamp;
 using NzbDrone.Core.Http.Bandcamp;
 using NzbDrone.Core.Indexers;
@@ -239,6 +241,93 @@ namespace Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp
             var normalized = BandcampIndexer.NormalizeAlbumTitle(artistName, albumTitle);
 
             Assert.Equal(expected, normalized);
+        }
+
+        [Fact]
+        public async Task Fetch_AlbumSearch_WithMultipleReleasesSameTitle_FiltersByTrackCount()
+        {
+            _httpClientMock
+                .Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
+                .ReturnsAsync((HttpRequest request) =>
+                {
+                    return request.Url.FullUri switch
+                    {
+                        "https://bandcamp.com" => CreateStringResponse(
+                            @"<html><body><div id=""HomepageApp"" data-blob=""{&quot;pageContext&quot;:{&quot;identity&quot;:{&quot;fanId&quot;:12345678,&quot;isLoggedIn&quot;:true}}}""></div></body></html>",
+                            request),
+                        "https://bandcamp.com/api/fancollection/1/collection_items" => CreateStringResponse(
+                            @"{
+                                ""redownload_urls"": {
+                                    ""a111"": ""https://bandcamp.com/download?type=album&id=111"",
+                                    ""a222"": ""https://bandcamp.com/download?type=album&id=222""
+                                },
+                                ""items"": [
+                                    {
+                                        ""item_id"": 111,
+                                        ""item_type"": ""album"",
+                                        ""sale_item_type"": ""a"",
+                                        ""sale_item_id"": 111,
+                                        ""token"": ""tok-111"",
+                                        ""item_url"": ""https://martha.bandcamp.com/album/please-dont-take-me-back-single"",
+                                        ""item_title"": ""Please Don't Take Me Back"",
+                                        ""band_name"": ""Martha"",
+                                        ""num_tracks"": 2,
+                                        ""release_date"": null
+                                    },
+                                    {
+                                        ""item_id"": 222,
+                                        ""item_type"": ""album"",
+                                        ""sale_item_type"": ""a"",
+                                        ""sale_item_id"": 222,
+                                        ""token"": ""tok-222"",
+                                        ""item_url"": ""https://martha.bandcamp.com/album/please-dont-take-me-back-album"",
+                                        ""item_title"": ""Please Don't Take Me Back"",
+                                        ""band_name"": ""Martha"",
+                                        ""num_tracks"": 11,
+                                        ""release_date"": null
+                                    }
+                                ]
+                            }",
+                            request),
+                        "https://bandcamp.com/download?type=album&id=111" => CreateStringResponse(
+                            @"<html><body><div id=""pagedata"" data-blob=""{&quot;digital_items&quot;:[{&quot;item_id&quot;:111,&quot;item_type&quot;:&quot;album&quot;,&quot;title&quot;:&quot;Please Don't Take Me Back&quot;,&quot;downloads&quot;:{&quot;flac&quot;:{&quot;url&quot;:&quot;https://bandcamp.com/statdownload/album/111?sig=flac&quot;,&quot;size_mb&quot;:&quot;25MB&quot;}}}]}""></div></body></html>",
+                            request),
+                        "https://martha.bandcamp.com/album/please-dont-take-me-back-single" => CreateStringResponse(
+                            @"<html><body><script data-tralbum=""{&quot;trackinfo&quot;:[{&quot;duration&quot;:200.0},{&quot;duration&quot;:180.0}]}""></script></body></html>",
+                            request),
+                        _ => CreateStringResponse(@"{""items"": []}", request)
+                    };
+                });
+
+            var criteria = new AlbumSearchCriteria
+            {
+                Artist = new Artist { Name = "Martha" },
+                AlbumTitle = "Please Don't Take Me Back"
+            };
+
+            // Create a mock album with release specifying expected track count
+            var album = new Album
+            {
+                Title = "Please Don't Take Me Back",
+                AlbumReleases = new LazyLoaded<List<AlbumRelease>>(new List<AlbumRelease>
+                {
+                    new AlbumRelease
+                    {
+                        TrackCount = 2,
+                        Title = "Please Don't Take Me Back"
+                    }
+                })
+            };
+            criteria.Albums = new List<Album> { album };
+
+            var results = await _subject.Fetch(criteria);
+
+            // Should only return the 2-track single, not the 11-track album
+            Assert.Single(results);
+            Assert.Equal("Martha", results[0].Artist);
+            Assert.Equal("Please Don't Take Me Back", results[0].Album);
+            Assert.Contains("[2 tracks]", results[0].Title);
+            Assert.DoesNotContain("[11 tracks]", results[0].Title);
         }
 
         private static HttpResponse CreateStringResponse(string content, HttpRequest request, HttpStatusCode statusCode = HttpStatusCode.OK)
