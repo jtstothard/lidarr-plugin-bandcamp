@@ -1,186 +1,109 @@
 # Lidarr Bandcamp Plugin
 
-[![Build and Release Plugin](https://github.com/jtstothard/lidarr-plugin-bandcamp/actions/workflows/build.yml/badge.svg)](https://github.com/jtstothard/lidarr-plugin-bandcamp/actions/workflows/build.yml)
+[![Build](https://github.com/jtstothard/lidarr-plugin-bandcamp/actions/workflows/build.yml/badge.svg)](https://github.com/jtstothard/lidarr-plugin-bandcamp/actions/workflows/build.yml)
 
-Native Lidarr plugin adding **Bandcamp** as both an indexer and download client for your purchased music.
+Bandcamp indexer and download client for Lidarr. Searches your Bandcamp collection and downloads albums you've bought.
 
----
+> **This only works with music you own.** It connects to your Bandcamp account and searches your purchase history. If you haven't bought it on Bandcamp, it won't show up.
 
-> ⚠️ **Important — Owned Music Only**
->
-> This plugin can only download music you have **purchased on Bandcamp**. It searches and downloads from your authenticated Bandcamp collection — it cannot access or download music you do not own.
+## Requirements
 
----
+- Lidarr on the **nightly** branch (plugins aren't on stable yet)
+- A Bandcamp account with at least one purchased album
+- A browser to grab your session cookie
 
-## Overview
+## Installing
 
-- **Indexer** — Searches your authenticated Bandcamp collection and returns releases your account can redownload. Results are emitted per downloadable format so Lidarr can apply its usual quality/profile rules.
-- **Download Client** — Downloads the exact format selected from the indexer results and hands it off to Lidarr's import pipeline.
+1. In Lidarr, go to **System → Plugins**
+2. Paste `https://github.com/jtstothard/lidarr-plugin-bandcamp`
+3. Click **Install**, restart if asked
 
-Bandcamp has no official API, so the plugin uses cookie-based authentication to access your account and purchased content.
+Bandcamp will now show up as an available indexer and download client.
 
-## Prerequisites
+## Setup
 
-- **Lidarr nightly branch** (required for the plugin system)
-- A **Bandcamp account** with purchased music
-- A web browser to export session cookies
+### Indexer
 
-## Installation
+1. **Settings → Indexers → Add** (`+`)
+2. Pick **Bandcamp** from the list
+3. Paste your `identity` cookie into **Session Cookies** (see below for how to get it)
+4. **Test**, then **Save**
 
-1. Open Lidarr and navigate to **System → Plugins**.
-2. Paste the GitHub repository URL into the plugin installer:
-   ```
-   https://github.com/jtstothard/lidarr-plugin-bandcamp
-   ```
-3. Click **Install**. Lidarr will download and load the plugin automatically.
-4. Restart Lidarr if prompted.
+### Download Client
 
-After installation, "Bandcamp" will appear as an available indexer and download client.
+1. **Settings → Download Clients → Add** (`+`)
+2. Pick **Bandcamp**
+3. Same cookie as above in **Session Cookies**
+4. Set **Download Path** to somewhere Lidarr can write to (like `/downloads/bandcamp`)
+5. **Test**, then **Save**
 
-## Configuration
+### Delay Profile (don't skip this)
 
-### 1. Add the Bandcamp Indexer
+You need to enable the Bandcamp protocol or Lidarr won't use it for searches:
 
-1. Go to **Settings → Indexers**.
-2. Click **Add Indexer** (`+`).
-3. Select **Bandcamp** from the list.
-4. Configure:
-   - **Session Cookies** — Paste your Bandcamp `identity` cookie value (see [Exporting Cookies](#exporting-bandcamp-cookies) below).
-   - **Base URL** — Leave as `https://bandcamp.com` unless you have a reason to change it.
-5. Click **Test** to verify connectivity, then **Save**.
+1. **Settings → Profiles → Delay Profiles**
+2. Edit your default profile
+3. Toggle **Bandcamp** on
+4. Save
 
-### 2. Add the Bandcamp Download Client
+## Getting your cookie
 
-1. Go to **Settings → Download Clients**.
-2. Click **Add Download Client** (`+`).
-3. Select **Bandcamp** from the list.
-4. Configure:
-   - **Session Cookies** — Paste your Bandcamp `identity` cookie value (see [Exporting Cookies](#exporting-bandcamp-cookies) below).
-   - **Download Path** — Directory where downloads are saved before Lidarr imports them (e.g., `/downloads/bandcamp`). Ensure Lidarr has read/write access.
-5. Click **Test**, then **Save**.
+The plugin authenticates using the `identity` cookie from your browser.
 
-### 3. Enable Bandcamp Protocol in Delay Profiles
+**Chrome:**
+1. Log into [bandcamp.com](https://bandcamp.com)
+2. Open DevTools (`F12`) → **Application** tab → **Cookies** → `https://bandcamp.com`
+3. Find `identity`, copy its value
+4. Paste that into the Session Cookies field
 
-1. Go to **Settings → Profiles → Delay Profiles**.
-2. Edit the default profile (or create a new one).
-3. Enable the **Bandcamp** protocol so Lidarr will actually use the indexer for searches and grabs.
-4. Save the profile.
+**Firefox:**
+1. Log into [bandcamp.com](https://bandcamp.com)
+2. Open Developer Tools (`F12`) → **Storage** tab → **Cookies** → `https://bandcamp.com`
+3. Find `identity`, copy its value
+4. Paste that into the Session Cookies field
 
-> **This step is required.** Without enabling the protocol in a delay profile, Lidarr will not send searches to or grab from the Bandcamp indexer.
+The cookie expires eventually. When downloads start failing, just grab a fresh one.
 
-### Exporting Bandcamp Cookies
+## Supported formats
 
-The plugin needs your Bandcamp `identity` cookie to authenticate downloads of purchased albums.
+| Format | Type |
+|--------|------|
+| FLAC | Lossless |
+| ALAC | Lossless |
+| WAV | Lossless (uncompressed) |
+| AIFF | Lossless (uncompressed) |
+| MP3 V0 | Lossy |
+| MP3 320 | Lossy |
+| OGG Vorbis | Lossy |
+| AAC | Lossy |
 
-#### Chrome / Chromium
-
-1. Log in to [bandcamp.com](https://bandcamp.com).
-2. Open **DevTools** (`F12` or `Ctrl+Shift+I` / `Cmd+Option+I`).
-3. Go to the **Application** tab → **Cookies** → `https://bandcamp.com`.
-4. Find the cookie named `identity`.
-5. Copy its **Value** — this is a long string starting with something like `t%3A...`.
-6. Paste this value into the **Session Cookies** field in Lidarr.
-
-#### Firefox
-
-1. Log in to [bandcamp.com](https://bandcamp.com).
-2. Open **Developer Tools** (`F12` or `Ctrl+Shift+I` / `Cmd+Option+I`).
-3. Go to the **Storage** tab → **Cookies** → `https://bandcamp.com`.
-4. Find the cookie named `identity`.
-5. Copy its **Value**.
-6. Paste this value into the **Session Cookies** field in Lidarr.
-
-> **Note:** The `identity` cookie is tied to your browser session. If you log out of Bandcamp or the cookie expires, downloads will fail. Re-export the cookie when this happens.
-
-## Supported Formats
-
-The plugin exposes the following download formats from Bandcamp:
-
-| Format | Description |
-|--------|-------------|
-| FLAC | Free Lossless Audio Codec (lossless, recommended) |
-| ALAC | Apple Lossless Audio Codec (lossless) |
-| WAV | Waveform Audio File Format (lossless, uncompressed) |
-| AIFF | Audio Interchange File Format (lossless, uncompressed) |
-| MP3 V0 | MP3 variable bitrate (lossy, high quality) |
-| MP3 320 | MP3 320 kbps CBR (lossy) |
-| OGG Vorbis | Ogg Vorbis (lossy) |
-| AAC | Advanced Audio Coding (lossy) |
-
-Lidarr selects the best available format based on your quality profile.
-
-## Usage
-
-1. **Search** — Use Lidarr's manual or automatic search. The Bandcamp indexer returns owned/downloadable releases from your collection.
-2. **Grab** — Lidarr chooses a specific Bandcamp result and format using its normal quality/profile logic.
-3. **Download** — The Bandcamp download client fetches the exact selected format into the download path.
-4. **Import** — Lidarr imports the downloaded files into your library.
+Lidarr picks the best one based on your quality profile.
 
 ## Limitations
 
-- **Owned music only** — The plugin can only download releases you have purchased on Bandcamp. There is no public catalog search.
-- **Cookie expiration** — The `identity` cookie expires periodically. You will need to re-export it from your browser when downloads start failing.
-- **Collection-only search** — Searches are limited to your Bandcamp collection. Music available on Bandcamp but not purchased by you will not appear in results.
-- **No streaming preview** — The plugin downloads full releases only; it does not support preview/streaming.
+- Only downloads albums you've bought on Bandcamp. No public search.
+- The `identity` cookie expires. Re-export it when things stop working.
+- Searches your collection, not the full Bandcamp catalog.
 
 ## Troubleshooting
 
-### Plugin doesn't appear in Lidarr
+**Plugin doesn't show up in Lidarr**
+You need the nightly branch, not stable. Go to Settings → General → change branch to `nightly`, save, and update.
 
-- Ensure you're running Lidarr **nightly** branch (not stable). The plugin system is only available on nightly.
-- Check that the repository URL is correct and accessible.
-- Restart Lidarr after installing.
+**Authentication errors / downloads fail**
+Your cookie expired. Get a fresh one from your browser.
 
-### Downloads fail with authentication errors
+**Search returns nothing**
+Check that you actually bought the album on Bandcamp. Also make sure the Bandcamp protocol is enabled in your Delay Profile (Settings → Profiles → Delay Profiles).
 
-- Your `identity` cookie has likely expired. Re-export it from your browser and update the settings.
-- Make sure you're logged in to Bandcamp in the same browser when exporting the cookie.
-- Verify you actually own the album you're trying to download (check your Bandcamp collection at `https://bandcamp.com/yours`).
+## Contributing
 
-### Search returns no results
-
-- Check that cookies are configured for the Bandcamp indexer (Settings → Indexers → Bandcamp).
-- Verify network connectivity to `bandcamp.com`.
-- Search results come only from your owned/downloadable Bandcamp collection. If you have not purchased the release on Bandcamp, it will not appear.
-- Ensure the Bandcamp protocol is enabled in your Delay Profile (Settings → Profiles → Delay Profiles).
-
-### Build errors when installing from source
-
-- Ensure you have .NET SDK 8.0+ installed.
-- Run `dotnet restore` before `dotnet build`.
-- See the [Development](#development) section for build instructions.
-
-## Development
-
-### Build from source
-
-```bash
-# Restore dependencies (requires cloning Lidarr source for references)
-git clone --depth 1 --branch nightly https://github.com/Lidarr/Lidarr.git ext/Lidarr
-dotnet restore Lidarr.Plugin.Bandcamp.slnx -p:TreatWarningsAsErrors=false
-
-# Build
-dotnet build Lidarr.Plugin.Bandcamp.slnx -c Release -p:TreatWarningsAsErrors=false
-
-# Run tests
-dotnet test Lidarr.Plugin.Bandcamp.slnx --no-build -c Release --filter "FullyQualifiedName~Bandcamp" -p:TreatWarningsAsErrors=false
-```
-
-The built plugin DLL is at:
-```
-src/Lidarr.Plugin.Bandcamp/bin/Release/net8.0/Lidarr.Plugin.Bandcamp.dll
-```
-
-### CI / Releases
-
-Pushing a tag (`v*`) to the `main` branch triggers the [GitHub Actions workflow](.github/workflows/build.yml), which builds, tests, and publishes a release with the zipped plugin DLL as an asset.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for build instructions and PR guidelines.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+MIT. See [LICENSE](LICENSE).
 
-## Support the Project
-
-If you find this plugin useful, consider buying me a coffee:
+## Support the project
 
 [☕ Ko-fi](https://ko-fi.com/trshpotato)

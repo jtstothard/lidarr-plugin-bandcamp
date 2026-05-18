@@ -1,0 +1,84 @@
+name: "Bug Report"
+description: Report a bug or unexpected behavior
+title: "[BUG] "
+labels: ["bug"]
+assignees: []
+body:
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin Version
+      description: Check System → Plugins in Lidarr
+      placeholder: v1.0.18
+    validations:
+      required: true
+
+  - type: input
+    id: lidarr-version
+    attributes:
+      label: Lidarr Version
+      description: Check System → Status. Must be nightly branch.
+      placeholder: v2.14.2
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Docker
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened
+      description: What were you doing and what went wrong?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Exact steps so we can try it ourselves
+      placeholder: |
+        1. Go to...
+        2. Click...
+        3. See error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        Enable Trace logging first: Settings → General → Log Level → Trace.
+        Then reproduce the issue and grab the logs from System → Logs → Files.
+      value: |
+        <details>
+        <summary>Trace logs</summary>
+
+        ```
+        paste relevant logs here
+        ```
+
+        </details>
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I am on the Lidarr nightly branch (not stable)
+          required: true
+        - label: I have enabled Trace logging and reproduced the issue
+          required: true
