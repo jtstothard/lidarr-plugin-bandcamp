@@ -60,7 +60,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Http
             // Invoke protected method via reflection
             var method = typeof(ManagedHttpDispatcher).GetMethod(
                 "AddRequestHeaders",
-                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Protected);
+                BindingFlags.Instance | BindingFlags.NonPublic);
 
             var ex = Record.Exception(() => method?.Invoke(_dispatcher, new object[] { message, headers }));
 
@@ -83,7 +83,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Http
 
             var method = typeof(ManagedHttpDispatcher).GetMethod(
                 "AddRequestHeaders",
-                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Protected);
+                BindingFlags.Instance | BindingFlags.NonPublic);
 
             var ex = Assert.Throws<TargetInvocationException>(
                 () => method?.Invoke(_dispatcher, new object[] { message, headers }));
@@ -102,7 +102,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Http
 
             var method = typeof(ManagedHttpDispatcher).GetMethod(
                 "AddRequestHeaders",
-                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Protected);
+                BindingFlags.Instance | BindingFlags.NonPublic);
 
             var ex = Record.Exception(() => method?.Invoke(_dispatcher, new object[] { message, headers }));
             Assert.Null(ex);
