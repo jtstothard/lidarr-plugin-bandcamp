@@ -1,3 +1,4 @@
+using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using NLog;
@@ -64,13 +65,13 @@ namespace NzbDrone.Core.Http.Bandcamp
                         webRequest.Headers.Connection.Add(header.Value);
                         break;
                     case "Content-Length":
-                        AddContentHeader(webRequest, "Content-Length", header.Value);
+                        AddContentHeaderInternal(webRequest, "Content-Length", header.Value);
                         break;
                     case "Content-Type":
-                        AddContentHeader(webRequest, "Content-Type", header.Value);
+                        AddContentHeaderInternal(webRequest, "Content-Type", header.Value);
                         break;
                     case "Content-Encoding":
-                        AddContentHeader(webRequest, "Content-Encoding", header.Value);
+                        AddContentHeaderInternal(webRequest, "Content-Encoding", header.Value);
                         break;
                     case "Date":
                         webRequest.Headers.Remove("Date");
@@ -107,6 +108,23 @@ namespace NzbDrone.Core.Http.Bandcamp
                         break;
                 }
             }
+        }
+
+        /// <summary>
+        /// Adds content headers to the request's content object.
+        /// Mirrors the base class's private static AddContentHeader, which is
+        /// inaccessible from a subclass.
+        /// </summary>
+        private static void AddContentHeaderInternal(HttpRequestMessage request, string header, string value)
+        {
+            var headers = request.Content?.Headers;
+            if (headers == null)
+            {
+                return;
+            }
+
+            headers.Remove(header);
+            headers.Add(header, value);
         }
     }
 }
