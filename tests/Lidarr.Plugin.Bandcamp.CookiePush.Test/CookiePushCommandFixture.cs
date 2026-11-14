@@ -11,6 +11,31 @@ public sealed class CookiePushCommandFixture
     private const string ApiKey = "api-key-that-must-stay-secret";
 
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Rejected_save_identifies_provider_and_skips_explicit_test(bool indexer)
+    {
+        var api = new MockLidarrApi();
+        api.Enqueue(HttpMethod.Get, "/api/v1/downloadclient", HttpStatusCode.OK, Clients());
+        if (indexer)
+        {
+            api.Enqueue(HttpMethod.Get, "/api/v1/indexer", HttpStatusCode.OK, "[" + Indexer() + "]");
+            api.Enqueue(HttpMethod.Put, "/api/v1/downloadclient/7", HttpStatusCode.OK, Client());
+            api.Enqueue(HttpMethod.Post, "/api/v1/downloadclient/test", HttpStatusCode.OK, "{}");
+        }
+        api.Enqueue(HttpMethod.Put, indexer ? "/api/v1/indexer/11" : "/api/v1/downloadclient/7", HttpStatusCode.BadRequest, Cookie + ApiKey);
+        var output = new StringWriter();
+        var error = new StringWriter();
+        var args = new List<string> { "--url", "http://lidarr.test", "--api-key", ApiKey };
+        if (indexer) args.Add("--update-indexer");
+        Assert.Equal(1, await Run(api, Cookie, output, error, args.ToArray()));
+        Assert.Contains(indexer ? "indexer save failed" : "download client save failed", error.ToString());
+        Assert.Contains("Validation/Test", error.ToString());
+        Assert.Equal(indexer ? 5 : 2, api.Requests.Count);
+        AssertSecretSafe(output, error);
+    }
+
+    [Theory]
     [InlineData(true, 1)]
     [InlineData(true, 0)]
     [InlineData(true, 2)]

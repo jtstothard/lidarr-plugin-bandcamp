@@ -56,6 +56,11 @@ public static class CookiePushCommand
             error.WriteLine("Cancelled. Completed Lidarr writes are not rolled back; check settings before retrying.");
             return 130;
         }
+        catch (Microsoft.Playwright.PlaywrightException)
+        {
+            error.WriteLine("Error: Browser login failed. Check that Playwright Chromium and its system dependencies are installed, and that Bandcamp is reachable.");
+            return 1;
+        }
         catch (UsageException ex)
         {
             error.WriteLine("Error: " + ex.Message);
@@ -166,13 +171,13 @@ public static class CookiePushCommand
         var cookieField = provider["fields"]!.AsArray().Single(field =>
             string.Equals(field?["name"]?.GetValue<string>(), "cookies", StringComparison.OrdinalIgnoreCase));
         cookieField!["value"] = cookie.StartsWith("identity=", StringComparison.OrdinalIgnoreCase) ? cookie : "identity=" + cookie;
-        await SendAsync<JsonObject>(http, HttpMethod.Put, $"api/v1/{endpoint}/{id}", new StringContent(provider.ToJsonString(), Encoding.UTF8, "application/json"), cancellationToken);
+        await SendAsync<JsonObject>(http, HttpMethod.Put, $"api/v1/{endpoint}/{id}", new StringContent(provider.ToJsonString(), Encoding.UTF8, "application/json"), cancellationToken, saveLabel: label);
         output.WriteLine($"Updated Session Cookie for '{name}' (id {id}).");
         await SendAsync<JsonObject>(http, HttpMethod.Post, $"api/v1/{endpoint}/test", new StringContent(provider.ToJsonString(), Encoding.UTF8, "application/json"), cancellationToken, testLabel: label);
         output.WriteLine($"Lidarr {label} Test passed.");
     }
 
-    private static async Task<T> SendAsync<T>(HttpClient http, HttpMethod method, string path, HttpContent? content, CancellationToken cancellationToken, string? testLabel = null)
+    private static async Task<T> SendAsync<T>(HttpClient http, HttpMethod method, string path, HttpContent? content, CancellationToken cancellationToken, string? testLabel = null, string? saveLabel = null)
         where T : JsonNode
     {
         using var request = new HttpRequestMessage(method, path) { Content = content };
@@ -182,11 +187,18 @@ public static class CookiePushCommand
             throw new LidarrException("Lidarr rejected the API key. Check --api-key or LIDARR_API_KEY.");
         }
 
+        if ((int)response.StatusCode is >= 300 and < 400)
+        {
+            throw new LidarrException("Lidarr redirected the request. Use its final URL; redirects are disabled to protect credentials.");
+        }
+
         if (!response.IsSuccessStatusCode)
         {
             throw new LidarrException(testLabel is not null
                 ? $"Lidarr {testLabel} Test failed with HTTP {(int)response.StatusCode}. Check the cookie and {testLabel} settings."
-                : $"Lidarr request failed with HTTP {(int)response.StatusCode}.");
+                : saveLabel is not null
+                    ? $"Lidarr {saveLabel} save failed with HTTP {(int)response.StatusCode}. Validation/Test may have rejected the update; check the cookie and {saveLabel} settings."
+                    : $"Lidarr request failed with HTTP {(int)response.StatusCode}.");
         }
 
         var json = await response.Content.ReadAsStringAsync(cancellationToken);

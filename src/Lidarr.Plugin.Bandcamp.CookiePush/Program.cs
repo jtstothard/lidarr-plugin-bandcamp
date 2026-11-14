@@ -15,7 +15,7 @@ try
         Console.Out,
         Console.Error,
         Environment.GetEnvironmentVariable,
-        new HttpClientHandler(),
+        new HttpClientHandler { AllowAutoRedirect = false },
         new PlaywrightCookieCapture(),
         cancellation.Token);
 }

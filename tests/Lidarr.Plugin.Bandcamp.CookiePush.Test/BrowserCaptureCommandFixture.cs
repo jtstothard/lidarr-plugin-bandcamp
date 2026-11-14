@@ -11,6 +11,25 @@ public sealed class BrowserCaptureCommandFixture
     private const string ApiKey = "api-key-that-must-stay-secret";
 
     [Fact]
+    public async Task Browser_failure_is_sanitized_at_command_boundary()
+    {
+        var output = new StringWriter();
+        var error = new StringWriter();
+        var result = await CookiePushCommand.RunAsync(["--print-cookie"], TextReader.Null,
+            output, error, _ => null, new MockLidarrApi(), new FailedBrowser());
+        Assert.Equal(1, result);
+        Assert.Contains("Browser login failed", error.ToString());
+        Assert.DoesNotContain(" at ", error.ToString());
+        AssertSecretSafe(output, error);
+    }
+
+    private sealed class FailedBrowser : IBrowserCookieCapture
+    {
+        public Task<string> CaptureAsync(CancellationToken cancellationToken) =>
+            throw new Microsoft.Playwright.PlaywrightException(Cookie + ApiKey);
+    }
+
+    [Fact]
     public async Task Cancellation_returns_130_without_secrets_or_stack_trace()
     {
         using var cancellation = new CancellationTokenSource();
