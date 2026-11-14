@@ -100,10 +100,20 @@ public class BandcampSecretHygieneFixture
     [InlineData("https://bandcamp.com.evil.test", false)]
     [InlineData("https://unrelated.test", false)]
     [InlineData("https://bandcamp.com:444", false)]
-    public void IdentityOnlyFlowsToAccountHttpsOrigin(string url, bool allowed)
+    public async Task IdentityOnlyFlowsToAccountHttpsOrigin(string url, bool allowed)
     {
-        var client = new BandcampHttpClient(Mock.Of<IHttpClient>(), LogManager.GetCurrentClassLogger());
-        var request = client.CreateRequestBuilder(url, Secrets[3]).Build();
+        var http = new Mock<IHttpClient>();
+        HttpRequest? sent = null;
+        http.Setup(h => h.ExecuteAsync(It.IsAny<HttpRequest>())).ReturnsAsync((HttpRequest r) =>
+        {
+            sent = r;
+            return new HttpResponse(r, new HttpHeader { { "Content-Type", "application/zip" } }, new byte[] { 1, 2 }, HttpStatusCode.OK);
+        });
+        var logger = LogManager.GetCurrentClassLogger();
+        var client = new BandcampHttpClient(http.Object, logger);
+        using var destination = new System.IO.MemoryStream();
+        await new NzbDrone.Core.Download.Clients.Bandcamp.BandcampApiClient(client, logger).DownloadFileAsync(Secrets[3], url, destination);
+        var request = Assert.IsType<HttpRequest>(sent);
         Assert.Equal(allowed, request.Headers.GetValues("Cookie")?.Any() == true);
         Assert.False(request.AllowAutoRedirect); Assert.False(request.StoreRequestCookie); Assert.False(request.StoreResponseCookie);
     }

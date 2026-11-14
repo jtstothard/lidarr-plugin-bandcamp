@@ -104,11 +104,11 @@ namespace NzbDrone.Core.Http.Bandcamp
         /// <summary>
         /// Executes an HTTP GET request and returns the raw HttpResponse.
         /// Use .Content on the response to access the string body.
-        /// Logs URL and status but never logs cookie values.
+        /// Logs method and status without URLs, bodies or credential values.
         /// </summary>
         public async Task<HttpResponse> ExecuteAsync(HttpRequest request, bool observeIdentity = true)
         {
-            // Log the request URL without any headers (cookies are in headers)
+            // URLs may contain signed download credentials; log the method only.
             _logger.Debug("Bandcamp request: {0}", request.Method);
 
             try
