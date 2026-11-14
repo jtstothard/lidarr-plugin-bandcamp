@@ -211,12 +211,22 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         {
             _logger.Debug("Bandcamp download client: Running connection test");
 
-            // Test cookie auth — resolve fan_id to verify cookies are valid
+            // Test auth: validate the cookie (live fan_id lookup); with credentials set, a dead
+            // or missing cookie triggers a login and the outcome is reported per field.
             try
             {
-                var session = SessionProvider.ValidateAsync().GetAwaiter().GetResult();
+                var hasCredentials = !string.IsNullOrWhiteSpace(Settings.Email) && !string.IsNullOrWhiteSpace(Settings.Password);
+                var provider = SessionProvider;
+                var session = hasCredentials
+                    ? provider.RenewAsync().GetAwaiter().GetResult()
+                    : provider.ValidateAsync().GetAwaiter().GetResult();
 
-                if (session == null)
+                if (session == null && hasCredentials)
+                {
+                    failures.Add(LoginFailure(provider));
+                    _logger.Debug("Bandcamp download client: Login test failed ({0})", provider.LastLoginOutcome);
+                }
+                else if (session == null)
                 {
                     failures.Add(new ValidationFailure("Cookies",
                         "Could not verify session cookies. Make sure you're pasting the 'identity' cookie " +
@@ -251,6 +261,21 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             {
                 _logger.Debug("Bandcamp download client: Download path test passed");
             }
+        }
+
+        private static ValidationFailure LoginFailure(IBandcampSessionProvider provider)
+        {
+            return provider.LastLoginOutcome switch
+            {
+                BandcampLoginOutcome.BadCredentials => new ValidationFailure("Password",
+                    "Bandcamp rejected the email or password. Login won't be retried until you change them."),
+                BandcampLoginOutcome.VerificationRequired => new ValidationFailure("Password",
+                    "Bandcamp asked for an emailed verification code. Paste a session cookie from your browser for now."),
+                BandcampLoginOutcome.CaptchaRequired => new ValidationFailure("Cookies",
+                    "Bandcamp asked for a captcha, which can't be solved here. Paste a session cookie from your browser instead."),
+                _ => new ValidationFailure("Email",
+                    "Could not log in to Bandcamp: " + (provider.LastLoginMessage ?? "unknown error"))
+            };
         }
 
         /// <summary>

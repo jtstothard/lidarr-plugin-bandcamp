@@ -27,15 +27,42 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         private readonly BandcampApiClient _apiClient;
         private readonly Logger _logger;
         private readonly Func<DateTime>? _clock;
+        private readonly BandcampLoginClient? _loginClient;
+        private readonly IBandcampSessionStore? _sessionStore;
 
         public BandcampSessionProviderRegistry(BandcampApiClient apiClient, Logger logger)
-            : this(apiClient, logger, null)
+            : this(apiClient, null, null, logger, null)
         {
         }
 
         public BandcampSessionProviderRegistry(BandcampApiClient apiClient, Logger logger, Func<DateTime>? clock)
+            : this(apiClient, null, null, logger, clock)
+        {
+        }
+
+        /// <summary>
+        /// Production constructor (the container picks the one with the most resolvable
+        /// arguments): credential login and session write-back enabled.
+        /// </summary>
+        public BandcampSessionProviderRegistry(
+            BandcampApiClient apiClient,
+            BandcampLoginClient loginClient,
+            IBandcampSessionStore sessionStore,
+            Logger logger)
+            : this(apiClient, loginClient, sessionStore, logger, null)
+        {
+        }
+
+        public BandcampSessionProviderRegistry(
+            BandcampApiClient apiClient,
+            BandcampLoginClient? loginClient,
+            IBandcampSessionStore? sessionStore,
+            Logger logger,
+            Func<DateTime>? clock)
         {
             _apiClient = apiClient;
+            _loginClient = loginClient;
+            _sessionStore = sessionStore;
             _logger = logger;
             _clock = clock;
         }
@@ -44,7 +71,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         {
             var provider = _providers.GetOrAdd(
                 definitionId,
-                id => new BandcampSessionProvider(id, settings, _apiClient, _logger, _clock));
+                id => new BandcampSessionProvider(id, settings, _apiClient, _logger, _clock, _loginClient, _sessionStore));
             provider.UpdateSettings(settings);
             return provider;
         }

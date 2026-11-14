@@ -18,6 +18,12 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         /// <summary>Gets the result of the most recent validation.</summary>
         BandcampSessionState State { get; }
 
+        /// <summary>Gets the outcome of the most recent login attempt, or null if none ran.</summary>
+        BandcampLoginOutcome? LastLoginOutcome { get; }
+
+        /// <summary>Gets a non-secret diagnostic from the most recent failed login.</summary>
+        string? LastLoginMessage { get; }
+
         /// <summary>
         /// Returns a session usable right now, or null when none can be obtained.
         /// Used when a queued item starts running (and, later, before a grab).
