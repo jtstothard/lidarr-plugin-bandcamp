@@ -58,8 +58,10 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             BandcampLoginClient? loginClient,
             IBandcampSessionStore? sessionStore,
             Logger logger,
-            Func<DateTime>? clock)
+            Func<DateTime>? clock,
+            IDownloadClientRepository? repository = null)
         {
+            _repository = repository;
             _apiClient = apiClient;
             _loginClient = loginClient;
             _sessionStore = sessionStore;

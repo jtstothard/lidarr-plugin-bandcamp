@@ -21,6 +21,14 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
         public long FanId { get; }
 
+        internal Action<string?>? RateLimitObserver { get; init; }
+
+        internal Func<bool>? RequestAllowed { get; init; }
+
+        internal void ReportRateLimit(string? retryAfter) => RateLimitObserver?.Invoke(retryAfter);
+
+        internal bool CanRequest() => RequestAllowed?.Invoke() ?? true;
+
         internal Func<string, string, CancellationToken, Task<BandcampSession?>>? IdentityObserver { get; init; }
 
         internal Task<BandcampSession?> ObserveIdentityAsync(string expected, string candidate, CancellationToken cancellationToken) =>

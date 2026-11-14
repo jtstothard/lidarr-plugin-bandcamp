@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using Lidarr.Plugin.Bandcamp.Protocol;
 using System.Text;
 using System.Text.Json.Nodes;
 
@@ -93,7 +94,7 @@ public static class CookiePushCommand
             var begun = await Send(http, HttpMethod.Post,
                 "api/v1/downloadclient/action/beginIdentityRenewal", metadata, cancellationToken);
             operationId = begun?["operationId"]?.GetValue<string>();
-            if (begun?["state"]?.GetValue<string>() != "Pending" || !Guid.TryParseExact(operationId, "D", out _))
+            if (BandcampRenewalStateWire.Parse(begun?["state"]?.GetValue<string>()) != BandcampRenewalState.Pending || !Guid.TryParseExact(operationId, "D", out _))
                 throw new InvalidOperationException();
             output.WriteLine($"Renewal operation: {operationId}");
             JsonNode? result;
@@ -112,7 +113,7 @@ public static class CookiePushCommand
                 {
                     result = await Send(http, HttpMethod.Post,
                         $"api/v1/downloadclient/action/cancelIdentityRenewal?operationId={operationId}", metadata, reconciliation.Token);
-                    if (result?["state"]?.GetValue<string>() is "Committing" or "Validating" or "Pending")
+                    if (BandcampRenewalStateWire.Parse(result?["state"]?.GetValue<string>()) is BandcampRenewalState.Committing or BandcampRenewalState.Validating or BandcampRenewalState.Pending)
                         result = await Send(http, HttpMethod.Post,
                             $"api/v1/downloadclient/action/identityRenewalStatus?operationId={operationId}", metadata, reconciliation.Token);
                 }
@@ -130,19 +131,19 @@ public static class CookiePushCommand
 
     private static int Report(JsonNode? receipt, TextWriter output, TextWriter error)
     {
-        var state = receipt?["state"]?.GetValue<string>();
-        if (state == "Committed" && receipt?["success"]?.GetValue<bool>() == true)
+        var state = BandcampRenewalStateWire.Parse(receipt?["state"]?.GetValue<string>());
+        if (state == BandcampRenewalState.Committed && receipt?["success"]?.GetValue<bool>() == true)
         {
             output.WriteLine("Shared identity validated and saved. The commit boundary was crossed; cancellation cannot undo it. Search and downloads use the selected owner.");
             return 0;
         }
-        if (state == "Cancelled")
+        if (state == BandcampRenewalState.Cancelled)
         {
             error.WriteLine("Cancellation acknowledged before commit. This operation did not replace the prior identity.");
             return 1;
         }
         var problem = receipt?["problem"]?.GetValue<string>();
-        if (state == "Refused" && problem is "WrongAccount" or "ReplacementConflict" or "ConfigurationMissing" or
+        if (state == BandcampRenewalState.Refused && problem is "WrongAccount" or "ReplacementConflict" or "ConfigurationMissing" or
             "ChallengeOrUnrecognized" or "CookieExpired" or "RateLimited" or "Unavailable" or "InvalidRequest")
             error.WriteLine($"Renewal refused ({problem}). This operation did not replace the prior identity. Check Lidarr status and the recovery guide.");
         else

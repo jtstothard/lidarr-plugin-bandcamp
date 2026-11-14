@@ -35,6 +35,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Http
         private int _writes;
         private int _validations;
         private bool _candidateValid = true;
+        private bool _otherFan;
         private bool _storageFails;
         private readonly BandcampHttpClient _client;
         private readonly BandcampApiClient _api;
@@ -59,7 +60,9 @@ namespace Lidarr.Plugin.Bandcamp.Test.Http
                     if (_homepageRotation && request.Headers.GetSingleValue("Cookie") == "identity=prior") headers.Add("Set-Cookie", _rotation!);
                     if (request.Headers.GetSingleValue("Cookie") == "identity=rotated" && _candidateDelay != null) await _candidateDelay();
                     var valid = request.Headers.GetSingleValue("Cookie") == "identity=prior" || _candidateValid;
-                    return new HttpResponse(request, headers, LoginFixtures.Read(valid ? "homepage_logged_in.html" : "homepage_logged_out.html"), HttpStatusCode.OK);
+                    var body = LoginFixtures.Read(valid ? "homepage_logged_in.html" : "homepage_logged_out.html");
+                    if (_otherFan && request.Headers.GetSingleValue("Cookie") == "identity=rotated") body = "var pagedata = {\"fan_id\":999};";
+                    return new HttpResponse(request, headers, body, HttpStatusCode.OK);
                 }
                 if (_rotation != null) headers.Add("Set-Cookie", _rotation);
                 if (_extraCookie != null) headers.Add("Set-Cookie", _extraCookie);
@@ -90,6 +93,23 @@ namespace Lidarr.Plugin.Bandcamp.Test.Http
             Assert.Equal("identity=rotated", (await Registry().GetNamed("Fan").GetSessionAsync())!.Cookies);
             Assert.Equal(1, _writes);
             Assert.Equal(3, _validations);
+        }
+
+        [Fact]
+        public async Task ValidRotationFromAnotherFanCannotSwitchTheSharedOwner()
+        {
+            var registry = Registry();
+            var search = registry.GetNamed("Fan");
+            var download = registry.Get(8, new BandcampDownloadSettings { AuthConfiguration = "Fan" });
+            var session = (await search.GetSessionAsync())!;
+            _otherFan = true;
+            using (_api.ObserveSession(session)) await _api.GetCollectionAsync(session.Cookies, session.FanId);
+            Assert.Equal(BandcampSessionProblem.WrongAccount, search.State.Problem);
+            Assert.Equal(search.State.Problem, download.State.Problem);
+            Assert.Equal(session.FanId, (await download.GetSessionAsync())!.FanId);
+            Assert.Equal("identity=prior", (await download.GetSessionAsync())!.Cookies);
+            Assert.Equal("identity=prior", (await Registry().GetNamed("Fan").GetSessionAsync())!.Cookies);
+            Assert.Equal(0, _writes);
         }
 
         [Theory]
@@ -213,8 +233,19 @@ namespace Lidarr.Plugin.Bandcamp.Test.Http
             _responseStatus = (HttpStatusCode)status;
             var provider = Registry().GetNamed("Fan");
             using var observation = _api.ObserveSession((await provider.GetSessionAsync())!);
-            await _client.ExecuteAsync(_client.CreateRequestBuilder("https://bandcamp.com/download", "identity=prior").Build());
-            Assert.Equal("identity=prior", (await provider.GetSessionAsync())!.Cookies);
+            var request = _client.CreateRequestBuilder("https://bandcamp.com/download", "identity=prior").Build();
+            request.SuppressHttpError = true;
+            if (status == 429)
+            {
+                await Assert.ThrowsAsync<BandcampRateLimitedException>(() => _client.ExecuteAsync(request));
+                Assert.Null(await provider.GetSessionAsync());
+                Assert.Equal("identity=prior", _saved.Cookies);
+            }
+            else
+            {
+                await _client.ExecuteAsync(request);
+                Assert.Equal("identity=prior", (await provider.GetSessionAsync())!.Cookies);
+            }
             Assert.Equal(0, _writes);
         }
 

@@ -56,6 +56,65 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         private readonly Logger _logger = LogManager.GetCurrentClassLogger();
         private int _downloadPageRequests;
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task Consumer429StopsSearchAndDownloadUntilSharedWaitExpires(bool file)
+        {
+            var now = new DateTime(2026, 11, 14, 12, 0, 0, DateTimeKind.Utc);
+            var limited = true;
+            var requests = 0;
+            var owner = new DownloadClientDefinition { Id = 70, Name = "Fan", Implementation = nameof(BandcampDownloadClient),
+                Settings = new BandcampDownloadSettings { Cookies = OldCookie, Email = "fan@example.test", Password = "secret" } };
+            var repository = new Mock<IDownloadClientRepository>();
+            repository.Setup(r => r.All()).Returns(new List<DownloadClientDefinition> { owner });
+            repository.Setup(r => r.Find(70)).Returns(owner);
+            var http = Http((request, cookie) =>
+            {
+                requests++;
+                var url = request.Url.FullUri;
+                if (url == "https://bandcamp.com") return Text(ValidHomepage, request);
+                if (limited && (file ? url == "https://files.example.com/fresh.flac" : url.Contains("collection_items")))
+                    return new HttpResponse(request, new HttpHeader { { "Retry-After", "120" } }, "wait", HttpStatusCode.TooManyRequests);
+                if (url == DownloadPageUrl) return Text(DownloadPage, request);
+                if (url.Contains("collection_items")) return Text("{\"items\":[]}", request);
+                return Files(request);
+            });
+            var bandcampHttp = new BandcampHttpClient(http.Object, _logger);
+            var api = new BandcampApiClient(bandcampHttp, _logger);
+            var registry = new BandcampSessionProviderRegistry(api, new BandcampLoginClient(bandcampHttp, _logger),
+                new BandcampSessionStore(repository.Object), _logger, () => now, repository.Object);
+            var client = CreateClient(http, registry);
+            Settings(client).AuthConfiguration = "Fan";
+            var indexer = new NzbDrone.Core.Indexers.Bandcamp.BandcampIndexer(http.Object, api,
+                Mock.Of<IIndexerStatusService>(), Mock.Of<IConfigService>(), Mock.Of<NzbDrone.Core.Parser.IParsingService>(), _logger, registry)
+            {
+                Definition = new IndexerDefinition { Id = 72, Settings = new NzbDrone.Core.Indexers.Bandcamp.BandcampIndexerSettings { AuthConfiguration = "Fan" } }
+            };
+            var criteria = new NzbDrone.Core.IndexerSearch.Definitions.ArtistSearchCriteria { Artist = new Artist { Name = "Fresh" } };
+            if (file)
+            {
+                var failedId = await client.Download(CreateRemoteAlbum(), Mock.Of<IIndexer>());
+                Assert.Equal(DownloadItemStatus.Failed, (await WaitForFinished(client, failedId)).Status);
+            }
+            else await Assert.ThrowsAsync<BandcampRateLimitedException>(() => indexer.Fetch(criteria));
+            Assert.Equal(BandcampSessionStatus.RateLimited, registry.GetNamed("Fan").State.Status);
+            var afterFailure = requests;
+            var refusal = await Assert.ThrowsAsync<InvalidOperationException>(() => indexer.Fetch(criteria));
+            Assert.Contains("wait until 2026-11-14 12:02:00 UTC", refusal.Message);
+            await Assert.ThrowsAsync<DownloadClientAuthenticationException>(() => client.Download(CreateRemoteAlbum(), Mock.Of<IIndexer>()));
+            Assert.Equal(afterFailure, requests);
+            Assert.Equal(OldCookie, ((BandcampDownloadSettings)owner.Settings).Cookies);
+            Assert.Null(registry.GetNamed("Fan").LastLoginOutcome);
+            repository.Verify(r => r.SetFields(It.IsAny<DownloadClientDefinition>(), It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()), Times.Never);
+            limited = false;
+            now = now.AddSeconds(120);
+            Assert.Empty(await indexer.Fetch(criteria));
+            var recoveredId = await client.Download(CreateRemoteAlbum(), Mock.Of<IIndexer>());
+            Assert.Equal(DownloadItemStatus.Completed, (await WaitForFinished(client, recoveredId)).Status);
+            Assert.Equal(new byte[] { 0x66, 0x4c, 0x61, 0x43, 0, 0, 0, 0x22 }, File.ReadAllBytes(Directory.GetFiles(_tempRoot, "*.flac", SearchOption.AllDirectories).Single()));
+        }
+
         [Fact]
         public async Task DistinctNamedOwnersKeepSeparateSessionsEvenWhenBothAreValid()
         {

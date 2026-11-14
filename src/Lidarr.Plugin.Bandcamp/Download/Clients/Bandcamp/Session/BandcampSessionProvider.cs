@@ -320,7 +320,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                     return Task.FromResult<BandcampSession?>(null);
                 }
 
-                return ReplaceIdentityAsync(candidate, settings, settings.Cookies, settings.CredentialKey(), cancellationToken);
+                return ReplaceIdentityAsync(candidate, settings, settings.Cookies, settings.CredentialKey(), cancellationToken, cached.Session.FanId);
             }
         }
 
@@ -368,23 +368,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
             var validation = await _apiClient.ValidateSessionAsync(cookies).ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
-            if (validation.Outcome == BandcampValidationOutcome.RateLimited)
-            {
-                SetRateLimit(validation.RetryAfter);
-                return null;
-            }
-
-            if (validation.Outcome == BandcampValidationOutcome.ChallengeOrUnrecognized)
-            {
-                SetState(BandcampSessionStatus.ChallengeOrUnrecognized, BandcampSessionProblem.ChallengeOrUnrecognized);
-                return null;
-            }
-
-            if (validation.Outcome == BandcampValidationOutcome.Unavailable)
-            {
-                SetState(BandcampSessionStatus.Error, BandcampSessionProblem.Unavailable);
-                return null;
-            }
+            if (ApplyValidationFailure(validation)) return null;
 
             var fanId = validation.FanId;
             if (fanId == null)
@@ -433,7 +417,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 // Persistence is the commit point. Only now publish the validated identity.
                 _settings.Cookies = cookies;
                 settings.Cookies = cookies;
-                var session = new BandcampSession(cookies, fanId.Value) { IdentityObserver = ObserveIdentityAsync };
+                var session = CreateSession(cookies, fanId.Value);
                 _cached = new CachedSession(session, Clock());
                 SetState(BandcampSessionStatus.Valid);
                 return session;
@@ -497,23 +481,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
             var validation = await _apiClient.ValidateSessionAsync(cookies).ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
-            if (validation.Outcome == BandcampValidationOutcome.RateLimited)
-            {
-                SetRateLimit(validation.RetryAfter);
-                return (null, false);
-            }
-
-            if (validation.Outcome == BandcampValidationOutcome.ChallengeOrUnrecognized)
-            {
-                SetState(BandcampSessionStatus.ChallengeOrUnrecognized, BandcampSessionProblem.ChallengeOrUnrecognized);
-                return (null, false);
-            }
-
-            if (validation.Outcome == BandcampValidationOutcome.Unavailable)
-            {
-                SetState(BandcampSessionStatus.Error, BandcampSessionProblem.Unavailable);
-                return (null, false);
-            }
+            if (ApplyValidationFailure(validation)) return (null, false);
 
             var fanId = validation.FanId;
             cancellationToken.ThrowIfCancellationRequested();
@@ -525,7 +493,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 return (null, true);
             }
 
-            var session = new BandcampSession(cookies, fanId.Value) { IdentityObserver = ObserveIdentityAsync };
+            var session = CreateSession(cookies, fanId.Value);
             _cached = new CachedSession(session, Clock());
             SetState(BandcampSessionStatus.Valid);
             if (validation.IdentityCandidate is { } candidate)
@@ -536,6 +504,32 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
             return (session, false);
         }
+
+        // Failure classification is shared; callers retain their distinct cache/login/commit policy.
+        private bool ApplyValidationFailure(BandcampValidationResult validation)
+        {
+            switch (validation.Outcome)
+            {
+                case BandcampValidationOutcome.RateLimited:
+                    SetRateLimit(validation.RetryAfter);
+                    return true;
+                case BandcampValidationOutcome.ChallengeOrUnrecognized:
+                    SetState(BandcampSessionStatus.ChallengeOrUnrecognized, BandcampSessionProblem.ChallengeOrUnrecognized);
+                    return true;
+                case BandcampValidationOutcome.Unavailable:
+                    SetState(BandcampSessionStatus.Error, BandcampSessionProblem.Unavailable);
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private BandcampSession CreateSession(string cookies, long fanId) => new(cookies, fanId)
+        {
+            IdentityObserver = ObserveIdentityAsync,
+            RateLimitObserver = retryAfter => SetRateLimit(retryAfter),
+            RequestAllowed = () => _rateLimit is not { } limit || Clock() >= limit.UntilUtc
+        };
 
         private void SetRateLimit(string? retryAfter)
         {

@@ -1,0 +1,45 @@
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.1 (arm64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 10.0.3)
+[xUnit.net 00:00:00.03]   Discovering: Lidarr.Plugin.Bandcamp.CookiePush.Test
+[xUnit.net 00:00:00.06]   Discovered:  Lidarr.Plugin.Bandcamp.CookiePush.Test
+[xUnit.net 00:00:00.06]   Starting:    Lidarr.Plugin.Bandcamp.CookiePush.Test
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.SecretHygieneFixture.HelperOutputNeverEchoesAnySecretOrCorrelatableDigest(throwTransport: True) [9 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.SecretHygieneFixture.HelperOutputNeverEchoesAnySecretOrCorrelatableDigest(throwTransport: False) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Browser_boundary_blocks_navigation_outside_exact_https_bandcamp(url: "https://bandcamp.com/login", blocked: False) [84 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Browser_boundary_blocks_navigation_outside_exact_https_bandcamp(url: "https://evil.example/", blocked: True) [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Browser_boundary_blocks_navigation_outside_exact_https_bandcamp(url: "https://artist.bandcamp.com/", blocked: True) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Browser_boundary_blocks_navigation_outside_exact_https_bandcamp(url: "http://bandcamp.com/login", blocked: True) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Capture_rejects_unscoped_or_insecure_identity_from_browser_api(domain: ".bandcamp.com", path: "/login", secure: True) [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Capture_rejects_unscoped_or_insecure_identity_from_browser_api(domain: ".evil.example", path: "/", secure: True) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Capture_rejects_unscoped_or_insecure_identity_from_browser_api(domain: ".bandcamp.com", path: "/", secure: False) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Closing_login_page_stops_capture_instead_of_polling_forever [17 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.PlaywrightCookieCaptureFixture.Capture_uses_a_fresh_temporary_profile_and_deletes_it_after_success [255 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.PlaywrightCookieCaptureFixture.Capture_deletes_profile_when_launch_fails [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.PlaywrightCookieCaptureFixture.Capture_deletes_profile_on_cancellation [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.PlaywrightCookieCaptureFixture.Capture_deletes_profile_and_disposes_session_when_cookie_read_fails [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Cancelled_or_closed_browser_never_submits_a_replacement_or_reveals_exception(cancel: True) [9 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Cancelled_or_closed_browser_never_submits_a_replacement_or_reveals_exception(cancel: False) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Real_http_transport_disables_redirect_and_cookie_forwarding_before_use [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Receipt_wire_states_preserve_existing_meanings_and_unknown_values_never_confirm_success(state: "Cancelled", expectedExit: 1, message: "Cancellation acknowledged") [10 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Receipt_wire_states_preserve_existing_meanings_and_unknown_values_never_confirm_success(state: "3", expectedExit: 1, message: "uncertain") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Receipt_wire_states_preserve_existing_meanings_and_unknown_values_never_confirm_success(state: "Committed", expectedExit: 0, message: "validated and saved") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Receipt_wire_states_preserve_existing_meanings_and_unknown_values_never_confirm_success(state: "committed", expectedExit: 1, message: "uncertain") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Receipt_wire_states_preserve_existing_meanings_and_unknown_values_never_confirm_success(state: "Pending", expectedExit: 1, message: "uncertain") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Receipt_wire_states_preserve_existing_meanings_and_unknown_values_never_confirm_success(state: "Unknown", expectedExit: 1, message: "uncertain") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Receipt_wire_states_preserve_existing_meanings_and_unknown_values_never_confirm_success(state: "Committing", expectedExit: 1, message: "uncertain") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Receipt_wire_states_preserve_existing_meanings_and_unknown_values_never_confirm_success(state: "FutureState", expectedExit: 1, message: "uncertain") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Receipt_wire_states_preserve_existing_meanings_and_unknown_values_never_confirm_success(state: "Validating", expectedExit: 1, message: "uncertain") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Receipt_wire_states_preserve_existing_meanings_and_unknown_values_never_confirm_success(state: "Refused", expectedExit: 1, message: "Renewal refused") [< 1 ms]
+[xUnit.net 00:00:00.49]   Finished:    Lidarr.Plugin.Bandcamp.CookiePush.Test
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Secret_print_option_is_rejected_without_output_or_requests [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Manual_import_sends_only_candidate_to_named_owner_transaction_never_puts_settings [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Storage_uncertainty_reports_only_known_status_never_server_secret_details [< 1 ms]
+
+Test Run Successful.
+Total tests: 30
+     Passed: 30
+ Total time: 0.7544 Seconds
