@@ -108,11 +108,36 @@ jobs:
           echo "Created ${{ env.PLUGIN_NAME }}.net8.0.zip"
           ls -la "${{ github.workspace }}/${{ env.PLUGIN_NAME }}.net8.0.zip"
 
-      - name: Upload build artifact
+      - name: Check compatibility gate and scanner controls
+        run: |
+          ruby tests/PackagedCompatibility/verify_workflow.rb
+          python3 tests/PackagedCompatibility/test_scanner.py
+          python3 tests/PackagedCompatibility/test_gate.py
+          python3 tests/PackagedCompatibility/gate.py "${PLUGIN_NAME}.net8.0.zip" --receipt compatibility.json
+          python3 tests/PackagedCompatibility/test_distribution.py "${PLUGIN_NAME}.net8.0.zip" compatibility.json
+
+      - name: Upload checked distribution
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ env.PLUGIN_NAME }}.net8.0
-          path: src/Lidarr.Plugin.Bandcamp/bin/Release/net8.0/${{ env.PLUGIN_NAME }}.dll
+          name: checked-distribution
+          if-no-files-found: error
+          path: |
+            ${{ env.PLUGIN_NAME }}.net8.0.zip
+            compatibility.json
+
+  publish:
+    needs: [build, known-bad-compatibility-control]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: checked-distribution
+      - name: Verify checked bytes before publication
+        run: python3 tests/PackagedCompatibility/verify_distribution.py "${PLUGIN_NAME}.net8.0.zip" compatibility.json
 
       - name: Generate changelog
         if: startsWith(github.ref, 'refs/tags/v')
@@ -126,6 +151,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v3
         with:
+          fail_on_unmatched_files: true
           generate_release_notes: true
           body_path: changelog.txt
           draft: false
