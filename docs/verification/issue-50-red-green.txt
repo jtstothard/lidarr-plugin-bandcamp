@@ -1,0 +1,101 @@
+Issue #50 implementation verification
+Base: integration/46-bandcamp-auth at 588ab60d7ffbd484939b7643a74e043a7cfa3b11
+Initial HEAD matched exactly; initial worktree was clean.
+Read #46, #48, #49, #50; GLOSSARY; accepted ADR 0001; requested TDD skill and its test/mocking guidance.
+Testing Decisions from #46 were treated as already approved seams.
+No live account actions, PR, subagents, or cleanup operations.
+
+Host inspection: ProviderDefinition.Settings, ProviderRepository, DownloadClientRepository,
+DownloadClientController/ProviderControllerBase, FieldDefinitionAttribute, Newznab.RequestAction.
+Choice: use existing named downloader definitions as auth owners, persisted through the same
+provider JSON/API and #49 transactional store. Explicit selectors preserve account isolation;
+legacy independent definitions remain unchanged until deliberately mapped. No second login engine.
+
+Build setup: ignored ext/Lidarr symlink reuses the existing #49 Lidarr source references.
+All build/test invocations were issued individually. Initial builds encountered CS0006 for
+reference assemblies through the reused source path; no cleanup was done. Final commands use
+-m:1, BuildInParallel=false and ProduceReferenceAssembly=false to use implementation assemblies
+and serialize dependency builds. Existing dependencies were not edited.
+
+Red/green slices below are actual process output. Compilation/setup errors were corrected before
+counting each red. Each behavioral red was executed before its corresponding implementation.
+
+settings
+red: Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 28 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+assertion: Assert.True() Failure
+green: Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 26 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+shared persisted recovery through search and file download
+red: Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 105 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+assertion: Assert.NotNull() Failure: Value is null
+green: Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 188 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+current saved owner session despite stale factory settings
+red: Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 182 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+assertion: Assert.Equal() Failure: Strings differ
+green: Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 181 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+owner changed to consumer during candidate validation
+red: Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 93 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+assertion: Assert.Null() Failure: Value is not null
+green: Passed!  - Failed:     0, Passed:     4, Skipped:     0, Total:     4, Duration: 109 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+owner changed during login challenge persistence
+red: Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 129 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+assertion: Moq.MockException :
+green: Passed!  - Failed:     0, Passed:     2, Skipped:     0, Total:     2, Duration: 131 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+actionable selector field in Test failures
+red: Failed!  - Failed:     3, Passed:     0, Skipped:     0, Total:     3, Duration: 84 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+assertion: Assert.Contains() Failure: Filter not matched in collection
+green: Passed!  - Failed:     0, Passed:     3, Skipped:     0, Total:     3, Duration: 127 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+The owner-change green ran four tests (three invalid-selection characterization cases plus the
+replacement race); challenge-owner green also ran the named-consumer coalescing regression.
+An intermediate full-suite run exposed missing health registry registration after Test; corrected
+without changing existing assertions. The next complete run passed 203/203; additional legacy
+format, shared credential-pair, distinct-account and coalescing coverage is included below.
+
+Final commands (sequential):
+dotnet build Lidarr.Plugin.Bandcamp.slnx -c Release -m:1 -p:BuildInParallel=false -p:ProduceReferenceAssembly=false -p:TreatWarningsAsErrors=false
+dotnet test Lidarr.Plugin.Bandcamp.slnx -c Release --no-build -m:1 -p:BuildInParallel=false -p:ProduceReferenceAssembly=false -p:TreatWarningsAsErrors=false
+    34 Warning(s)
+    0 Error(s)
+Passed!  - Failed:     0, Passed:   209, Skipped:     0, Total:   209, Duration: 598 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+Fixture evidence:
+- NamedOwnerRenewalRepairsSearchAndRealDownloadWithoutConsumerCookieWrites: selected owner starts
+  signed out, ReplaceIdentityAsync validates and persists one replacement, indexer Fetch returns
+  collection releases, real download queue completes and emits exact fixture FLAC bytes. Only
+  owner settings are written; consumer cookies, owner email/password/path/disabled state and
+  indexer options are retained. A recreated registry uses the serialized persisted identity.
+- NamedConsumersCoalesceTheExistingLoginAndPersistOneOwner: overlapping named consumers use the
+  existing credential engine, issue one login, receive the same session and persist once.
+- DistinctNamedOwnersKeepSeparateSessionsEvenWhenBothAreValid: no cross-account cache sharing or
+  settings write. Missing/duplicate/chained references refuse before network use and report the
+  selector field. Legacy local secrets are not fallback identities.
+- LegacyJsonKeepsIndependentAuthAndDowngradeReadableSecrets and settings fixtures retain old
+  representations and reject partial email/password pairs even with a shared selection.
+- Existing validation/cache, typed failure, rate-limit, monitor/hourly, health, valid-cookie,
+  challenge restart, pre-grab, candidate transaction, login suppression/coalescing and single
+  mid-download renewal/retry fixtures all remain passing. Existing assertions were not weakened.
+
+Limitations:
+- Migration is deliberate mapping, not automatic account matching or copying. Indexer-only
+  accounts need an explicitly created owner. The selector is exact-name text, not a dropdown.
+- Shared consumers retain stale legacy cookie/credential fields; downgrade ignores the selector.
+  Owner legacy fields are current; consumers require deliberate reconciliation/copy before
+  downgrade. Emptying a selector reactivates its retained legacy account settings.
+- Owner names are administrative mappings: rename requires updating selectors; deleting/recreating
+  the same unique name selects the replacement. Disabled owners are allowed; only enabled
+  download clients are scheduled hourly. Indexer-only use validates at search/Test.
+- Ordinary host/API settings edits are outside plugin compare-before-write coordination. Manual
+  host cookie paste is retained; ReplaceIdentityAsync is the validated transactional import seam.
+  No host database transaction fault injection or cross-process compare-and-swap is claimed.
+- Fixtures prove regressions, not production/runtime/live-account qualification. No browser flow,
+  Subsonic implementation, passive rotation or indefinite session-life guarantee is added.
+- Upstream package vulnerability and Sentry notices remain; no dependency changes were made.
+
+Integration refresh: git fetch origin integration/46-bandcamp-auth completed; local and remote
+integration heads both remained 588ab60d7ffbd484939b7643a74e043a7cfa3b11. Merge receipt is recorded
+in the commit handoff after the ticket commit. git diff --check passed.

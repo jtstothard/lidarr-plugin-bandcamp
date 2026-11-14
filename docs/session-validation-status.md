@@ -10,7 +10,7 @@ Homepage validation and both login endpoints recognize HTTP 429. An unsigned del
 
 ## Status and actions
 
-`IBandcampSessionProvider.State` exposes the session status, problem code/action, effective web auth mode and last successful validation UTC time. Failure warnings include the mode and time (or `never`). Healthy sessions clear health warnings. The last successful time is process-local and changes only after a successful live validation; it is not a cookie expiry prediction. There is no new status dashboard or shared-session API in this ticket.
+`IBandcampSessionProvider.State` exposes the session status, problem code/action, effective web auth mode and last successful validation UTC time. Failure warnings include the mode and time (or `never`). Healthy sessions clear health warnings. The last successful time is process-local and changes only after a successful live validation; it is not a cookie expiry prediction. There is no separate status dashboard; shared consumers expose the owner's typed state and identify shared configuration as their effective mode.
 
 - Missing or positively signed out: configure complete credentials or renew in a browser and paste the identity.
 - Rejected credentials: correct email/password; suppression until they change remains in force.
@@ -20,7 +20,7 @@ Homepage validation and both login endpoints recognize HTTP 429. An unsigned del
 - Rate limited: wait until the displayed UTC deadline; do not change credentials.
 - Temporary network/server failure: investigate connectivity/service availability and try later. Keep the saved identity.
 
-Downloader and indexer still have independent cookie settings. Durable challenge suppression and transactional identity replacement belong to #49; this ticket does not change the session-store contract or promise storage atomicity.
+Durable challenge suppression and transactional replacement are implemented by #49. #50 adds [explicit named sharing](shared-authentication.md) through that same provider and store. Unmapped legacy indexers remain independent.
 
 ## Evidence limits
 

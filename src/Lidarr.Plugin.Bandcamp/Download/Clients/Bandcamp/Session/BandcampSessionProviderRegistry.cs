@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using NLog;
 
 namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
@@ -17,6 +18,11 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         /// </summary>
         IBandcampSessionProvider Get(int definitionId, BandcampDownloadSettings settings);
 
+        IBandcampSessionProvider GetNamed(string name);
+
+        // Host Test validates the proposed unsaved settings; execution uses saved settings.
+        IBandcampSessionProvider GetForTest(int definitionId, BandcampDownloadSettings settings) => Get(definitionId, settings);
+
         /// <summary>Returns the provider for the definition if one exists.</summary>
         IBandcampSessionProvider? Find(int definitionId);
     }
@@ -24,7 +30,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
     public class BandcampSessionProviderRegistry : IBandcampSessionProviderRegistry
     {
         private readonly ConcurrentDictionary<int, BandcampSessionProvider> _providers = new();
+        private readonly ConcurrentDictionary<int, IBandcampSessionProvider> _consumers = new();
         private readonly BandcampApiClient _apiClient;
+        private readonly IDownloadClientRepository? _repository;
         private readonly Logger _logger;
         private readonly Func<DateTime>? _clock;
         private readonly BandcampLoginClient? _loginClient;
@@ -35,9 +43,11 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             BandcampApiClient apiClient,
             BandcampLoginClient? loginClient,
             IBandcampSessionStore? sessionStore,
-            Logger logger)
-            : this(apiClient, loginClient, sessionStore, logger, null)
+            Logger logger,
+            IDownloadClientRepository? repository = null)
+            : this(apiClient, loginClient, sessionStore, logger, (Func<DateTime>?)null)
         {
+            _repository = repository;
         }
 
         /// <summary>Test seam: a controllable clock.</summary>
@@ -57,6 +67,40 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
         public IBandcampSessionProvider Get(int definitionId, BandcampDownloadSettings settings)
         {
+            if (!string.IsNullOrWhiteSpace(settings.AuthConfiguration))
+            {
+                var selected = GetNamed(settings.AuthConfiguration);
+                _consumers[definitionId] = selected;
+                return selected;
+            }
+
+            IBandcampSessionProvider provider = _repository != null && definitionId > 0
+                ? new BandcampSharedSessionProvider(() =>
+                {
+                    var saved = _repository.Find(definitionId);
+                    if (saved?.Settings is not BandcampDownloadSettings current)
+                    {
+                        return null;
+                    }
+
+                    return string.IsNullOrWhiteSpace(current.AuthConfiguration)
+                        ? GetOwner(definitionId, current) : GetNamed(current.AuthConfiguration);
+                })
+                : GetOwner(definitionId, settings);
+            _consumers[definitionId] = provider;
+            return provider;
+        }
+
+        public IBandcampSessionProvider GetForTest(int definitionId, BandcampDownloadSettings settings)
+        {
+            var provider = string.IsNullOrWhiteSpace(settings.AuthConfiguration)
+                ? GetOwner(definitionId, settings) : GetNamed(settings.AuthConfiguration);
+            _consumers[definitionId] = provider;
+            return provider;
+        }
+
+        private BandcampSessionProvider GetOwner(int definitionId, BandcampDownloadSettings settings)
+        {
             var provider = _providers.GetOrAdd(
                 definitionId,
                 id => new BandcampSessionProvider(id, settings, _apiClient, _logger, _clock, _loginClient, _sessionStore));
@@ -64,9 +108,38 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             return provider;
         }
 
+        public IBandcampSessionProvider GetNamed(string name)
+        {
+            // Resolve from saved definitions on every operation, including queued execution.
+            // A selector is an explicit account choice; never infer ownership from cookies.
+            return new BandcampSharedSessionProvider(() =>
+            {
+                if (_repository == null)
+                {
+                    return null;
+                }
+
+                var owners = _repository.All().Where(d => d.Name == name &&
+                    d.Implementation == nameof(BandcampDownloadClient) && d.Settings is BandcampDownloadSettings).ToList();
+                if (owners.Count != 1)
+                {
+                    return null;
+                }
+
+                var definition = _repository.Find(owners[0].Id);
+                if (definition?.Settings is not BandcampDownloadSettings settings ||
+                    !string.IsNullOrWhiteSpace(settings.AuthConfiguration))
+                {
+                    return null;
+                }
+
+                return GetOwner(definition.Id, settings);
+            });
+        }
+
         public IBandcampSessionProvider? Find(int definitionId)
         {
-            return _providers.TryGetValue(definitionId, out var provider) ? provider : null;
+            return _consumers.TryGetValue(definitionId, out var provider) ? provider : null;
         }
     }
 }

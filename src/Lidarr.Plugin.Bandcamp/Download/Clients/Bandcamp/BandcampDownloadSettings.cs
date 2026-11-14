@@ -16,7 +16,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         {
             // Either email and password (credential login) or a session cookie is required.
             RuleFor(c => c.Cookies).NotEmpty()
-                .When(c => c.Email.IsNullOrWhiteSpace() && c.Password.IsNullOrWhiteSpace())
+                .When(c => c.Email.IsNullOrWhiteSpace() && c.Password.IsNullOrWhiteSpace() && string.IsNullOrWhiteSpace(c.AuthConfiguration))
                 .WithMessage("Enter your Bandcamp email and password, or a session cookie");
 
             RuleFor(c => c.Password).NotEmpty()
@@ -64,6 +64,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
         [FieldDefinition(4, Label = "Download Path", Type = FieldType.Path, HelpText = "Directory where Bandcamp downloads will be saved before import")]
         public string DownloadPath { get; set; }
+
+        [FieldDefinition(5, Label = "Shared Authentication", Type = FieldType.Textbox, HelpText = "Exact name of a saved Bandcamp download client that owns authentication (its Shared Authentication must be empty). Leave empty to own a separate session. Local secrets are retained for downgrade but ignored when selected; renew or paste identity on the named owner.")]
+        public string AuthConfiguration { get; set; } = "";
 
         // Persisted lifecycle metadata, deliberately not editable provider fields.
         public DateTime? ChallengeUntilUtc { get; set; }

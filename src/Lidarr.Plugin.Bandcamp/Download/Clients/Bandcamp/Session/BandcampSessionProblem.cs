@@ -8,6 +8,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
     {
         private static readonly string CooldownText = $"{BandcampSessionProvider.ChallengeCooldown.TotalHours:0} hours";
 
+        public static readonly BandcampSessionProblem ConfigurationMissing = new(
+            "ConfigurationMissing", "shared authentication owner is missing, ambiguous, or refers to another owner; select the exact unique name of a saved Bandcamp download client whose Shared Authentication is empty; legacy local secrets were retained and will not be merged or used as fallback");
+
         public static readonly BandcampSessionProblem CookieExpired = new(
             "CookieExpired",
             "Bandcamp positively signed the session out; renew in your browser and paste a fresh identity cookie, or configure complete email and password credentials");

@@ -26,16 +26,32 @@ Bandcamp will now show up as an available indexer and download client.
 
 1. **Settings → Indexers → Add** (`+`)
 2. Pick **Bandcamp** from the list
-3. Paste your `identity` cookie into **Session Cookies** (see below for how to get it)
+3. Set **Shared Authentication** to the exact name of your saved Bandcamp download client (configure that first), or leave it empty and paste an independent `identity` cookie into **Session Cookies**.
 4. **Test**, then **Save**
 
 ### Download Client
 
 1. **Settings → Download Clients → Add** (`+`)
 2. Pick **Bandcamp**
-3. Paste your `identity` cookie into **Session Cookie (optional)**. You can also add your Bandcamp **Email** and **Password**, but Bandcamp currently asks for a captcha on every login. See [Download client sign-in](#download-client-sign-in).
+3. Paste your `identity` cookie into **Session Cookie (optional)**. You can also add your Bandcamp **Email** and **Password**, but a recorded login required CAPTCHA; unattended recovery is not guaranteed. See [Download client sign-in](#download-client-sign-in).
 4. Set **Download Path** to somewhere Lidarr can write to (like `/downloads/bandcamp`)
 5. **Test**, then **Save**
+
+### Shared authentication for search and download
+
+A saved Bandcamp download client is a named authentication owner when its **Shared Authentication**
+field is empty. Give it a unique name, for example `Bandcamp personal`. Set the indexer's
+**Shared Authentication** to that exact name. Additional download clients can select the same
+owner. Renew or paste the identity only on the owner; search and downloads use its current saved
+session. A disabled owner can still supply authentication without becoming an enabled downloader.
+
+Upgrades retain every legacy cookie, credential pair, enablement flag and provider option.
+Nothing guesses which cookies belong to the same account. Leave selectors empty to preserve
+independent legacy behavior, or explicitly map each consumer to the correct account's owner.
+Local consumer cookies/credentials remain saved but are ignored while a shared owner is selected;
+they are not fallback identities. Missing, duplicate or chained owner names cause an actionable
+refusal. Rename consumers' selectors when renaming an owner. See [migration and downgrade
+limitations](docs/shared-authentication.md) before switching accounts or downgrading.
 
 ### Delay Profile (don't skip this)
 
@@ -91,7 +107,7 @@ The plugin authenticates using the `identity` cookie from your browser.
 3. Find `identity`, copy its value
 4. Paste that into the indexer's **Session Cookies** field, or the download client's **Session Cookie (optional)** field
 
-No fixed cookie lifetime is assumed. If Bandcamp positively signs the session out, the plugin can attempt credential login; CAPTCHA or verification may require browser/manual recovery. The indexer and downloader still have independent cookie settings, so update both when renewing manually.
+No fixed cookie lifetime is assumed. If Bandcamp positively signs the session out, the plugin can attempt credential login; CAPTCHA or verification may require browser/manual recovery. With shared authentication selected, update the owner only. Legacy independent configurations still require separate cookie updates.
 
 ## Supported formats
 
@@ -111,7 +127,7 @@ Lidarr picks the best one based on your quality profile.
 ## Limitations
 
 - Only downloads albums you've bought on Bandcamp. No public search.
-- The indexer still uses a pasted `identity` cookie, which expires. Re-export it when searches stop working.
+- Shared search uses the selected owner's current session. Legacy independent search still needs its own pasted identity.
 - Login can't get past a Bandcamp captcha. Paste a cookie instead.
 - Searches your collection, not the full Bandcamp catalog.
 
