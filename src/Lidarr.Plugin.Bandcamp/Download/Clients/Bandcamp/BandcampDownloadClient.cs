@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentValidation.Results;
@@ -84,10 +85,11 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
             // Pre-grab auth gate: refuse at the client level (Lidarr's download-client failure
             // and backoff) rather than enqueue an item that would fail, be blocklisted and re-searched.
+            var provider = SessionProvider;
             BandcampSession? session;
             try
             {
-                session = await SessionProvider.GetSessionAsync().ConfigureAwait(false);
+                session = await provider.GetSessionAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -97,8 +99,8 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             if (session == null)
             {
                 _logger.Warn("Bandcamp download client: No valid Bandcamp session; refusing grab");
-                throw new DownloadClientAuthenticationException(
-                    "Bandcamp session is invalid or expired. Update the session cookie in the download client settings.");
+                var cause = provider.State.Problem?.Description ?? "no usable session; set your email and password or a session cookie in the client settings";
+                throw new DownloadClientAuthenticationException("Bandcamp session unusable: " + cause);
             }
 
             var title = remoteAlbum.Release.Title ?? remoteAlbum.Release.Album ?? albumUrl;
@@ -112,7 +114,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 ? $"{retagContext.ArtistName} - {retagContext.AlbumTitle}"
                 : title;
             var albumDir = MakeValidDirectoryName(folderTitle);
-            var outputPath = System.IO.Path.Combine(downloadPath, $"{albumDir}-{downloadId[..8]}");
+            var outputPath = Path.Combine(downloadPath, $"{albumDir}-{downloadId[..8]}");
 
             var item = new BandcampDownloadItem
             {
@@ -215,7 +217,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             // or missing cookie triggers a login and the outcome is reported per field.
             try
             {
-                var hasCredentials = !string.IsNullOrWhiteSpace(Settings.Email) && !string.IsNullOrWhiteSpace(Settings.Password);
+                var hasCredentials = Settings.HasCredentials();
                 var provider = SessionProvider;
                 var session = hasCredentials
                     ? provider.RenewAsync().GetAwaiter().GetResult()
@@ -430,7 +432,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         /// </summary>
         private static string MakeValidDirectoryName(string title)
         {
-            var invalid = System.IO.Path.GetInvalidFileNameChars();
+            var invalid = Path.GetInvalidFileNameChars();
             var name = title;
 
             foreach (var c in invalid)

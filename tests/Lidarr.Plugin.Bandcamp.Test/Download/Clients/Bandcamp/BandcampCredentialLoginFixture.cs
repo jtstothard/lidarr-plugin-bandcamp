@@ -11,11 +11,14 @@ using NzbDrone.Common.Disk;
 using NzbDrone.Common.Http;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Download;
+using NzbDrone.Core.Download.Clients;
 using NzbDrone.Core.Download.Clients.Bandcamp;
 using NzbDrone.Core.Download.Clients.Bandcamp.Session;
 using NzbDrone.Core.Http.Bandcamp;
+using NzbDrone.Core.Indexers;
 using NzbDrone.Core.Localization;
 using NzbDrone.Core.Music;
+using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.RemotePathMappings;
 using Xunit;
 
@@ -37,6 +40,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         private int _loginPosts;
         private string _loginCbFixture = "login_cb_success.json";
         private Func<Task>? _homepageDelay;
+        private Func<Task>? _loginDelay;
         private readonly ConcurrentQueue<string> _loginBodies = new();
         private DateTime _now = new(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
 
@@ -64,9 +68,18 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                         Interlocked.Increment(ref _loginPosts);
                         var body = request.ContentData == null ? string.Empty : System.Text.Encoding.UTF8.GetString(request.ContentData);
                         _loginBodies.Enqueue(body);
+                        if (_loginDelay != null)
+                        {
+                            await _loginDelay();
+                        }
 
                         // Bandcamp accepts the login once the emailed code is supplied.
                         var fixture = body.Contains("login.twofactor=" + EmailedCode) ? "login_cb_success.json" : _loginCbFixture;
+                        if (body.Contains("password=wrong-password"))
+                        {
+                            fixture = "login_cb_bad_credentials.json";
+                        }
+
                         var headers = new HttpHeader();
                         if (fixture == "login_cb_success.json")
                         {
@@ -353,6 +366,78 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             Assert.True(result.IsValid);
             Assert.Equal(1, _loginPosts);
             Assert.Equal("", HealthMessage(registry));
+        }
+
+        [Fact]
+        public async Task ConcurrentCallerWithDifferentCredentials_DoesNotShareAnotherLogin()
+        {
+            var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _loginDelay = () => release.Task;
+            var registry = CreateRegistry();
+
+            var goodClient = CreateClient(Settings(cookies: "identity=expired"), registry);
+            var badClient = CreateClient(Settings(cookies: "identity=expired", password: "wrong-password"), registry);
+
+            // The saved definition is separate from either in-memory settings object.
+            _repository.Setup(r => r.Find(7)).Returns(new DownloadClientDefinition { Id = 7, Settings = Settings() });
+
+            var good = Task.Run(() => goodClient.Test());
+            while (Volatile.Read(ref _loginPosts) == 0)
+            {
+                await Task.Delay(5);
+            }
+
+            var bad = Task.Run(() => badClient.Test());
+            await Task.Delay(100);
+            release.TrySetResult(true);
+
+            Assert.True((await good).IsValid);
+            Assert.Contains((await bad).Errors, e => e.PropertyName == "Password");
+        }
+
+        [Fact]
+        public async Task GetSession_CancelledToken_ThrowsWithoutLoggingIn()
+        {
+            var registry = CreateRegistry();
+            CreateClient(Settings(cookies: "identity=expired"), registry);
+            var provider = registry.Find(7) ?? registry.Get(7, Settings(cookies: "identity=expired"));
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => provider.RenewAsync(cts.Token));
+            Assert.Equal(0, _loginPosts);
+        }
+
+        [Fact]
+        public void AfterCaptcha_VerificationCodeDoesNotSkipCooldown()
+        {
+            _loginCbFixture = "login_cb_captcha_required.json";
+            var registry = CreateRegistry();
+            CreateClient(Settings(), registry).Test();
+
+            CreateClient(Settings(verificationCode: "123456"), registry).Test();
+
+            Assert.Equal(1, _loginPosts);
+        }
+
+        [Fact]
+        public async Task Download_RefusalNamesTheActualCause()
+        {
+            _loginCbFixture = "login_cb_captcha_required.json";
+            var client = CreateClient(Settings());
+
+            var ex = await Assert.ThrowsAsync<DownloadClientAuthenticationException>(() => client.Download(
+                new RemoteAlbum
+                {
+                    Release = new ReleaseInfo
+                    {
+                        Title = "Album [FLAC]",
+                        DownloadUrl = "https://bandcamp.com/download?type=album&id=1#format=flac"
+                    }
+                },
+                Mock.Of<IIndexer>()));
+
+            Assert.Contains(BandcampSessionProblem.CaptchaRequired.Description, ex.Message);
         }
     }
 }

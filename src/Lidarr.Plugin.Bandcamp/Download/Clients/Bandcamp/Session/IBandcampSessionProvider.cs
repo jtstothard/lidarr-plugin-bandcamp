@@ -26,7 +26,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
         /// <summary>
         /// Returns a session usable right now, or null when none can be obtained.
-        /// Used when a queued item starts running (and, later, before a grab).
+        /// Used when a queued item starts running and before a grab.
         /// </summary>
         Task<BandcampSession?> GetSessionAsync(CancellationToken cancellationToken = default);
 

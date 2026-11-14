@@ -9,17 +9,8 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
     /// Session provider for one client definition. The session is the
     /// <see cref="BandcampDownloadSettings.Cookies"/> value, validated by the live fan_id lookup.
     /// When that cookie is dead and Email/Password are set, the provider logs in (one login at a
-    /// time across concurrent callers) and writes the fresh cookie back to the settings.
-    /// Bad credentials are never retried until the email or password changes.
-    ///
-    /// Extension points for later work:
-    ///   - <see cref="GetSessionAsync"/> is the one path for "give me a usable session"; a
-    ///     validation cache (using <see cref="State"/> and <see cref="Clock"/>) and
-    ///     renewal-by-login slot in there.
-    ///   - <see cref="ValidateAsync"/> is the one live check; it records <see cref="State"/>
-    ///     for health reporting.
-    ///   - <see cref="UpdateSettings"/> is where a settings change is observed (e.g. to reset
-    ///     cooldowns when credentials change, or to write a renewed cookie back).
+    /// time per credentials across concurrent callers) and writes the fresh cookie back to the
+    /// settings. Bad credentials are never retried until the email or password changes.
     /// </summary>
     public class BandcampSessionProvider : IBandcampSessionProvider
     {
@@ -34,7 +25,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         private readonly IBandcampSessionStore? _sessionStore;
         private readonly Logger _logger;
         private readonly object _loginLock = new();
-        private Task<BandcampSession?>? _loginInFlight;
+        private InFlightLogin? _loginInFlight;
         private volatile string? _rejectedCredentials;
         private volatile LoginRecord? _lastLogin;
         private volatile ChallengeRecord? _challenge;
@@ -113,8 +104,8 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         {
             var settings = _settings;
             var deadCookie = settings.Cookies;
-            var session = await ValidateAsync(cancellationToken).ConfigureAwait(false);
-            if (session != null || _loginClient == null || !HasCredentials(settings))
+            var session = await ValidateAsync(settings, cancellationToken).ConfigureAwait(false);
+            if (session != null || _loginClient == null || !settings.HasCredentials())
             {
                 return session;
             }
@@ -122,43 +113,66 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             return await LoginOnceAsync(settings, deadCookie, cancellationToken).ConfigureAwait(false);
         }
 
-        private Task<BandcampSession?> LoginOnceAsync(BandcampDownloadSettings settings, string deadCookie, CancellationToken cancellationToken)
+        private async Task<BandcampSession?> LoginOnceAsync(BandcampDownloadSettings settings, string deadCookie, CancellationToken cancellationToken)
         {
-            lock (_loginLock)
+            var credentials = settings.CredentialKey();
+            while (true)
             {
-                // Join a login already in progress.
-                if (_loginInFlight != null)
+                Task<BandcampSession?> task;
+                bool joined;
+                lock (_loginLock)
                 {
-                    return _loginInFlight;
-                }
-
-                // Another caller already logged in and replaced the cookie we saw fail.
-                if (settings.Cookies != deadCookie)
-                {
-                    return ValidateAsync(cancellationToken);
-                }
-
-                var task = Task.Run(() => LoginAsync(settings));
-                _loginInFlight = task;
-                task.ContinueWith(
-                    _ =>
+                    var inFlight = _loginInFlight;
+                    if (inFlight != null)
                     {
-                        lock (_loginLock)
-                        {
-                            _loginInFlight = null;
-                        }
-                    },
-                    CancellationToken.None,
-                    TaskContinuationOptions.ExecuteSynchronously,
-                    TaskScheduler.Default);
+                        // Join a login for the same credentials; otherwise wait for it to finish
+                        // and then log in with ours, so no caller gets another account's result.
+                        task = inFlight.Task;
+                        joined = inFlight.CredentialKey == credentials;
+                    }
+                    else if (settings.Cookies != deadCookie)
+                    {
+                        // Another caller already logged in and replaced the cookie we saw fail.
+                        task = ValidateAsync(settings, cancellationToken);
+                        joined = true;
+                    }
+                    else
+                    {
+                        task = Task.Run(() => LoginAsync(settings, credentials, cancellationToken), cancellationToken);
+                        _loginInFlight = new InFlightLogin(credentials, task);
+                        task.ContinueWith(
+                            _ =>
+                            {
+                                lock (_loginLock)
+                                {
+                                    _loginInFlight = null;
+                                }
+                            },
+                            CancellationToken.None,
+                            TaskContinuationOptions.ExecuteSynchronously,
+                            TaskScheduler.Default);
+                        joined = true;
+                    }
+                }
 
-                return task;
+                if (joined)
+                {
+                    return await task.WaitAsync(cancellationToken).ConfigureAwait(false);
+                }
+
+                try
+                {
+                    await task.WaitAsync(cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception) when (!cancellationToken.IsCancellationRequested)
+                {
+                    // The other login's failure is its own caller's to report.
+                }
             }
         }
 
-        private async Task<BandcampSession?> LoginAsync(BandcampDownloadSettings settings)
+        private async Task<BandcampSession?> LoginAsync(BandcampDownloadSettings settings, string credentials, CancellationToken cancellationToken)
         {
-            var credentials = CredentialKey(settings);
             if (credentials == _rejectedCredentials)
             {
                 _logger.Debug("Bandcamp session [{0}]: credentials were rejected before; not retrying until they change", DefinitionId);
@@ -166,11 +180,13 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 return null;
             }
 
-            // A verification code is the user answering the challenge, so it skips the cooldown.
+            // A verification code answers a verification challenge, so it skips that cooldown
+            // (but not a captcha's, which a code can't solve).
             var code = settings.VerificationCode?.Trim();
             var hasCode = !string.IsNullOrEmpty(code);
             var challenge = _challenge;
-            if (!hasCode && challenge != null && Clock() - challenge.AtUtc < ChallengeCooldown)
+            var codeAnswersChallenge = hasCode && challenge?.Problem == BandcampSessionProblem.VerificationNeeded;
+            if (!codeAnswersChallenge && challenge != null && Clock() - challenge.AtUtc < ChallengeCooldown)
             {
                 _logger.Debug("Bandcamp session [{0}]: login challenge pending; not retrying until the cooldown ends", DefinitionId);
                 SetState(BandcampSessionStatus.Invalid, challenge.Problem);
@@ -178,7 +194,8 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             }
 
             _logger.Debug("Bandcamp session [{0}]: session invalid, logging in", DefinitionId);
-            var result = await _loginClient!.LoginAsync(settings.Email, settings.Password, hasCode ? code : null).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+            var result = await _loginClient!.LoginAsync(settings.Email, settings.Password, hasCode ? code : null, cancellationToken).ConfigureAwait(false);
             _lastLogin = new LoginRecord(result.Outcome, result.Message);
 
             if (hasCode)
@@ -188,24 +205,27 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
             var problem = result.Outcome switch
             {
+                BandcampLoginOutcome.BadCredentials => BandcampSessionProblem.BadCredentials,
                 BandcampLoginOutcome.VerificationRequired => BandcampSessionProblem.VerificationNeeded,
                 BandcampLoginOutcome.CaptchaRequired => BandcampSessionProblem.CaptchaRequired,
                 _ => null
             };
-            if (problem != null)
+            if (result.Outcome == BandcampLoginOutcome.BadCredentials)
+            {
+                _rejectedCredentials = credentials;
+            }
+            else if (problem != null)
             {
                 _challenge = new ChallengeRecord(problem, Clock());
-                SetState(BandcampSessionStatus.Invalid, problem);
             }
             else if (result.Outcome == BandcampLoginOutcome.Success)
             {
                 _challenge = null;
             }
 
-            if (result.Outcome == BandcampLoginOutcome.BadCredentials)
+            if (problem != null)
             {
-                _rejectedCredentials = credentials;
-                SetState(BandcampSessionStatus.Invalid, BandcampSessionProblem.BadCredentials);
+                SetState(BandcampSessionStatus.Invalid, problem);
             }
 
             if (result.Outcome != BandcampLoginOutcome.Success || result.Cookies == null)
@@ -216,7 +236,11 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
             // Write back: the in-memory settings first (every holder of this definition's
             // settings object sees it at once), then the persisted definition.
-            settings.Cookies = result.Cookies;
+            lock (_loginLock)
+            {
+                settings.Cookies = result.Cookies;
+            }
+
             try
             {
                 _sessionStore?.SaveCookies(DefinitionId, result.Cookies);
@@ -226,13 +250,17 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 _logger.Warn(ex, "Bandcamp session [{0}]: logged in but could not save the new session to settings", DefinitionId);
             }
 
-            return await ValidateAsync().ConfigureAwait(false);
+            return await ValidateAsync(settings, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>The code is single-use: clear it in memory and in the saved definition.</summary>
         private void ClearVerificationCode(BandcampDownloadSettings settings)
         {
-            settings.VerificationCode = string.Empty;
+            lock (_loginLock)
+            {
+                settings.VerificationCode = string.Empty;
+            }
+
             try
             {
                 _sessionStore?.ClearVerificationCode(DefinitionId);
@@ -243,21 +271,16 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             }
         }
 
-        private static bool HasCredentials(BandcampDownloadSettings settings)
+        public virtual Task<BandcampSession?> ValidateAsync(CancellationToken cancellationToken = default)
         {
-            return !string.IsNullOrWhiteSpace(settings.Email) && !string.IsNullOrWhiteSpace(settings.Password);
+            return ValidateAsync(_settings, cancellationToken);
         }
 
-        /// <summary>A hash, so rejected credentials aren't kept around in plain text.</summary>
-        private static string CredentialKey(BandcampDownloadSettings settings)
+        /// <summary>Validates the cookie of the given settings snapshot (the one a login wrote to).</summary>
+        private async Task<BandcampSession?> ValidateAsync(BandcampDownloadSettings settings, CancellationToken cancellationToken)
         {
-            var bytes = System.Text.Encoding.UTF8.GetBytes(settings.Email + "\0" + settings.Password);
-            return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes));
-        }
-
-        public virtual async Task<BandcampSession?> ValidateAsync(CancellationToken cancellationToken = default)
-        {
-            var cookies = _settings.Cookies;
+            cancellationToken.ThrowIfCancellationRequested();
+            var cookies = settings.Cookies;
 
             if (string.IsNullOrWhiteSpace(cookies))
             {
@@ -278,6 +301,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 throw;
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
             if (fanId == null)
             {
                 _cached = null;
@@ -297,43 +321,12 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             _state = new BandcampSessionState(status, Clock(), problem);
         }
 
-        private sealed class LoginRecord
-        {
-            public LoginRecord(BandcampLoginOutcome outcome, string? message)
-            {
-                Outcome = outcome;
-                Message = message;
-            }
+        private sealed record LoginRecord(BandcampLoginOutcome Outcome, string? Message);
 
-            public BandcampLoginOutcome Outcome { get; }
+        private sealed record ChallengeRecord(BandcampSessionProblem Problem, DateTime AtUtc);
 
-            public string? Message { get; }
-        }
+        private sealed record CachedSession(BandcampSession Session, DateTime ValidatedAtUtc);
 
-        private sealed class ChallengeRecord
-        {
-            public ChallengeRecord(BandcampSessionProblem problem, DateTime atUtc)
-            {
-                Problem = problem;
-                AtUtc = atUtc;
-            }
-
-            public BandcampSessionProblem Problem { get; }
-
-            public DateTime AtUtc { get; }
-        }
-
-        private sealed class CachedSession
-        {
-            public CachedSession(BandcampSession session, DateTime validatedAtUtc)
-            {
-                Session = session;
-                ValidatedAtUtc = validatedAtUtc;
-            }
-
-            public BandcampSession Session { get; }
-
-            public DateTime ValidatedAtUtc { get; }
-        }
+        private sealed record InFlightLogin(string CredentialKey, Task<BandcampSession?> Task);
     }
 }

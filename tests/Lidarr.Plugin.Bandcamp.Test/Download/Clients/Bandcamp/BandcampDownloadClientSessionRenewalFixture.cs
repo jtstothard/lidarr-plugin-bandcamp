@@ -278,7 +278,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
 
             var client = new BandcampDownloadClient(
                 queue,
-                new BandcampSessionProviderRegistry(apiClient, _logger),
+                new BandcampSessionProviderRegistry(apiClient, null, null, _logger),
                 Mock.Of<IAlbumService>(),
                 Mock.Of<IReleaseService>(),
                 Mock.Of<ITrackService>(),

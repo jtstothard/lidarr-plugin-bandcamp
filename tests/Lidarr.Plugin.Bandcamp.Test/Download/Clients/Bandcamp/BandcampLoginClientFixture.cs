@@ -112,6 +112,19 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             Assert.Equal(BandcampLoginOutcome.Error, result.Outcome);
             Assert.Null(result.Cookies);
         }
+
+        [Fact]
+        public async Task Login_RequestThrows_ReturnsGenericMessageWithoutExceptionText()
+        {
+            _http.Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
+                .ThrowsAsync(new System.Exception("connect failed for fan@example.com:hunter2"));
+
+            var result = await CreateClient().LoginAsync("fan@example.com", "hunter2");
+
+            Assert.Equal(BandcampLoginOutcome.Error, result.Outcome);
+            Assert.DoesNotContain("hunter2", result.Message ?? string.Empty);
+            Assert.DoesNotContain("connect failed", result.Message ?? string.Empty);
+        }
     }
 
     internal static class LoginFixtures

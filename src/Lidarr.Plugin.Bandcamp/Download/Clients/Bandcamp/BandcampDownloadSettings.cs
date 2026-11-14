@@ -1,3 +1,6 @@
+using System;
+using System.Security.Cryptography;
+using System.Text;
 using FluentValidation;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Annotations;
@@ -61,6 +64,19 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
         [FieldDefinition(4, Label = "Download Path", Type = FieldType.Path, HelpText = "Directory where Bandcamp downloads will be saved before import")]
         public string DownloadPath { get; set; }
+
+        /// <summary>Whether both an email and a password are set (credential login is possible).</summary>
+        public bool HasCredentials()
+        {
+            return !string.IsNullOrWhiteSpace(Email) && !string.IsNullOrWhiteSpace(Password);
+        }
+
+        /// <summary>A hash of the email and password, so they aren't kept around in plain text.</summary>
+        internal string CredentialKey()
+        {
+            var bytes = Encoding.UTF8.GetBytes(Email + "\0" + Password);
+            return Convert.ToHexString(SHA256.HashData(bytes));
+        }
 
         public NzbDroneValidationResult Validate()
         {

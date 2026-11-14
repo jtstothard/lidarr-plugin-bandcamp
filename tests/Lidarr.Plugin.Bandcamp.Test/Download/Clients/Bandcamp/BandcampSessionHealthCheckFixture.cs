@@ -99,7 +99,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                 });
 
             var apiClient = new BandcampApiClient(new BandcampHttpClient(httpClient.Object, _logger), _logger);
-            return new BandcampSessionProviderRegistry(apiClient, _logger, () => _now);
+            return new BandcampSessionProviderRegistry(apiClient, null, null, _logger, () => _now);
         }
     }
 }

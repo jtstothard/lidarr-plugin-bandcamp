@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using NLog;
 using NzbDrone.Core.Http.Bandcamp;
@@ -76,7 +77,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             _logger = logger;
         }
 
-        public virtual async Task<BandcampLoginResult> LoginAsync(string email, string password, string? verificationCode = null)
+        public virtual async Task<BandcampLoginResult> LoginAsync(string email, string password, string? verificationCode = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -86,6 +87,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
                 var preLoginCookies = string.Join("; ", page.GetCookies().Select(kv => $"{kv.Key}={kv.Value}"));
                 var crumb = ExtractLoginCrumb(page.Content ?? string.Empty);
+                cancellationToken.ThrowIfCancellationRequested();
 
                 var builder = _httpClient.CreateRequestBuilder(LoginCallbackUrl, preLoginCookies);
                 builder.SuppressHttpError = true;
@@ -127,10 +129,16 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
                 return BandcampLoginResult.Success("identity=" + identity);
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
-                _logger.Debug(ex, "Bandcamp login: request failed");
-                return BandcampLoginResult.Failed(BandcampLoginOutcome.Error, ex.Message);
+                // The exception text can echo request details, so it stays out of the
+                // user-facing message and the log; only its type is logged.
+                _logger.Debug("Bandcamp login: request failed ({0})", ex.GetType().Name);
+                return BandcampLoginResult.Failed(BandcampLoginOutcome.Error, "Could not reach Bandcamp to log in");
             }
         }
 

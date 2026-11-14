@@ -1,3 +1,5 @@
+using System;
+
 namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 {
     /// <summary>
@@ -31,7 +33,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             Update(definitionId, s => s.Cookies = cookies);
         }
 
-        private void Update(int definitionId, System.Action<BandcampDownloadSettings> change)
+        private void Update(int definitionId, Action<BandcampDownloadSettings> change)
         {
             var definition = _repository.Find(definitionId);
             if (definition?.Settings is not BandcampDownloadSettings settings)

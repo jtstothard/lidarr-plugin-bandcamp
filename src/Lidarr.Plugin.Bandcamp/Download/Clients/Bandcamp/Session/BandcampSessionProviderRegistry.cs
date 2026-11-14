@@ -6,7 +6,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 {
     /// <summary>
     /// Process-wide map of download client definition id to its session provider.
-    /// Resolved as a singleton so every client instance, the queue and (later) a health check
+    /// Resolved as a singleton so every client instance, the queue and the health check
     /// share one provider per definition.
     /// </summary>
     public interface IBandcampSessionProviderRegistry
@@ -30,30 +30,18 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         private readonly BandcampLoginClient? _loginClient;
         private readonly IBandcampSessionStore? _sessionStore;
 
-        public BandcampSessionProviderRegistry(BandcampApiClient apiClient, Logger logger)
-            : this(apiClient, null, null, logger, null)
-        {
-        }
-
-        public BandcampSessionProviderRegistry(BandcampApiClient apiClient, Logger logger, Func<DateTime>? clock)
-            : this(apiClient, null, null, logger, clock)
-        {
-        }
-
-        /// <summary>
-        /// Production constructor (the container picks the one with the most resolvable
-        /// arguments): credential login and session write-back enabled.
-        /// </summary>
+        /// <summary>The only public constructor, so Lidarr's container picks it unambiguously.</summary>
         public BandcampSessionProviderRegistry(
             BandcampApiClient apiClient,
-            BandcampLoginClient loginClient,
-            IBandcampSessionStore sessionStore,
+            BandcampLoginClient? loginClient,
+            IBandcampSessionStore? sessionStore,
             Logger logger)
             : this(apiClient, loginClient, sessionStore, logger, null)
         {
         }
 
-        public BandcampSessionProviderRegistry(
+        /// <summary>Test seam: a controllable clock.</summary>
+        internal BandcampSessionProviderRegistry(
             BandcampApiClient apiClient,
             BandcampLoginClient? loginClient,
             IBandcampSessionStore? sessionStore,
