@@ -223,7 +223,14 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                     ? provider.RenewAsync().GetAwaiter().GetResult()
                     : provider.ValidateAsync().GetAwaiter().GetResult();
 
-                if (session == null && hasCredentials)
+                if (session == null && provider.State.Problem != null)
+                {
+                    var problem = provider.State.Problem;
+                    var field = problem == BandcampSessionProblem.BadCredentials ? "Password"
+                        : problem == BandcampSessionProblem.VerificationNeeded ? "VerificationCode" : "Cookies";
+                    failures.Add(new ValidationFailure(field, problem.Description));
+                }
+                else if (session == null && hasCredentials)
                 {
                     failures.Add(LoginFailure(provider));
                     _logger.Debug("Bandcamp download client: Login test failed ({0})", provider.LastLoginOutcome);

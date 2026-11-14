@@ -27,16 +27,19 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         CaptchaRequired,
 
         /// <summary>Network failure, server error or a response we don't understand.</summary>
-        Error
+        Error,
+
+        RateLimited
     }
 
     public sealed class BandcampLoginResult
     {
-        private BandcampLoginResult(BandcampLoginOutcome outcome, string? cookies, string? message)
+        private BandcampLoginResult(BandcampLoginOutcome outcome, string? cookies, string? message, string? retryAfter = null)
         {
             Outcome = outcome;
             Cookies = cookies;
             Message = message;
+            RetryAfter = retryAfter;
         }
 
         public BandcampLoginOutcome Outcome { get; }
@@ -47,9 +50,11 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         /// <summary>Gets a non-secret diagnostic for failures.</summary>
         public string? Message { get; }
 
+        public string? RetryAfter { get; }
+
         public static BandcampLoginResult Success(string cookies) => new(BandcampLoginOutcome.Success, cookies, null);
 
-        public static BandcampLoginResult Failed(BandcampLoginOutcome outcome, string? message = null) => new(outcome, null, message);
+        public static BandcampLoginResult Failed(BandcampLoginOutcome outcome, string? message = null, string? retryAfter = null) => new(outcome, null, message, retryAfter);
     }
 
     /// <summary>
@@ -89,6 +94,18 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 pageBuilder.SuppressHttpError = true;
                 var page = await _httpClient.ExecuteAsync(pageBuilder.Build()).ConfigureAwait(false);
 
+                if ((int)page.StatusCode == 429)
+                {
+                    var values = page.Headers?.GetValues("Retry-After");
+                    return BandcampLoginResult.Failed(BandcampLoginOutcome.RateLimited,
+                        retryAfter: values?.Length == 1 ? values[0] : null);
+                }
+
+                if (page.StatusCode != HttpStatusCode.OK)
+                {
+                    return BandcampLoginResult.Failed(BandcampLoginOutcome.Error, "Could not load Bandcamp login; check service availability");
+                }
+
                 var preLoginCookies = string.Join("; ", page.GetCookies().Select(kv => $"{kv.Key}={kv.Value}"));
                 var crumb = ExtractLoginCrumb(page.Content ?? string.Empty);
                 cancellationToken.ThrowIfCancellationRequested();
@@ -118,6 +135,13 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 }
 
                 var response = await _httpClient.ExecuteAsync(builder.Build()).ConfigureAwait(false);
+
+                if ((int)response.StatusCode == 429)
+                {
+                    var values = response.Headers?.GetValues("Retry-After");
+                    return BandcampLoginResult.Failed(BandcampLoginOutcome.RateLimited,
+                        retryAfter: values?.Length == 1 ? values[0] : null);
+                }
 
                 if (response.StatusCode != HttpStatusCode.OK)
                 {

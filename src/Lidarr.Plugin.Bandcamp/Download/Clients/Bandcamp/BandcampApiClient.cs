@@ -74,88 +74,89 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         /// <returns>The fan_id, or null if resolution fails.</returns>
         public async Task<long?> ResolveFanIdAsync(string cookies)
         {
-            _logger.Debug("Bandcamp API: Resolving fan_id from homepage");
+            var result = await ValidateSessionAsync(cookies).ConfigureAwait(false);
+            if (result.Outcome == Session.BandcampValidationOutcome.Unavailable)
+            {
+                throw new DownloadException("Bandcamp is temporarily unavailable; check network and service availability");
+            }
 
-            var builder = _httpClient.CreateRequestBuilder(BandcampBaseUrl, cookies);
-            var request = builder.Build();
-            var response = await _httpClient.ExecuteAsync(request);
+            if (result.Outcome == Session.BandcampValidationOutcome.RateLimited)
+            {
+                throw new DownloadException("Bandcamp rate limited requests; wait before trying again");
+            }
+
+            return result.FanId;
+        }
+
+        /// <summary>Classifies homepage evidence without treating an unknown page as sign-out.</summary>
+        public async Task<Session.BandcampValidationResult> ValidateSessionAsync(string cookies)
+        {
+            HttpResponse response;
+            try
+            {
+                var builder = _httpClient.CreateRequestBuilder(BandcampBaseUrl, cookies);
+                builder.SuppressHttpError = true;
+                response = await _httpClient.ExecuteAsync(builder.Build()).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                return new(Session.BandcampValidationOutcome.Unavailable);
+            }
+
+            if ((int)response.StatusCode == 429)
+            {
+                var values = response.Headers?.GetValues("Retry-After");
+                return new(Session.BandcampValidationOutcome.RateLimited, RetryAfter: values?.Length == 1 ? values[0] : null);
+            }
+
+            if ((int)response.StatusCode >= 500)
+            {
+                return new(Session.BandcampValidationOutcome.Unavailable);
+            }
 
             var content = response.Content ?? string.Empty;
-
-            // Approach 1: Parse data-blob attribute (Bandcamp homepage format)
-            // The homepage embeds JSON in data-blob="..." on a div element
-            var blobMatch = DataBlobRegex.Match(content);
-            if (blobMatch.Success)
+            var blob = DataBlobRegex.Match(content);
+            var pagedata = PagedataRegex.Match(content);
+            var json = blob.Success
+                ? System.Net.WebUtility.HtmlDecode(System.Net.WebUtility.HtmlDecode(blob.Groups[1].Value))
+                : pagedata.Success ? pagedata.Groups[1].Value : null;
+            if (json != null)
             {
                 try
                 {
-                    // HTML-decode the blob content (it's double-encoded)
-                    var blobJson = System.Net.WebUtility.HtmlDecode(
-                        System.Net.WebUtility.HtmlDecode(blobMatch.Groups[1].Value));
-
-                    using var doc = JsonDocument.Parse(blobJson);
+                    using var doc = JsonDocument.Parse(json);
                     var root = doc.RootElement;
-
-                    // Navigate: pageContext -> identity -> fanId
-                    if (root.TryGetProperty("pageContext", out var pageContext) &&
-                        pageContext.TryGetProperty("identity", out var identity) &&
-                        identity.TryGetProperty("fanId", out var fanIdEl))
+                    if (root.ValueKind == JsonValueKind.Object &&
+                        root.TryGetProperty("pageContext", out var context) && context.ValueKind == JsonValueKind.Object &&
+                        context.TryGetProperty("identity", out var identity) && identity.ValueKind == JsonValueKind.Object &&
+                        identity.TryGetProperty("fanId", out var id))
                     {
-                        if (fanIdEl.ValueKind == JsonValueKind.Number)
+                        if (response.StatusCode == System.Net.HttpStatusCode.OK && id.ValueKind == JsonValueKind.Number && id.TryGetInt64(out var fanId) && fanId > 0)
                         {
-                            var fanId = fanIdEl.GetInt64();
-                            _logger.Debug("Bandcamp API: Resolved fan_id {0} from data-blob", fanId);
-                            return fanId;
+                            return new(Session.BandcampValidationOutcome.Valid, fanId);
                         }
 
-                        if (fanIdEl.ValueKind == JsonValueKind.Null)
+                        if (((int)response.StatusCode == 200 || (int)response.StatusCode == 401 || (int)response.StatusCode == 403) &&
+                            id.ValueKind == JsonValueKind.Null &&
+                            identity.TryGetProperty("isLoggedIn", out var loggedIn) && loggedIn.ValueKind == JsonValueKind.False)
                         {
-                            _logger.Debug("Bandcamp API: fan_id is null in data-blob — cookies may be invalid or expired");
-                            return null;
+                            return new(Session.BandcampValidationOutcome.SignedOut);
                         }
                     }
+
+                    if (response.StatusCode == System.Net.HttpStatusCode.OK && root.ValueKind == JsonValueKind.Object &&
+                        root.TryGetProperty("fan_id", out var snake) && snake.ValueKind == JsonValueKind.Number && snake.TryGetInt64(out var snakeId) && snakeId > 0)
+                    {
+                        return new(Session.BandcampValidationOutcome.Valid, snakeId);
+                    }
                 }
-                catch (Exception ex)
+                catch (JsonException)
                 {
-                    _logger.Debug(ex, "Bandcamp API: Failed to parse data-blob JSON");
+                    // Never log page contents or parser exceptions containing session data.
                 }
             }
 
-            // Approach 2: Parse var pagedata (older/alternate Bandcamp page format)
-            var pagedataMatch = PagedataRegex.Match(content);
-            if (pagedataMatch.Success)
-            {
-                try
-                {
-                    using var doc = JsonDocument.Parse(pagedataMatch.Groups[1].Value);
-                    var root = doc.RootElement;
-
-                    // Check pageContext.identity.fanId (camelCase)
-                    if (root.TryGetProperty("pageContext", out var pageContext) &&
-                        pageContext.TryGetProperty("identity", out var identity) &&
-                        identity.TryGetProperty("fanId", out var fanIdEl) &&
-                        fanIdEl.ValueKind == JsonValueKind.Number)
-                    {
-                        var fanId = fanIdEl.GetInt64();
-                        _logger.Debug("Bandcamp API: Resolved fan_id {0} from pagedata", fanId);
-                        return fanId;
-                    }
-
-                    // Also check for fan_id (snake_case) in some page formats
-                    if (root.TryGetProperty("fan_id", out var fanIdSnake) &&
-                        fanIdSnake.ValueKind == JsonValueKind.Number)
-                    {
-                        return fanIdSnake.GetInt64();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.Debug(ex, "Bandcamp API: Failed to parse pagedata JSON");
-                }
-            }
-
-            _logger.Debug("Bandcamp API: Failed to resolve fan_id — no valid identity found in page");
-            return null;
+            return new(Session.BandcampValidationOutcome.ChallengeOrUnrecognized);
         }
 
         /// <summary>
