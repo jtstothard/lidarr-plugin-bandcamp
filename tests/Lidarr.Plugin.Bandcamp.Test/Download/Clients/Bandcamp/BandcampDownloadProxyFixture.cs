@@ -246,6 +246,56 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                 r.Url.FullUri.StartsWith("https://files.example.com", StringComparison.OrdinalIgnoreCase))), Times.Never);
         }
 
+        [Fact]
+        public async Task ExecuteDownloadAsync_FileDownloadFails_RemovesEmptyOutputFolderAndTempFile()
+        {
+            SetupStreamingDownload(
+                statdownloadBody: System.Text.Encoding.UTF8.GetBytes(@"{""url"":""https://files.example.com/album.zip""}"),
+                statdownloadContentType: "application/json",
+                fileBody: null);
+            _httpClientMock
+                .Setup(c => c.ExecuteAsync(It.Is<HttpRequest>(r => r.Url.FullUri.StartsWith("https://files.example.com"))))
+                .ThrowsAsync(new IOException("connection reset"));
+
+            var outputDir = Path.Combine(_tempRoot, "Artist - Album-1");
+            var item = CreateDownloadItem();
+            item.OutputPath = outputDir;
+
+            await Assert.ThrowsAnyAsync<Exception>(() => _subject.ExecuteDownloadAsync(item, CancellationToken.None));
+
+            Assert.False(Directory.Exists(outputDir));
+        }
+
+        [Fact]
+        public async Task ExecuteDownloadAsync_ExtractionFails_RemovesEmptyOutputFolderAndTempFile()
+        {
+            // A truncated ZIP (valid local-file header, no central directory) makes extraction throw.
+            var junk = new byte[] { 0x50, 0x4B, 0x03, 0x04, 0x00, 0x01, 0x02, 0x03 };
+            SetupStreamingDownload(statdownloadBody: junk, statdownloadContentType: "application/zip", fileBody: null);
+
+            var outputDir = Path.Combine(_tempRoot, "Artist - Album-2");
+            var item = CreateDownloadItem();
+            item.OutputPath = outputDir;
+
+            await Assert.ThrowsAnyAsync<Exception>(() => _subject.ExecuteDownloadAsync(item, CancellationToken.None));
+
+            Assert.False(Directory.Exists(outputDir));
+        }
+
+        [Fact]
+        public void CleanUpFailedOutput_KeepsFolderWithFiles()
+        {
+            var outputDir = Path.Combine(_tempRoot, "kept");
+            Directory.CreateDirectory(outputDir);
+            File.WriteAllBytes(Path.Combine(outputDir, "01 - Track.flac"), new byte[] { 1 });
+            File.WriteAllBytes(Path.Combine(outputDir, "abc.tmp"), new byte[] { 1 });
+
+            BandcampDownloadProxy.CleanUpFailedOutput(outputDir, "abc");
+
+            Assert.True(File.Exists(Path.Combine(outputDir, "01 - Track.flac")));
+            Assert.False(File.Exists(Path.Combine(outputDir, "abc.tmp")));
+        }
+
         private BandcampDownloadItem CreateDownloadItem()
         {
             return new BandcampDownloadItem

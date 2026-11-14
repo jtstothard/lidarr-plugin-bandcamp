@@ -83,6 +83,13 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         /// </summary>
         public void RemoveItem(string downloadId)
         {
+            // Backstop for the proxy's own failure cleanup (e.g. a folder that was locked at the time).
+            if (_registry.GetItems().TryGetValue(downloadId, out var item) &&
+                item.Status == BandcampDownloadStatus.Failed)
+            {
+                BandcampDownloadProxy.CleanUpFailedOutput(item.OutputPath, item.DownloadId);
+            }
+
             _registry.Remove(downloadId);
             _logger.Debug("Bandcamp download queue: Removed item {0}", downloadId);
         }

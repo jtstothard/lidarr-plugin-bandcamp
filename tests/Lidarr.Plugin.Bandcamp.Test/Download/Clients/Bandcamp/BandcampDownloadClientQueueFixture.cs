@@ -65,6 +65,36 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             proxy.Release();
         }
 
+        [Theory]
+        [InlineData(BandcampDownloadStatus.Failed, false)]
+        [InlineData(BandcampDownloadStatus.Downloading, true)]
+        public void RemoveItem_DeletesEmptyOutputFolderOnlyForFailedItems(BandcampDownloadStatus status, bool folderKept)
+        {
+            var outputDir = Path.Combine(Path.GetTempPath(), "bandcamp-queue-tests", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(outputDir);
+            var registry = new BandcampDownloadRegistry();
+            var item = new BandcampDownloadItem { OutputPath = outputDir, Status = status };
+            registry.Upsert(item);
+            var proxy = new BlockingProxy();
+            using var queue = new DownloadTaskQueue(proxy, registry, LogManager.GetCurrentClassLogger());
+
+            try
+            {
+                queue.RemoveItem(item.DownloadId);
+
+                Assert.Equal(folderKept, Directory.Exists(outputDir));
+                Assert.False(registry.GetItems().ContainsKey(item.DownloadId));
+            }
+            finally
+            {
+                proxy.Release();
+                if (Directory.Exists(outputDir))
+                {
+                    Directory.Delete(outputDir);
+                }
+            }
+        }
+
         [Fact]
         public async Task Download_SessionCookieChangedAfterGrab_QueuedItemRunsWithCurrentCookie()
         {

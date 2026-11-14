@@ -46,6 +46,46 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         public async Task ExecuteDownloadAsync(
             BandcampDownloadItem item, CancellationToken cancellationToken)
         {
+            try
+            {
+                await ExecuteDownloadCoreAsync(item, cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                CleanUpFailedOutput(item.OutputPath, item.DownloadId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Best-effort cleanup after a failed or abandoned download: deletes the partial
+        /// temp file and removes the output folder if nothing else is left in it.
+        /// </summary>
+        public static void CleanUpFailedOutput(string outputDir, string downloadId)
+        {
+            if (string.IsNullOrWhiteSpace(outputDir))
+            {
+                return;
+            }
+
+            TryDeleteFile(Path.Combine(outputDir, $"{downloadId}.tmp"));
+
+            try
+            {
+                if (Directory.Exists(outputDir) && !Directory.EnumerateFileSystemEntries(outputDir).Any())
+                {
+                    Directory.Delete(outputDir);
+                }
+            }
+            catch
+            {
+                // Best-effort cleanup — don't mask the original exception
+            }
+        }
+
+        private async Task ExecuteDownloadCoreAsync(
+            BandcampDownloadItem item, CancellationToken cancellationToken)
+        {
             if (item.SessionProvider == null)
             {
                 throw new DownloadException(
