@@ -90,7 +90,7 @@ namespace NzbDrone.Core.Http.Bandcamp
                 _logger.Debug("Bandcamp response: {0} -> {1} ({2} bytes)",
                     request.Url,
                     (int)response.StatusCode,
-                    response.Content?.Length ?? 0);
+                    response.ResponseData?.Length ?? 0);
 
                 return response;
             }

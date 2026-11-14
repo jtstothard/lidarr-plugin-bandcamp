@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -15,7 +17,11 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
     {
         public string? DownloadUrl { get; set; }
 
-        public HttpResponse? DirectResponse { get; set; }
+        /// <summary>
+        /// True when the statdownload endpoint served the archive itself and it
+        /// has already been streamed into the caller's destination stream.
+        /// </summary>
+        public bool ArchiveWrittenToDestination { get; set; }
     }
 
     /// <summary>
@@ -360,16 +366,27 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         }
 
         /// <summary>
+        /// Largest statdownload body treated as a JSON/text pointer. Anything bigger
+        /// that is not a ZIP is not a pointer we understand.
+        /// </summary>
+        private const int MaxStatdownloadTextBytes = 1024 * 1024;
+
+        /// <summary>
         /// Constructs and resolves a statdownload URL. Bandcamp uses statdownload
         /// endpoints to track download analytics before redirecting to the actual
-        /// file URL. This follows the redirect chain and returns the final download URL.
+        /// file URL. The response is usually JSON pointing at the file, but some
+        /// endpoints serve the archive directly. When <paramref name="archiveDestination"/>
+        /// is given, the body is streamed into it (never buffered in memory); a direct
+        /// archive stays there and <see cref="BandcampResolvedDownload.ArchiveWrittenToDestination"/>
+        /// is set, otherwise the destination is truncated back to where it started.
         /// </summary>
         /// <param name="cookies">Session cookies from browser.</param>
         /// <param name="downloadUrl">The initial download URL (from pagedata or purchase).</param>
         /// <param name="format">The desired format (e.g., "FLAC").</param>
-        /// <returns>The final download URL for the file, or null if resolution fails.</returns>
+        /// <param name="archiveDestination">Seekable, writable stream that receives a direct archive.</param>
+        /// <returns>The resolution, or null if resolution fails.</returns>
         public async Task<BandcampResolvedDownload?> ResolveStatdownloadUrlAsync(
-            string cookies, string downloadUrl, string format)
+            string cookies, string downloadUrl, string format, Stream? archiveDestination = null)
         {
             _logger.Debug("Bandcamp API: Resolving statdownload URL for format {0}", format);
 
@@ -380,10 +397,66 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
             var builder = _httpClient.CreateRequestBuilder(url, cookies);
             var request = builder.Build();
+            var startPosition = archiveDestination?.Position ?? 0;
+            request.ResponseStream = archiveDestination;
+
             var response = await _httpClient.ExecuteAsync(request);
 
-            var content = response.Content ?? string.Empty;
+            string content;
+            if (response.ResponseData != null)
+            {
+                // Body was buffered (non-200 or a dispatcher that ignores ResponseStream).
+                if (IsZipHeader(response.ResponseData))
+                {
+                    if (archiveDestination == null)
+                    {
+                        _logger.Debug("Bandcamp API: Statdownload returned archive bytes but no destination was given");
+                        return null;
+                    }
 
+                    await archiveDestination.WriteAsync(response.ResponseData).ConfigureAwait(false);
+                    _logger.Debug("Bandcamp API: Statdownload returned archive bytes directly");
+                    return new BandcampResolvedDownload { ArchiveWrittenToDestination = true };
+                }
+
+                content = response.Content ?? string.Empty;
+            }
+            else if (archiveDestination != null)
+            {
+                var written = archiveDestination.Position - startPosition;
+                var header = new byte[4];
+                archiveDestination.Position = startPosition;
+                var headerRead = await ReadAtMostAsync(archiveDestination, header).ConfigureAwait(false);
+
+                if (headerRead == 4 && IsZipHeader(header))
+                {
+                    archiveDestination.Position = startPosition + written;
+                    _logger.Debug("Bandcamp API: Statdownload streamed archive directly ({0} bytes)", written);
+                    return new BandcampResolvedDownload { ArchiveWrittenToDestination = true };
+                }
+
+                content = string.Empty;
+                if (written <= MaxStatdownloadTextBytes)
+                {
+                    var textBytes = new byte[written];
+                    archiveDestination.Position = startPosition;
+                    var read = await ReadAtMostAsync(archiveDestination, textBytes).ConfigureAwait(false);
+                    content = Encoding.UTF8.GetString(textBytes, 0, read);
+                }
+
+                archiveDestination.SetLength(startPosition);
+                archiveDestination.Position = startPosition;
+            }
+            else
+            {
+                content = string.Empty;
+            }
+
+            return ParseStatdownloadPointer(content);
+        }
+
+        private BandcampResolvedDownload? ParseStatdownloadPointer(string content)
+        {
             // Parse the JSON response to extract the actual download URL
             var urlMatch = StatdownloadUrlRegex.Match(content);
             if (urlMatch.Success)
@@ -410,40 +483,52 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 };
             }
 
-            // Some Bandcamp statdownload responses stream the archive directly.
-            // In that case, keep using the statdownload URL we just probed.
-            var responseData = response.ResponseData;
-            if (responseData != null && responseData.Length >= 4)
-            {
-                // ZIP local file header: PK\x03\x04
-                if (responseData[0] == 0x50 && responseData[1] == 0x4B &&
-                    responseData[2] == 0x03 && responseData[3] == 0x04)
-                {
-                    _logger.Debug("Bandcamp API: Statdownload returned archive bytes directly");
-                    return new BandcampResolvedDownload
-                    {
-                        DirectResponse = response
-                    };
-                }
-            }
-
             _logger.Debug("Bandcamp API: Failed to parse statdownload response");
             return null;
         }
 
+        private static bool IsZipHeader(byte[] data)
+        {
+            // ZIP local file header: PK\x03\x04
+            return data.Length >= 4 &&
+                   data[0] == 0x50 && data[1] == 0x4B &&
+                   data[2] == 0x03 && data[3] == 0x04;
+        }
+
+        private static async Task<int> ReadAtMostAsync(Stream stream, byte[] buffer)
+        {
+            var total = 0;
+            while (total < buffer.Length)
+            {
+                var read = await stream.ReadAsync(buffer.AsMemory(total)).ConfigureAwait(false);
+                if (read == 0)
+                {
+                    break;
+                }
+
+                total += read;
+            }
+
+            return total;
+        }
+
         /// <summary>
-        /// Downloads the actual FLAC archive file from a resolved download URL.
-        /// Returns the raw HTTP response for streaming to disk.
+        /// Downloads the actual archive from a resolved download URL, streaming the
+        /// body straight into <paramref name="destination"/> via Lidarr's
+        /// <see cref="HttpRequest.ResponseStream"/> so the file is never held in memory.
         /// </summary>
         /// <param name="cookies">Session cookies from browser.</param>
         /// <param name="fileUrl">The resolved file download URL.</param>
-        /// <returns>The raw HTTP response containing the file data.</returns>
-        public async Task<HttpResponse> DownloadFileAsync(string cookies, string fileUrl)
+        /// <param name="destination">Writable stream that receives the body.</param>
+        /// <returns>The HTTP response (headers/status; body is in the destination).</returns>
+        public async Task<HttpResponse> DownloadFileAsync(string cookies, string fileUrl, Stream destination)
         {
             _logger.Debug("Bandcamp API: Downloading file from resolved URL");
 
             var builder = _httpClient.CreateRequestBuilder(fileUrl, cookies);
             var request = builder.Build();
+            request.ResponseStream = destination;
+
             var response = await _httpClient.ExecuteRawAsync(request);
 
             // Verify content type — Bandcamp should return application/zip or similar
@@ -454,6 +539,18 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 throw new DownloadException(
                     "Received HTML response instead of expected audio archive. " +
                     "The download URL may have expired or the session cookies may be invalid.");
+            }
+
+            if (response.StatusCode != System.Net.HttpStatusCode.OK)
+            {
+                throw new DownloadException(
+                    $"Bandcamp file download failed with HTTP {(int)response.StatusCode}.");
+            }
+
+            if (response.ResponseData is { Length: > 0 } buffered)
+            {
+                // Dispatcher buffered the body instead of streaming it; persist it anyway.
+                await destination.WriteAsync(buffered).ConfigureAwait(false);
             }
 
             _logger.Debug("Bandcamp API: File download response received (Content-Type: {0})", contentType);

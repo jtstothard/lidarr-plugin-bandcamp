@@ -210,6 +210,124 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                 r.Url.FullUri.Contains("/api/fancollection/1/collection_items", StringComparison.OrdinalIgnoreCase))), Times.Never);
         }
 
+        [Fact]
+        public async Task ExecuteDownloadAsync_ArchiveStreamedIntoResponseStream_ExtractsWithoutResponseData()
+        {
+            var zip = CreateZip("01 - Track.flac", 256 * 1024);
+            SetupStreamingDownload(
+                statdownloadBody: System.Text.Encoding.UTF8.GetBytes(@"{""url"":""https://files.example.com/album.zip""}"),
+                statdownloadContentType: "application/json",
+                fileBody: zip);
+
+            var item = CreateDownloadItem();
+            await _subject.ExecuteDownloadAsync(item, CancellationToken.None);
+
+            var track = Path.Combine(_tempRoot, "01 - Track.flac");
+            Assert.True(File.Exists(track));
+            Assert.Equal(256 * 1024, new FileInfo(track).Length);
+            Assert.Equal(zip.Length, item.DownloadedBytes);
+            Assert.Equal(1.0, item.Progress);
+            Assert.Empty(Directory.GetFiles(_tempRoot, "*.tmp"));
+        }
+
+        [Fact]
+        public async Task ExecuteDownloadAsync_StatdownloadStreamsArchiveDirectly_ExtractsWithoutResponseData()
+        {
+            var zip = CreateZip("02 - Direct.flac", 128 * 1024);
+            SetupStreamingDownload(statdownloadBody: zip, statdownloadContentType: "application/zip", fileBody: null);
+
+            var item = CreateDownloadItem();
+            await _subject.ExecuteDownloadAsync(item, CancellationToken.None);
+
+            Assert.True(File.Exists(Path.Combine(_tempRoot, "02 - Direct.flac")));
+            Assert.Equal(zip.Length, item.DownloadedBytes);
+            Assert.Empty(Directory.GetFiles(_tempRoot, "*.tmp"));
+            _httpClientMock.Verify(c => c.ExecuteAsync(It.Is<HttpRequest>(r =>
+                r.Url.FullUri.StartsWith("https://files.example.com", StringComparison.OrdinalIgnoreCase))), Times.Never);
+        }
+
+        private BandcampDownloadItem CreateDownloadItem()
+        {
+            return new BandcampDownloadItem
+            {
+                AlbumUrl = "https://bandcamp.com/download?type=album&id=111#format=flac",
+                Title = "Fresh - Fresh [FLAC]",
+                OutputPath = _tempRoot,
+                SessionProvider = new BandcampSessionProvider(
+                    1,
+                    new BandcampDownloadSettings { Cookies = "identity=testcookie" },
+                    _apiClient,
+                    LogManager.GetCurrentClassLogger())
+            };
+        }
+
+        /// <summary>
+        /// Mimics Lidarr's ManagedHttpDispatcher: when the request carries a
+        /// ResponseStream, a 200 body is copied into it and ResponseData stays null.
+        /// </summary>
+        private void SetupStreamingDownload(byte[] statdownloadBody, string statdownloadContentType, byte[]? fileBody)
+        {
+            _httpClientMock
+                .Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
+                .ReturnsAsync((HttpRequest request) =>
+                {
+                    var uri = request.Url.FullUri;
+                    var body = uri switch
+                    {
+                        "https://bandcamp.com/statdownload/album/111?sig=flac&.format=flac&.json=true" => statdownloadBody,
+                        "https://files.example.com/album.zip" => fileBody,
+                        _ => null
+                    };
+
+                    if (body == null)
+                    {
+                        return uri switch
+                        {
+                            "https://bandcamp.com" => CreateStringResponse(
+                                @"<html><body><div id=""HomepageApp"" data-blob=""{&quot;pageContext&quot;:{&quot;identity&quot;:{&quot;fanId&quot;:12345678,&quot;isLoggedIn&quot;:true}}}""></div></body></html>",
+                                request),
+                            "https://bandcamp.com/download?type=album&id=111" => CreateStringResponse(
+                                @"<html><head><script type=""text/javascript"">var pagedata = {
+                                    ""digital_items"": [{
+                                        ""item_id"": 111,
+                                        ""item_type"": ""album"",
+                                        ""title"": ""Fresh"",
+                                        ""downloads"": {
+                                            ""flac"": { ""url"": ""https://bandcamp.com/statdownload/album/111?sig=flac"", ""size_mb"": 12 }
+                                        }
+                                    }]
+                                };</script></head><body></body></html>",
+                                request),
+                            _ => CreateStringResponse(@"{""items"": []}", request)
+                        };
+                    }
+
+                    if (request.ResponseStream == null)
+                    {
+                        throw new InvalidOperationException($"Expected a streamed request for {uri}");
+                    }
+
+                    var contentType = uri.Contains("statdownload") ? statdownloadContentType : "application/zip";
+                    request.ResponseStream.Write(body, 0, body.Length);
+                    return new HttpResponse(request, new HttpHeader { { "Content-Type", contentType } }, (byte[])null!, HttpStatusCode.OK);
+                });
+        }
+
+        private static byte[] CreateZip(string entryName, int size)
+        {
+            using var ms = new MemoryStream();
+            using (var archive = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
+            {
+                var entry = archive.CreateEntry(entryName, CompressionLevel.NoCompression);
+                using var es = entry.Open();
+                var data = new byte[size];
+                new Random(42).NextBytes(data);
+                es.Write(data, 0, data.Length);
+            }
+
+            return ms.ToArray();
+        }
+
         [Theory]
         [InlineData("https://bandcamp.com\\album\\test", "https://bandcamp.com/album/test")]
         [InlineData("https://bandcamp.com/album/test", "https://bandcamp.com/album/test")]
