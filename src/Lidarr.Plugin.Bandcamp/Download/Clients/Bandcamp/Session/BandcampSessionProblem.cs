@@ -10,7 +10,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
         public static readonly BandcampSessionProblem CookieExpired = new(
             "CookieExpired",
-            "session cookie expired or invalid; paste a fresh identity cookie into the client settings");
+            "session cookie expired or invalid; run the bandcamp-cookie-push helper or paste a fresh identity cookie into the client settings");
 
         public static readonly BandcampSessionProblem BadCredentials = new(
             "BadCredentials",
@@ -22,7 +22,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
         public static readonly BandcampSessionProblem CaptchaRequired = new(
             "CaptchaRequired",
-            "Bandcamp asked for a captcha, which can't be solved here; paste a session cookie from your browser into the client settings (login is retried at most every " + CooldownText + ")");
+            "Bandcamp asked for a captcha, which can't be solved here; run the bandcamp-cookie-push helper or paste a session cookie from your browser into the client settings (login is retried at most every " + CooldownText + ")");
 
         private BandcampSessionProblem(string code, string description)
         {
