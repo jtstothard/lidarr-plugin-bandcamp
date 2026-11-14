@@ -42,6 +42,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             Cookies = "";
             Email = "";
             Password = "";
+            VerificationCode = "";
         }
 
         [FieldDefinition(0, Label = "Email", Type = FieldType.Textbox, HelpText = "Bandcamp account email. With a password set, the plugin logs in itself and keeps the session cookie below up to date.", Privacy = PrivacyLevel.Password)]
@@ -50,11 +51,15 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         [FieldDefinition(1, Label = "Password", Type = FieldType.Password, HelpText = "Bandcamp account password.", Privacy = PrivacyLevel.Password)]
         public string Password { get; set; }
 
+        // Used once on the next login, then cleared automatically.
+        [FieldDefinition(2, Label = "Verification Code", Type = FieldType.Textbox, HelpText = "Only when Bandcamp emails you a code for a new device: enter it here and save. It is used once, then cleared.", Privacy = PrivacyLevel.Password)]
+        public string VerificationCode { get; set; }
+
         // Keeps its name so saved configs and downgrades still work. Filled in automatically after a login.
-        [FieldDefinition(2, Label = "Session Cookie (optional)", Type = FieldType.Textbox, HelpText = "Optional fallback: the 'identity' cookie value from your browser (DevTools: Application → Cookies → bandcamp.com → 'identity'). Written automatically after a successful login.", Privacy = PrivacyLevel.Password)]
+        [FieldDefinition(3, Label = "Session Cookie (optional)", Type = FieldType.Textbox, HelpText = "Optional fallback: the 'identity' cookie value from your browser (DevTools: Application → Cookies → bandcamp.com → 'identity'). Written automatically after a successful login.", Privacy = PrivacyLevel.Password)]
         public string Cookies { get; set; }
 
-        [FieldDefinition(3, Label = "Download Path", Type = FieldType.Path, HelpText = "Directory where Bandcamp downloads will be saved before import")]
+        [FieldDefinition(4, Label = "Download Path", Type = FieldType.Path, HelpText = "Directory where Bandcamp downloads will be saved before import")]
         public string DownloadPath { get; set; }
 
         public NzbDroneValidationResult Validate()

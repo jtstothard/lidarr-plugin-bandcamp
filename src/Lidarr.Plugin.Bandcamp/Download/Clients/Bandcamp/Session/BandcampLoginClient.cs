@@ -76,7 +76,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             _logger = logger;
         }
 
-        public virtual async Task<BandcampLoginResult> LoginAsync(string email, string password)
+        public virtual async Task<BandcampLoginResult> LoginAsync(string email, string password, string? verificationCode = null)
         {
             try
             {
@@ -95,7 +95,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 builder.Post()
                     .AddFormParameter("user.name", email)
                     .AddFormParameter("login.password", password)
-                    .AddFormParameter("login.twofactor", string.Empty)
+                    .AddFormParameter("login.twofactor", verificationCode ?? string.Empty)
                     .AddFormParameter("login.twofactor_remember", string.Empty)
                     .AddFormParameter("login.from", string.Empty);
 

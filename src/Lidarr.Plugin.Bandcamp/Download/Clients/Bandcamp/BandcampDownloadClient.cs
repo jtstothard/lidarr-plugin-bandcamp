@@ -269,8 +269,8 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             {
                 BandcampLoginOutcome.BadCredentials => new ValidationFailure("Password",
                     "Bandcamp rejected the email or password. Login won't be retried until you change them."),
-                BandcampLoginOutcome.VerificationRequired => new ValidationFailure("Password",
-                    "Bandcamp asked for an emailed verification code. Paste a session cookie from your browser for now."),
+                BandcampLoginOutcome.VerificationRequired => new ValidationFailure("VerificationCode",
+                    "Bandcamp emailed you a verification code. Enter it here and save; it is used once, then cleared."),
                 BandcampLoginOutcome.CaptchaRequired => new ValidationFailure("Cookies",
                     "Bandcamp asked for a captcha, which can't be solved here. Paste a session cookie from your browser instead."),
                 _ => new ValidationFailure("Email",

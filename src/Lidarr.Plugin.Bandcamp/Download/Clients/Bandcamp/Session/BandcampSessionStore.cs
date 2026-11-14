@@ -7,6 +7,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
     public interface IBandcampSessionStore
     {
         void SaveCookies(int definitionId, string cookies);
+
+        /// <summary>Clears the one-time verification code from the saved settings.</summary>
+        void ClearVerificationCode(int definitionId);
     }
 
     public class BandcampSessionStore : IBandcampSessionStore
@@ -18,7 +21,17 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             _repository = repository;
         }
 
+        public void ClearVerificationCode(int definitionId)
+        {
+            Update(definitionId, s => s.VerificationCode = string.Empty);
+        }
+
         public void SaveCookies(int definitionId, string cookies)
+        {
+            Update(definitionId, s => s.Cookies = cookies);
+        }
+
+        private void Update(int definitionId, System.Action<BandcampDownloadSettings> change)
         {
             var definition = _repository.Find(definitionId);
             if (definition?.Settings is not BandcampDownloadSettings settings)
@@ -26,7 +39,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 return;
             }
 
-            settings.Cookies = cookies;
+            change(settings);
             _repository.SetFields(definition, d => d.Settings);
         }
     }

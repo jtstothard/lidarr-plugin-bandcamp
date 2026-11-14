@@ -122,6 +122,21 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             var settings = new BandcampDownloadSettings();
             Assert.Equal("", settings.Email);
             Assert.Equal("", settings.Password);
+            Assert.Equal("", settings.VerificationCode);
+        }
+
+        [Fact]
+        public void Validate_VerificationCodeIsOptional()
+        {
+            var settings = new BandcampDownloadSettings
+            {
+                Email = "fan@example.com",
+                Password = "hunter2",
+                VerificationCode = "123456",
+                DownloadPath = "/downloads"
+            };
+
+            Assert.True(settings.Validate().IsValid);
         }
 
         [Fact]

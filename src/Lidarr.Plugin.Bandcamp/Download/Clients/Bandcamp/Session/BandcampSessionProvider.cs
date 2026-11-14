@@ -26,6 +26,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         /// <summary>How long a successful validation is reused before a fresh live lookup.</summary>
         public static readonly TimeSpan ValidationCacheDuration = TimeSpan.FromMinutes(15);
 
+        /// <summary>After a login challenge, at most one login attempt runs per this window.</summary>
+        public static readonly TimeSpan ChallengeCooldown = TimeSpan.FromHours(6);
+
         private readonly BandcampApiClient _apiClient;
         private readonly BandcampLoginClient? _loginClient;
         private readonly IBandcampSessionStore? _sessionStore;
@@ -34,6 +37,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         private Task<BandcampSession?>? _loginInFlight;
         private volatile string? _rejectedCredentials;
         private volatile LoginRecord? _lastLogin;
+        private volatile ChallengeRecord? _challenge;
         private volatile BandcampDownloadSettings _settings;
         private volatile BandcampSessionState _state = BandcampSessionState.Initial;
         private volatile CachedSession? _cached;
@@ -162,9 +166,41 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 return null;
             }
 
+            // A verification code is the user answering the challenge, so it skips the cooldown.
+            var code = settings.VerificationCode?.Trim();
+            var hasCode = !string.IsNullOrEmpty(code);
+            var challenge = _challenge;
+            if (!hasCode && challenge != null && Clock() - challenge.AtUtc < ChallengeCooldown)
+            {
+                _logger.Debug("Bandcamp session [{0}]: login challenge pending; not retrying until the cooldown ends", DefinitionId);
+                SetState(BandcampSessionStatus.Invalid, challenge.Problem);
+                return null;
+            }
+
             _logger.Debug("Bandcamp session [{0}]: session invalid, logging in", DefinitionId);
-            var result = await _loginClient!.LoginAsync(settings.Email, settings.Password).ConfigureAwait(false);
+            var result = await _loginClient!.LoginAsync(settings.Email, settings.Password, hasCode ? code : null).ConfigureAwait(false);
             _lastLogin = new LoginRecord(result.Outcome, result.Message);
+
+            if (hasCode)
+            {
+                ClearVerificationCode(settings);
+            }
+
+            var problem = result.Outcome switch
+            {
+                BandcampLoginOutcome.VerificationRequired => BandcampSessionProblem.VerificationNeeded,
+                BandcampLoginOutcome.CaptchaRequired => BandcampSessionProblem.CaptchaRequired,
+                _ => null
+            };
+            if (problem != null)
+            {
+                _challenge = new ChallengeRecord(problem, Clock());
+                SetState(BandcampSessionStatus.Invalid, problem);
+            }
+            else if (result.Outcome == BandcampLoginOutcome.Success)
+            {
+                _challenge = null;
+            }
 
             if (result.Outcome == BandcampLoginOutcome.BadCredentials)
             {
@@ -191,6 +227,20 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             }
 
             return await ValidateAsync().ConfigureAwait(false);
+        }
+
+        /// <summary>The code is single-use: clear it in memory and in the saved definition.</summary>
+        private void ClearVerificationCode(BandcampDownloadSettings settings)
+        {
+            settings.VerificationCode = string.Empty;
+            try
+            {
+                _sessionStore?.ClearVerificationCode(DefinitionId);
+            }
+            catch (Exception ex)
+            {
+                _logger.Warn(ex, "Bandcamp session [{0}]: could not clear the verification code from settings", DefinitionId);
+            }
         }
 
         private static bool HasCredentials(BandcampDownloadSettings settings)
@@ -258,6 +308,19 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             public BandcampLoginOutcome Outcome { get; }
 
             public string? Message { get; }
+        }
+
+        private sealed class ChallengeRecord
+        {
+            public ChallengeRecord(BandcampSessionProblem problem, DateTime atUtc)
+            {
+                Problem = problem;
+                AtUtc = atUtc;
+            }
+
+            public BandcampSessionProblem Problem { get; }
+
+            public DateTime AtUtc { get; }
         }
 
         private sealed class CachedSession

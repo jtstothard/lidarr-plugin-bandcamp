@@ -27,6 +27,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
     /// </summary>
     public class BandcampCredentialLoginFixture
     {
+        private const string EmailedCode = "482913";
         private const string FreshIdentity = "7%09fresh-identity%09%7B%22ex%22%3A0%7D";
 
         private readonly Logger _logger = LogManager.GetCurrentClassLogger();
@@ -36,6 +37,8 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         private int _loginPosts;
         private string _loginCbFixture = "login_cb_success.json";
         private Func<Task>? _homepageDelay;
+        private readonly ConcurrentQueue<string> _loginBodies = new();
+        private DateTime _now = new(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
 
         public BandcampCredentialLoginFixture()
         {
@@ -59,13 +62,18 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                     if (url == "https://bandcamp.com/login_cb")
                     {
                         Interlocked.Increment(ref _loginPosts);
+                        var body = request.ContentData == null ? string.Empty : System.Text.Encoding.UTF8.GetString(request.ContentData);
+                        _loginBodies.Enqueue(body);
+
+                        // Bandcamp accepts the login once the emailed code is supplied.
+                        var fixture = body.Contains("login.twofactor=" + EmailedCode) ? "login_cb_success.json" : _loginCbFixture;
                         var headers = new HttpHeader();
-                        if (_loginCbFixture == "login_cb_success.json")
+                        if (fixture == "login_cb_success.json")
                         {
                             headers.Add("Set-Cookie", $"identity={FreshIdentity}; domain=.bandcamp.com; path=/; secure; HttpOnly");
                         }
 
-                        return new HttpResponse(request, headers, LoginFixtures.Read(_loginCbFixture), HttpStatusCode.OK);
+                        return new HttpResponse(request, headers, LoginFixtures.Read(fixture), HttpStatusCode.OK);
                     }
 
                     if (url == "https://bandcamp.com/login")
@@ -108,16 +116,18 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                 new BandcampApiClient(bandcampHttp, _logger),
                 new BandcampLoginClient(bandcampHttp, _logger),
                 new BandcampSessionStore(_repository.Object),
-                _logger);
+                _logger,
+                () => _now);
         }
 
-        private static BandcampDownloadSettings Settings(string cookies = "", string email = "fan@example.com", string password = "hunter2")
+        private static BandcampDownloadSettings Settings(string cookies = "", string email = "fan@example.com", string password = "hunter2", string verificationCode = "")
         {
             return new BandcampDownloadSettings
             {
                 Cookies = cookies,
                 Email = email,
                 Password = password,
+                VerificationCode = verificationCode,
                 DownloadPath = "/tmp/bandcamp"
             };
         }
@@ -233,6 +243,116 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
 
             Assert.Contains(result.Errors, e => e.PropertyName == "Cookies");
             Assert.Equal(0, _loginPosts);
+        }
+    
+        private string HealthMessage(IBandcampSessionProviderRegistry registry)
+        {
+            var factory = new Mock<IDownloadClientFactory>();
+            factory.Setup(f => f.All()).Returns(new System.Collections.Generic.List<DownloadClientDefinition>
+            {
+                new() { Id = 7, Name = "Bandcamp", Enable = true, Implementation = nameof(BandcampDownloadClient) }
+            });
+            return new BandcampSessionHealthCheck(factory.Object, registry, Mock.Of<ILocalizationService>()).Check().Message ?? string.Empty;
+        }
+
+        [Fact]
+        public void VerificationRequired_ReportsAgainstVerificationCodeAndHealthNamesCause()
+        {
+            _loginCbFixture = "login_cb_verification_required.json";
+            var registry = CreateRegistry();
+
+            var result = CreateClient(Settings(), registry).Test();
+
+            Assert.Contains(result.Errors, e => e.PropertyName == "VerificationCode");
+            Assert.Equal(BandcampSessionProblem.VerificationNeeded, registry.Find(7)!.State.Problem);
+            Assert.Contains(BandcampSessionProblem.VerificationNeeded.Description, HealthMessage(registry));
+        }
+
+        [Fact]
+        public void VerificationCode_SubmittedOnceThenClearedAndPersisted()
+        {
+            _loginCbFixture = "login_cb_verification_required.json";
+            var registry = CreateRegistry();
+            CreateClient(Settings(), registry).Test();
+
+            // The user types the emailed code in; Lidarr hands over a new settings object.
+            var withCode = Settings(verificationCode: EmailedCode);
+            var result = CreateClient(withCode, registry).Test();
+
+            Assert.True(result.IsValid, string.Join(", ", result.Errors.Select(e => e.ErrorMessage)));
+            Assert.Equal(2, _loginPosts);
+            Assert.Contains("login.twofactor=" + EmailedCode, _loginBodies.Last());
+            Assert.Equal("", withCode.VerificationCode);
+            Assert.Equal("identity=" + FreshIdentity, withCode.Cookies);
+            _repository.Verify(r => r.SetFields(
+                It.Is<DownloadClientDefinition>(d => ((BandcampDownloadSettings)d.Settings).VerificationCode == ""),
+                It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()), Times.AtLeastOnce);
+            Assert.Equal("", HealthMessage(registry));
+        }
+
+        [Fact]
+        public void WrongVerificationCode_IsNotResubmitted()
+        {
+            _loginCbFixture = "login_cb_verification_required.json";
+            var registry = CreateRegistry();
+            var withCode = Settings(verificationCode: "000000");
+
+            CreateClient(withCode, registry).Test();
+            CreateClient(withCode, registry).Test();
+
+            Assert.Equal(1, _loginPosts);
+            Assert.Single(_loginBodies, b => b.Contains("login.twofactor=000000"));
+            Assert.Equal("", withCode.VerificationCode);
+        }
+
+        [Fact]
+        public void CaptchaRequired_NoRetryAndHealthPointsToCookiePaste()
+        {
+            _loginCbFixture = "login_cb_captcha_required.json";
+            var registry = CreateRegistry();
+
+            var first = CreateClient(Settings(), registry).Test();
+            CreateClient(Settings(), registry).Test();
+
+            Assert.Contains(first.Errors, e => e.PropertyName == "Cookies");
+            Assert.Equal(1, _loginPosts);
+            Assert.Equal(BandcampSessionProblem.CaptchaRequired, registry.Find(7)!.State.Problem);
+            Assert.Contains("cookie", HealthMessage(registry), StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Theory]
+        [InlineData("login_cb_captcha_required.json")]
+        [InlineData("login_cb_verification_required.json")]
+        public void AfterChallenge_AtMostOneLoginPerSixHours(string fixture)
+        {
+            _loginCbFixture = fixture;
+            var registry = CreateRegistry();
+
+            CreateClient(Settings(), registry).Test();
+            _now = _now.AddHours(5).AddMinutes(59);
+            CreateClient(Settings(), registry).Test();
+            Assert.Equal(1, _loginPosts);
+
+            _now = _now.AddMinutes(2);
+            CreateClient(Settings(), registry).Test();
+            Assert.Equal(2, _loginPosts);
+
+            CreateClient(Settings(), registry).Test();
+            Assert.Equal(2, _loginPosts);
+        }
+
+        [Fact]
+        public void AfterCaptcha_PastedCookieRestoresSessionAndClearsHealth()
+        {
+            _loginCbFixture = "login_cb_captcha_required.json";
+            var registry = CreateRegistry();
+            CreateClient(Settings(), registry).Test();
+
+            var result = CreateClient(Settings(cookies: "identity=" + FreshIdentity), registry).Test();
+
+            Assert.True(result.IsValid);
+            Assert.Equal(1, _loginPosts);
+            Assert.Equal("", HealthMessage(registry));
         }
     }
 }

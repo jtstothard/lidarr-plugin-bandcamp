@@ -15,6 +15,14 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             "BadCredentials",
             "Bandcamp rejected the email or password; login won't be retried until you change them in the client settings");
 
+        public static readonly BandcampSessionProblem VerificationNeeded = new(
+            "VerificationNeeded",
+            "Bandcamp sent a verification code to your email; enter it in the client's Verification Code setting (login is otherwise retried at most every 6 hours)");
+
+        public static readonly BandcampSessionProblem CaptchaRequired = new(
+            "CaptchaRequired",
+            "Bandcamp asked for a captcha, which can't be solved here; paste a session cookie from your browser into the client settings (login is retried at most every 6 hours)");
+
         private BandcampSessionProblem(string code, string description)
         {
             Code = code;

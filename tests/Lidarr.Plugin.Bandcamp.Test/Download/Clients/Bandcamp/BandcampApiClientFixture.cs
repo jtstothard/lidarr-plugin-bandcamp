@@ -825,7 +825,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             Assert.True(System.IO.Directory.Exists(srcDir), $"Source directory not found: {srcDir}");
 
             var argPattern = new System.Text.RegularExpressions.Regex(
-                @"[,(]\s*[\w.]*(email|password)\s*[,)]",
+                @"[,(]\s*[\w.]*(email|password|verificationcode|code)\s*[,)]",
                 System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             var violations = new System.Collections.Generic.List<string>();
 
@@ -855,6 +855,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         [Theory]
         [InlineData("Email")]
         [InlineData("Password")]
+        [InlineData("VerificationCode")]
         public void CredentialFieldsUsePrivacyLevelPassword(string property)
         {
             var prop = typeof(BandcampDownloadSettings).GetProperty(property);
