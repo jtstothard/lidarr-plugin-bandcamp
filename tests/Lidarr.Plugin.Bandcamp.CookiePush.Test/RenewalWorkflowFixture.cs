@@ -21,23 +21,26 @@ public class RenewalWorkflowFixture
             new StringReader("identity=sentinel-candidate"), output, error,
             key => key == "LIDARR_URL" ? "https://lidarr.example/base" : "sentinel-api-key", handler);
         Assert.Equal(0, result);
-        Assert.Equal(2, handler.Requests.Count);
-        Assert.Equal("POST", handler.Requests[1].Method);
-        Assert.Equal("https://lidarr.example/base/api/v1/downloadclient/action/renewIdentity?fanId=12345678", handler.Requests[1].Url);
-        Assert.Contains("sentinel-candidate", handler.Requests[1].Body);
-        Assert.DoesNotContain("prior-secret", handler.Requests[1].Body);
+        Assert.Equal(3, handler.Requests.Count);
+        Assert.Equal("POST", handler.Requests[2].Method);
+        Assert.StartsWith("https://lidarr.example/base/api/v1/downloadclient/action/renewIdentity?fanId=12345678&operationId=", handler.Requests[2].Url);
+        Assert.DoesNotContain("sentinel-candidate", handler.Requests[1].Body);
+        Assert.Contains("sentinel-candidate", handler.Requests[2].Body);
+        Assert.DoesNotContain("prior-secret", handler.Requests[2].Body);
         Assert.DoesNotContain("sentinel", output.ToString() + error);
     }
     [Fact]
-    public async Task Storage_refusal_reports_only_known_status_never_server_secret_details()
+    public async Task Storage_uncertainty_reports_only_known_status_never_server_secret_details()
     {
         var output = new StringWriter(); var error = new StringWriter();
         var result = await CookiePushCommand.RunAsync(["--client-name", "Personal", "--fan-id", "12345678"],
             new StringReader("sentinel-candidate"), output, error,
             k => k == "LIDARR_URL" ? "https://lidarr.example" : "sentinel-key",
-            new Handoff("""{"success":false,"problem":"StorageFailure","detail":"sentinel-candidate"}"""));
+            new Handoff("""{"success":false,"state":"Unknown","problem":"StorageFailure","detail":"sentinel-candidate"}"""));
         Assert.Equal(1, result);
         Assert.Contains("StorageFailure", error.ToString());
+        Assert.Contains("unknown", error.ToString());
+        Assert.DoesNotContain("prior identity was retained", error.ToString());
         Assert.DoesNotContain("sentinel", output.ToString() + error);
     }
     [Theory]
@@ -64,7 +67,7 @@ public class RenewalWorkflowFixture
             throw new BrowserWindowClosedException("sentinel-key sentinel-identity");
         }
     }
-    private sealed class Handoff(string result = "{\"success\":true}") : HttpMessageHandler
+    private sealed class Handoff(string result = "{\"success\":true,\"state\":\"Committed\"}") : HttpMessageHandler
     {
         public List<(string Method, string Url, string Body)> Requests { get; } = [];
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -72,7 +75,7 @@ public class RenewalWorkflowFixture
             Requests.Add((request.Method.Method, request.RequestUri!.ToString(), request.Content == null ? "" : await request.Content.ReadAsStringAsync(cancellationToken)));
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(Requests.Count == 1
                 ? """[{"id":7,"name":"Personal","implementation":"BandcampDownloadClient","configContract":"BandcampDownloadSettings","fields":[{"name":"cookies","value":"prior-secret"},{"name":"authConfiguration","value":""}]}]"""
-                : result) };
+                : Requests.Count == 2 ? """{"success":false,"state":"Pending","operationId":"00000000-0000-0000-0000-000000000051"}""" : result) };
         }
     }
     [Fact]

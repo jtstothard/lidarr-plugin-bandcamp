@@ -313,7 +313,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             }
         }
 
-        public Task<BandcampSession?> ReplaceIdentityForFanAsync(string cookies, long expectedFanId, int expectedDefinitionId, CancellationToken cancellationToken = default)
+        public Task<BandcampSession?> ReplaceIdentityForFanAsync(string cookies, long expectedFanId, int expectedDefinitionId, CancellationToken cancellationToken = default, Func<bool>? tryBeginCommit = null)
         {
             if (expectedDefinitionId != DefinitionId || expectedFanId <= 0 || !cookies.StartsWith("identity=", StringComparison.Ordinal) ||
                 cookies.Length <= 9 || cookies.Length > 16393 ||
@@ -325,12 +325,12 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             lock (_loginLock)
             {
                 var settings = _settings;
-                return ReplaceIdentityAsync(cookies, settings, settings.Cookies, settings.CredentialKey(), cancellationToken, expectedFanId);
+                return ReplaceIdentityAsync(cookies, settings, settings.Cookies, settings.CredentialKey(), cancellationToken, expectedFanId, tryBeginCommit);
             }
         }
 
         private async Task<BandcampSession?> ReplaceIdentityAsync(
-            string cookies, BandcampDownloadSettings settings, string expectedCookies, string credentials, CancellationToken cancellationToken, long? expectedFanId = null)
+            string cookies, BandcampDownloadSettings settings, string expectedCookies, string credentials, CancellationToken cancellationToken, long? expectedFanId = null, Func<bool>? tryBeginCommit = null)
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (_rateLimit is { } limit && Clock() < limit.UntilUtc)
@@ -394,6 +394,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                     {
                         throw new InvalidOperationException("Session storage is unavailable");
                     }
+
+                    // Cancellation and the irreversible commit boundary arbitrate under one operation gate.
+                    if (tryBeginCommit != null && !tryBeginCommit()) return null;
 
                     if (!_sessionStore.TryReplaceCookies(DefinitionId, expectedCookies, credentials, cookies))
                     {
