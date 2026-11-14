@@ -187,43 +187,63 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var resolvedDownload = await _apiClient.ResolveStatdownloadUrlAsync(
-                cookies, downloadUrl, formatKey).ConfigureAwait(false);
-
-            var rawResolvedUrl = resolvedDownload?.DownloadUrl;
-            var resolvedUrl = rawResolvedUrl != null ? NormalizeUrl(rawResolvedUrl) : null;
-
-            if (string.IsNullOrWhiteSpace(resolvedUrl) && resolvedDownload?.DirectResponse == null)
-            {
-                // Fall back to using the download URL directly
-                resolvedUrl = downloadUrl;
-                _logger.Debug("Bandcamp download proxy [{0}]: Statdownload resolution empty, using direct URL",
-                    item.DownloadId);
-            }
-
-            // Phase 5: Download the file to a temp location
-            item.Phase = "file_download";
-            item.Status = BandcampDownloadStatus.Downloading;
-            _logger.Debug("Bandcamp download proxy [{0}]: Phase 5 — Downloading archive", item.DownloadId);
-
-            cancellationToken.ThrowIfCancellationRequested();
-
             // Ensure output directory exists and doesn't contain stale unreadable files from prior attempts.
+            // The temp file is opened before statdownload because that endpoint may stream the archive itself.
             PrepareOutputDirectory(item.OutputPath);
 
             var tempFile = Path.Combine(item.OutputPath, $"{item.DownloadId}.tmp");
 
             try
             {
-                if (resolvedDownload?.DirectResponse != null)
+                await using (var fileStream = new FileStream(
+                    tempFile, FileMode.Create, FileAccess.ReadWrite, FileShare.None, 81920, useAsync: true))
                 {
-                    await WriteResponseToFileAsync(resolvedDownload.DirectResponse, tempFile, item, cancellationToken)
-                        .ConfigureAwait(false);
-                }
-                else
-                {
-                    await DownloadToFileAsync(cookies, resolvedUrl!, tempFile, item, cancellationToken)
-                        .ConfigureAwait(false);
+                    var progressStream = new ProgressReportingStream(fileStream, item);
+
+                    var resolvedDownload = await _apiClient.ResolveStatdownloadUrlAsync(
+                        cookies, downloadUrl, formatKey, progressStream).ConfigureAwait(false);
+
+                    if (resolvedDownload?.ArchiveWrittenToDestination != true)
+                    {
+                        var rawResolvedUrl = resolvedDownload?.DownloadUrl;
+                        var resolvedUrl = rawResolvedUrl != null ? NormalizeUrl(rawResolvedUrl) : null;
+
+                        if (string.IsNullOrWhiteSpace(resolvedUrl))
+                        {
+                            // Fall back to using the download URL directly
+                            resolvedUrl = downloadUrl;
+                            _logger.Debug("Bandcamp download proxy [{0}]: Statdownload resolution empty, using direct URL",
+                                item.DownloadId);
+                        }
+
+                        // Phase 5: Download the file to a temp location
+                        item.Phase = "file_download";
+                        item.Status = BandcampDownloadStatus.Downloading;
+                        _logger.Debug("Bandcamp download proxy [{0}]: Phase 5 — Downloading archive", item.DownloadId);
+
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        // Discard any statdownload pointer body; count only archive bytes.
+                        fileStream.SetLength(0);
+                        fileStream.Position = 0;
+                        item.DownloadedBytes = 0;
+
+                        await _apiClient.DownloadFileAsync(cookies, resolvedUrl, progressStream).ConfigureAwait(false);
+                    }
+
+                    await fileStream.FlushAsync(cancellationToken).ConfigureAwait(false);
+
+                    if (fileStream.Length == 0)
+                    {
+                        throw new DownloadException("Download response contained no data.");
+                    }
+
+                    item.DownloadedBytes = fileStream.Length;
+                    item.TotalSize = fileStream.Length;
+                    item.Progress = 1.0;
+
+                    _logger.Debug("Bandcamp download proxy [{0}]: File download complete ({1} bytes)",
+                        item.DownloadId, item.DownloadedBytes);
                 }
             }
             catch
@@ -249,50 +269,6 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
             _logger.Debug("Bandcamp download proxy [{0}]: All phases completed -> {1}",
                 item.DownloadId, item.OutputPath);
-        }
-
-        /// <summary>
-        /// Downloads a file from the resolved URL to a local temp file.
-        /// Lidarr's HttpResponse buffers the full response into byte[], so we write
-        /// ResponseData to disk in one shot. Progress jumps to 1.0 on completion.
-        /// </summary>
-        private async Task DownloadToFileAsync(
-            string cookies,
-            string fileUrl,
-            string tempFilePath,
-            BandcampDownloadItem item,
-            CancellationToken cancellationToken)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            // Use the API client's DownloadFileAsync which validates Content-Type
-            var response = await _apiClient.DownloadFileAsync(cookies, fileUrl).ConfigureAwait(false);
-            await WriteResponseToFileAsync(response, tempFilePath, item, cancellationToken).ConfigureAwait(false);
-        }
-
-        private async Task WriteResponseToFileAsync(
-            HttpResponse response,
-            string tempFilePath,
-            BandcampDownloadItem item,
-            CancellationToken cancellationToken)
-        {
-            var responseData = response.ResponseData;
-            if (responseData == null || responseData.Length == 0)
-            {
-                throw new DownloadException("Download response contained no data.");
-            }
-
-            // Track size for progress reporting
-            item.TotalSize = responseData.Length;
-
-            // Write to temp file asynchronously
-            await File.WriteAllBytesAsync(tempFilePath, responseData, cancellationToken).ConfigureAwait(false);
-
-            item.DownloadedBytes = responseData.Length;
-            item.Progress = 1.0;
-
-            _logger.Debug("Bandcamp download proxy [{0}]: File download complete ({1} bytes)",
-                item.DownloadId, item.DownloadedBytes);
         }
 
         /// <summary>

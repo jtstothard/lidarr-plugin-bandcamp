@@ -418,17 +418,20 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             SetupExecuteAsync(response);
             var client = CreateClient();
 
+            using var destination = new System.IO.MemoryStream();
+
             // Act
             var result = await client.ResolveStatdownloadUrlAsync(
                 "identity=testcookie",
                 "https://bandcamp.com/statdownload/album/12345?sig=abc",
-                "flac");
+                "flac",
+                destination);
 
             // Assert
             Assert.NotNull(result);
             Assert.Null(result!.DownloadUrl);
-            Assert.NotNull(result.DirectResponse);
-            Assert.Equal(response, result.DirectResponse);
+            Assert.True(result.ArchiveWrittenToDestination);
+            Assert.Equal(new byte[] { 0x50, 0x4B, 0x03, 0x04, 0x00 }, destination.ToArray());
         }
 
         #endregion
@@ -454,7 +457,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
 
             // Act & Assert
             var ex = await Assert.ThrowsAsync<DownloadException>(
-                () => client.DownloadFileAsync("identity=testcookie", "https://example.com/file.zip"));
+                () => client.DownloadFileAsync("identity=testcookie", "https://example.com/file.zip", new System.IO.MemoryStream()));
 
             Assert.Contains("HTML response", ex.Message);
         }
