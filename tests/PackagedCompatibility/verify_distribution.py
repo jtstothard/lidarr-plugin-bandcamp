@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 import zipfile
 
+from compatibility import SCENARIOS
 from run import verify, HERE
 
 def require(condition, message):
@@ -19,7 +20,7 @@ require(receipt['passed'] is True, 'Unsuccessful gate receipt')
 pins = json.loads((HERE / 'matrix.json').read_text())
 require(receipt['inputs'] == pins, 'Runtime pins differ')
 expected = {(p['version'], s) for p in pins.values()
-            for s in ('healthy', 'warning', 'restored', 'disabled', 'multiple')}
+            for s in SCENARIOS}
 require({(r['runtime'], r['scenario']) for r in receipt['results'] if r['behavioralPassed']} == expected, 'Incomplete behavior coverage')
 require(len(receipt['results']) == len(expected), 'Unexpected behavior result count')
 scans = receipt['scans']

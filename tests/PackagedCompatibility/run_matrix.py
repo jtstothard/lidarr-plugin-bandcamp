@@ -6,9 +6,10 @@ import json
 import os
 from pathlib import Path
 import subprocess
-import tarfile
 import tempfile
 import zipfile
+
+from compatibility import extract_runtime_dlls, SCENARIOS
 
 from run import HERE, CACHE, fetch, verify
 
@@ -18,7 +19,7 @@ def main():
     parser.add_argument('package', type=Path)
     parser.add_argument('--receipt', type=Path, required=True)
     parser.add_argument('--scan', action='store_true', help='Also require supplementary direct ABI scanning')
-    parser.add_argument('--scenario', action='append', choices=('healthy', 'warning', 'restored', 'disabled', 'multiple'))
+    parser.add_argument('--scenario', action='append', choices=SCENARIOS)
     args = parser.parse_args()
     package = args.package.resolve()
     pins = json.loads((HERE / 'matrix.json').read_text())
@@ -48,12 +49,9 @@ def main():
                 archive_path = fetch(key, key + '.tar.gz', pins)
                 runtime = root / key
                 runtime.mkdir()
-                with tarfile.open(archive_path) as archive:
-                    for member in archive:
-                        if member.isfile() and member.name.startswith('Lidarr/') and member.name.count('/') == 1 and member.name.endswith('.dll'):
-                            (runtime / Path(member.name).name).write_bytes(archive.extractfile(member).read())
+                extract_runtime_dlls(archive_path, runtime)
                 verify(runtime / 'Lidarr.Core.dll', pin['coreSha256'])
-                for scenario in args.scenario or ('healthy', 'warning', 'restored', 'disabled', 'multiple'):
+                for scenario in args.scenario or SCENARIOS:
                     command = ['dotnet', str(output / 'PackagedCompatibility.dll'), str(runtime), str(plugin), 'behavior', scenario]
                     probe = subprocess.run(command, capture_output=True, text=True, env=env)
                     print(f"{pin['version']} {scenario}: exit {probe.returncode}")

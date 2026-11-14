@@ -5,10 +5,11 @@ import json
 import os
 from pathlib import Path
 import subprocess
-import tarfile
 import tempfile
 import urllib.request
 import zipfile
+
+from compatibility import extract_runtime_dlls
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
@@ -41,11 +42,7 @@ def main():
         root = Path(tmp)
         runtime = root / 'runtime'
         runtime.mkdir()
-        # Extract flat DLLs only. No archive paths, symlinks, services or native executables.
-        with tarfile.open(runtime_archive) as archive:
-            for member in archive:
-                if member.isfile() and member.name.startswith('Lidarr/') and member.name.count('/') == 1 and member.name.endswith('.dll'):
-                    (runtime / Path(member.name).name).write_bytes(archive.extractfile(member).read())
+        extract_runtime_dlls(runtime_archive, runtime)
         plugin = root / 'Lidarr.Plugin.Bandcamp.dll'
         with zipfile.ZipFile(plugin_archive) as archive:
             plugin.write_bytes(archive.read(plugin.name))

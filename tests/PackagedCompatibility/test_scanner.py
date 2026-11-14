@@ -2,10 +2,11 @@
 import json
 from pathlib import Path
 import subprocess
-import tarfile
 import tempfile
 import unittest
 import zipfile
+
+from compatibility import extract_runtime_dlls
 from run import HERE, CACHE, fetch
 
 class ScannerControls(unittest.TestCase):
@@ -18,10 +19,7 @@ class ScannerControls(unittest.TestCase):
             root = Path(tmp)
             runtime = root / 'runtime'
             runtime.mkdir()
-            with tarfile.open(archive) as tar:
-                for member in tar:
-                    if member.isfile() and member.name.startswith('Lidarr/') and member.name.count('/') == 1 and member.name.endswith('.dll'):
-                        (runtime / Path(member.name).name).write_bytes(tar.extractfile(member).read())
+            extract_runtime_dlls(archive, runtime)
             scanner = root / 'scanner'
             subprocess.run(['dotnet', 'build', str(HERE / 'Scanner/Scanner.csproj'), '-o', str(scanner)], check=True, capture_output=True)
             subprocess.run(['dotnet', 'run', '--project', str(HERE / 'ScannerControls/ScannerControls.csproj'), '--', str(root)], check=True, capture_output=True)
