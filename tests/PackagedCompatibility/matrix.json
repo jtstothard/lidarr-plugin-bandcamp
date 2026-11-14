@@ -1,0 +1,24 @@
+{
+  "oldest": {
+    "version": "3.1.4.5029",
+    "releaseApi": "https://api.github.com/repos/Lidarr/Lidarr/releases/375193671",
+    "releaseCommit": "570f9a515ae7319d5df698cb4715cf718e7590d2",
+    "url": "https://github.com/Lidarr/Lidarr/releases/download/v3.1.4.5029/Lidarr.develop.3.1.4.5029.linux-core-x64.tar.gz",
+    "sha256": "39e011bb43ed612e3e009b9280836e47bc53f6ee1439192a9e89384fc38216b1",
+    "coreSha256": "4d1d09a507365e3dd79c1ac8734dfa2761f4610d40c359221c99734e6b53e735",
+    "releaseId": 375193671,
+    "assetId": 526152324,
+    "publishedAt": "2026-08-23T11:39:53Z"
+  },
+  "nightly": {
+    "version": "3.2.1.5196",
+    "releaseApi": "https://api.github.com/repos/Lidarr/Lidarr/releases/tags/v3.2.1.5196",
+    "releaseCommit": "6af1274a11957270a308fd0448ffe624a8e264d0",
+    "url": "https://github.com/Lidarr/Lidarr/releases/download/v3.2.1.5196/Lidarr.develop.3.2.1.5196.linux-core-x64.tar.gz",
+    "sha256": "009ce48af3faab34578dd1fcd3945cae7db42f5449c7999e2ffd20d60a22ec06",
+    "coreSha256": "7ca8d80b4ea680546f81b4c48787ed5a44550654e97684e3fe2465b7e7862294",
+    "releaseId": 438043540,
+    "assetId": 722940621,
+    "publishedAt": "2026-11-08T15:52:21Z"
+  }
+}

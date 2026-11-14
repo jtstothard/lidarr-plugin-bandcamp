@@ -18,6 +18,7 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   PLUGIN_NAME: Lidarr.Plugin.Bandcamp
   DOTNET_VERSION: '10.0.103'
+  LIDARR_SOURCE_COMMIT: e42a7ca4fd633e021d69da7daa0368b870b0282e
   # AssemblyVersion pinned to a LOW major version for cross-version compatibility.
   # Lidarr uses non-deterministic 10.0.0.* which changes every build. .NET's assembly
   # binding requires an EXACT version match when the major version component is the same
@@ -53,7 +54,10 @@ jobs:
 
       - name: Clone Lidarr source
         run: |
-          git clone --depth 1 --branch plugins https://github.com/Lidarr/Lidarr.git ext/Lidarr
+          git init ext/Lidarr
+          git -C ext/Lidarr remote add origin https://github.com/Lidarr/Lidarr.git
+          git -C ext/Lidarr fetch --depth 1 origin "$LIDARR_SOURCE_COMMIT"
+          git -C ext/Lidarr checkout --detach FETCH_HEAD
 
       - name: Pin Lidarr assembly versions
         run: |

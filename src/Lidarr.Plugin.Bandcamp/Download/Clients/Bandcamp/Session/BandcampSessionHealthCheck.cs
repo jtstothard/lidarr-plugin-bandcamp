@@ -42,9 +42,8 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 return new HealthCheck.HealthCheck(GetType());
             }
 
-            return new HealthCheck.HealthCheck(
+            return BandcampHealthResult.Warning(
                 GetType(),
-                HealthCheckResult.Warning,
                 "Bandcamp session invalid. " + string.Join("; ", problems));
         }
     }

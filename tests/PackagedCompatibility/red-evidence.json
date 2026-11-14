@@ -1,0 +1,51 @@
+{
+  "packageSha256": "d348b043307b326b44ddef040660ab604f119cd74ca1c405387b679ce9163e41",
+  "behavioralExit": 1,
+  "preFixSource": "4125c79060ccf47f8a27fd48050ee60f58b1ecfd",
+  "runtime": "3.2.1.5196",
+  "result": {
+    "processId": 91017,
+    "hostRuntime": "10.0.3",
+    "scenario": "healthy",
+    "homepageCalls": 1,
+    "diagnosticPassed": false,
+    "behavioralPassed": false,
+    "severity": null,
+    "healthMessage": null,
+    "reason": null,
+    "exception": "System.MissingMethodException",
+    "message": "Method not found: 'Void NzbDrone.Core.HealthCheck.HealthCheck..ctor(System.Type, NzbDrone.Core.HealthCheck.HealthCheckResult, System.String, System.String)'.",
+    "assemblies": [
+      {
+        "name": "FluentValidation",
+        "identity": "FluentValidation, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7de548da2fbae0f0",
+        "path": "<isolated-root>/nightly/FluentValidation.dll",
+        "sha256": "2c435bfd490bdf31e4e4bcb5f3e0f4e953f7d9510c0129d829c4b73966bece34"
+      },
+      {
+        "name": "Lidarr.Common",
+        "identity": "Lidarr.Common, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null",
+        "path": "<isolated-root>/nightly/Lidarr.Common.dll",
+        "sha256": "5e18c55b500b950828ed00000044082cc63967bd576b74e9c01a2a1970c54fbb"
+      },
+      {
+        "name": "Lidarr.Core",
+        "identity": "Lidarr.Core, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null",
+        "path": "<isolated-root>/nightly/Lidarr.Core.dll",
+        "sha256": "7ca8d80b4ea680546f81b4c48787ed5a44550654e97684e3fe2465b7e7862294"
+      },
+      {
+        "name": "Lidarr.Plugin.Bandcamp",
+        "identity": "Lidarr.Plugin.Bandcamp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+        "path": "<isolated-root>/Lidarr.Plugin.Bandcamp.dll",
+        "sha256": "47c29af8488cc63b6bc0e1a21371ffcc4166d3a378830ad8502a00b9cd7f02d1"
+      },
+      {
+        "name": "NLog",
+        "identity": "NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c",
+        "path": "<isolated-root>/nightly/NLog.dll",
+        "sha256": "0b96c27373786d9ae27e2a26e00d890adff5adfc4d3f0ee0bd1ae2a958292860"
+      }
+    ]
+  }
+}

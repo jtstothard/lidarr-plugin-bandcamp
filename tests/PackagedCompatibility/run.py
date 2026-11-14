@@ -22,8 +22,8 @@ def verify(path, expected):
         raise RuntimeError(f'SHA256 mismatch: {path}: {actual} != {expected}')
 
 
-def fetch(key, filename):
-    pin = PINS[key]
+def fetch(key, filename, pins=PINS):
+    pin = pins[key]
     path = CACHE / filename
     if not path.exists():
         with urllib.request.urlopen(pin['url']) as response, path.open('xb') as output:

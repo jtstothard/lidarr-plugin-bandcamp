@@ -12,26 +12,61 @@ var plugin = context.LoadFromAssemblyPath(pluginPath);
 var checkType = plugin.GetType("NzbDrone.Core.Download.Clients.Bandcamp.Session.BandcampSessionHealthCheck", true)!;
 var fixture = new SessionFixture(plugin, context);
 var scenario = args.Length > 3 ? args[3] : "healthy";
-if (scenario is "warning" or "restored")
+const string expiredCause = "session cookie expired or invalid; paste a fresh identity cookie into the client settings";
+object? provider = null;
+if (scenario is "healthy" or "warning" or "restored" or "disabled" or "multiple")
 {
-    var provider = fixture.AddClient(7, "My Bandcamp");
-    await fixture.ValidateAsync(provider, false);
-    if (scenario == "restored") await fixture.ValidateAsync(provider, true);
+    provider = fixture.AddClient(7, "My Bandcamp", scenario != "disabled");
+    await fixture.ValidateAsync(provider, scenario == "healthy");
+    if (scenario == "disabled")
+        await fixture.ValidateAsync(fixture.AddClient(8, "Healthy Bandcamp"), true);
+    if (scenario == "multiple")
+        await fixture.ValidateAsync(fixture.AddClient(8, "Other Bandcamp"), false);
 }
-else if (scenario != "healthy") throw new ArgumentException("Unknown scenario: " + scenario);
+else throw new ArgumentException("Unknown scenario: " + scenario);
 var check = fixture.CreateCheck(checkType);
 Exception? failure = null;
 object? result = null;
-try { result = checkType.GetMethod("Check")!.Invoke(check, null); }
+bool? warningBeforeRestore = null;
+try
+{
+    if (scenario == "restored")
+    {
+        // The same Check instance must warn before validation, then return OK after it.
+        if (expected == "behavior")
+            warningBeforeRestore = IsWarning(checkType.GetMethod("Check")!.Invoke(check, null), false);
+        await fixture.ValidateAsync(provider!, true);
+    }
+    result = checkType.GetMethod("Check")!.Invoke(check, null);
+}
 catch (TargetInvocationException e) { failure = e.InnerException; }
 
+string? Property(object? value, string name) => value?.GetType().GetProperty(name)?.GetValue(value)?.ToString();
+bool IsWarning(object? value, bool multiple)
+{
+    var message = Property(value, "Message");
+    return Property(value, "Type") == "Warning" &&
+        message?.Contains("My Bandcamp: " + expiredCause) == true &&
+        (!multiple || message.Contains("Other Bandcamp: " + expiredCause)) &&
+        (value?.GetType().GetProperty("Reason") == null || Property(value, "Reason") == "DownloadClientStatusSingleClient");
+}
+var severity = Property(result, "Type");
+var healthMessage = Property(result, "Message");
+var reason = Property(result, "Reason");
 // An expected diagnostic is distinct from a passing health behavior.
 const string removedConstructor = "Method not found: 'Void NzbDrone.Core.HealthCheck.HealthCheck..ctor(System.Type, NzbDrone.Core.HealthCheck.HealthCheckResult, System.String, System.String)'.";
 var passed = expected switch
 {
     "known-bad" => failure is MissingMethodException && failure.Message == removedConstructor,
-    "healthy" => failure == null && result?.GetType().GetProperty("Type")?.GetValue(result)?.ToString() == "Ok",
-    _ => throw new ArgumentException("Expected healthy or known-bad")
+    "healthy" => failure == null && severity == "Ok",
+    "behavior" => failure == null && (scenario switch
+    {
+        "warning" => IsWarning(result, false),
+        "multiple" => IsWarning(result, true),
+        "restored" => warningBeforeRestore == true && severity == "Ok" && string.IsNullOrEmpty(healthMessage),
+        _ => severity == "Ok" && string.IsNullOrEmpty(healthMessage)
+    }),
+    _ => throw new ArgumentException("Expected behavior, healthy or known-bad")
 };
 var assemblies = context.Assemblies.Select(a => new
 {
@@ -49,8 +84,12 @@ Console.WriteLine(JsonSerializer.Serialize(new
     hostRuntime = Environment.Version.ToString(),
     scenario,
     homepageCalls = fixture.HomepageCalls,
-    diagnosticPassed = passed,
-    behavioralPassed = failure == null,
+    diagnosticPassed = expected == "known-bad" && passed,
+    behavioralPassed = expected != "known-bad" && passed,
+    warningBeforeRestore,
+    severity,
+    healthMessage,
+    reason,
     exception = failure?.GetType().FullName,
     message = failure?.Message,
     assemblies
