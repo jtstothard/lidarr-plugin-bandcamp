@@ -7,6 +7,7 @@ using NLog;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.Http;
 using NzbDrone.Core.Configuration;
+using NzbDrone.Core.Download.Clients.Bandcamp.Session;
 using NzbDrone.Core.Indexers;
 using NzbDrone.Core.Localization;
 using NzbDrone.Core.Music;
@@ -31,7 +32,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
     public class BandcampDownloadClient : DownloadClientBase<BandcampDownloadSettings>
     {
         private readonly IBandcampDownloadQueue _taskQueue;
-        private readonly BandcampApiClient _apiClient;
+        private readonly IBandcampSessionProviderRegistry _sessionProviders;
         private readonly IAlbumService _albumService;
         private readonly IReleaseService _releaseService;
         private readonly ITrackService _trackService;
@@ -41,7 +42,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
         public BandcampDownloadClient(
             IBandcampDownloadQueue taskQueue,
-            BandcampApiClient apiClient,
+            IBandcampSessionProviderRegistry sessionProviders,
             IAlbumService albumService,
             IReleaseService releaseService,
             ITrackService trackService,
@@ -53,11 +54,16 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             : base(configService, diskProvider, remotePathMappingService, localizationService, logger)
         {
             _taskQueue = taskQueue;
-            _apiClient = apiClient;
+            _sessionProviders = sessionProviders;
             _albumService = albumService;
             _releaseService = releaseService;
             _trackService = trackService;
         }
+
+        /// <summary>
+        /// Gets this client definition's session provider, pointed at the current settings.
+        /// </summary>
+        private IBandcampSessionProvider SessionProvider => _sessionProviders.Get(Definition.Id, Settings);
 
         /// <summary>
         /// Enqueues an album download from Bandcamp. Extracts the album URL from the
@@ -94,7 +100,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 AlbumUrl = albumUrl,
                 Title = title,
                 OutputPath = outputPath,
-                Cookies = Settings.Cookies,
+                SessionProvider = SessionProvider,
                 RetagContext = retagContext
             };
 
@@ -188,9 +194,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             // Test cookie auth — resolve fan_id to verify cookies are valid
             try
             {
-                var fanId = _apiClient.ResolveFanIdAsync(Settings.Cookies).GetAwaiter().GetResult();
+                var session = SessionProvider.ValidateAsync().GetAwaiter().GetResult();
 
-                if (fanId == null)
+                if (session == null)
                 {
                     failures.Add(new ValidationFailure("Cookies",
                         "Could not verify session cookies. Make sure you're pasting the 'identity' cookie " +

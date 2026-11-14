@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Concurrent;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,6 +11,7 @@ using NzbDrone.Common.Http;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Download;
 using NzbDrone.Core.Download.Clients.Bandcamp;
+using NzbDrone.Core.Download.Clients.Bandcamp.Session;
 using NzbDrone.Core.Http.Bandcamp;
 using NzbDrone.Core.Indexers;
 using NzbDrone.Core.Localization;
@@ -55,11 +58,97 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             proxy.Release();
         }
 
+        [Fact]
+        public async Task Download_SessionCookieChangedAfterGrab_QueuedItemRunsWithCurrentCookie()
+        {
+            var logger = LogManager.GetCurrentClassLogger();
+            var httpClient = new Mock<IHttpClient>();
+            var firstRequestGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var homepageCookies = new ConcurrentQueue<string>();
+            var homepageCalls = 0;
+
+            httpClient
+                .Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
+                .Returns(async (HttpRequest request) =>
+                {
+                    if (request.Url.FullUri == "https://bandcamp.com")
+                    {
+                        homepageCookies.Enqueue(request.Headers.GetSingleValue("Cookie"));
+                        if (Interlocked.Increment(ref homepageCalls) == 1)
+                        {
+                            await firstRequestGate.Task;
+                        }
+
+                        // Dead session: no fanId, so each item fails at fan_id resolution.
+                        return new HttpResponse(request, new HttpHeader(), "<html></html>", System.Net.HttpStatusCode.OK);
+                    }
+
+                    return new HttpResponse(request, new HttpHeader(), "{}", System.Net.HttpStatusCode.OK);
+                });
+
+            var bandcampHttp = new BandcampHttpClient(httpClient.Object, logger);
+            var apiClient = new BandcampApiClient(bandcampHttp, logger);
+            var sessions = new BandcampSessionProviderRegistry(apiClient, logger);
+            var proxy = new BandcampDownloadProxy(apiClient, bandcampHttp, logger);
+            using var queue = new DownloadTaskQueue(proxy, new BandcampDownloadRegistry(), logger);
+
+            var client = CreateClient(queue, apiClient, logger, sessions, "identity=old-cookie");
+
+            await client.Download(CreateRemoteAlbum("111"), Mock.Of<IIndexer>());
+            await WaitUntil(() => Volatile.Read(ref homepageCalls) == 1);
+            await client.Download(CreateRemoteAlbum("222"), Mock.Of<IIndexer>());
+
+            // Session renewed (e.g. user pasted a fresh cookie) while the second item is still queued.
+            ((BandcampDownloadSettings)client.Definition.Settings).Cookies = "identity=new-cookie";
+            firstRequestGate.SetResult(true);
+
+            await WaitUntil(() => client.GetItems().Count(i => i.Status == DownloadItemStatus.Failed) == 2);
+
+            Assert.Equal(new[] { "identity=old-cookie", "identity=new-cookie" }, homepageCookies.ToArray());
+        }
+
+        private static RemoteAlbum CreateRemoteAlbum(string id)
+        {
+            return new RemoteAlbum
+            {
+                Release = new ReleaseInfo
+                {
+                    Title = $"Album {id} [FLAC]",
+                    Album = $"Album {id}",
+                    DownloadUrl = $"https://bandcamp.com/download?type=album&id={id}#format=flac"
+                }
+            };
+        }
+
+        private static async Task WaitUntil(Func<bool> condition)
+        {
+            var deadline = DateTime.UtcNow.AddSeconds(10);
+            while (!condition())
+            {
+                if (DateTime.UtcNow > deadline)
+                {
+                    throw new TimeoutException("Condition not met in time");
+                }
+
+                await Task.Delay(20);
+            }
+        }
+
         private static BandcampDownloadClient CreateClient(IBandcampDownloadQueue queue, BandcampApiClient apiClient, Logger logger)
+        {
+            return CreateClient(queue, apiClient, logger, new BandcampSessionProviderRegistry(apiClient, logger), "identity=testcookie");
+        }
+
+        private static BandcampDownloadClient CreateClient(
+            IBandcampDownloadQueue queue,
+            BandcampApiClient apiClient,
+            Logger logger,
+            IBandcampSessionProviderRegistry sessions,
+            string cookies)
         {
             var client = new BandcampDownloadClient(
                 queue,
-                apiClient,
+                sessions,
                 Mock.Of<IAlbumService>(),
                 Mock.Of<IReleaseService>(),
                 Mock.Of<ITrackService>(),
@@ -71,10 +160,11 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
 
             client.Definition = new DownloadClientDefinition
             {
+                Id = 1,
                 Name = "Bandcamp",
                 Settings = new BandcampDownloadSettings
                 {
-                    Cookies = "identity=testcookie",
+                    Cookies = cookies,
                     DownloadPath = "/tmp/bandcamp"
                 }
             };

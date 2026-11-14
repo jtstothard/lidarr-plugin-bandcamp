@@ -46,13 +46,12 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         public async Task ExecuteDownloadAsync(
             BandcampDownloadItem item, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(item.Cookies))
+            if (item.SessionProvider == null)
             {
                 throw new DownloadException(
-                    "Cannot execute download: session cookies are not set on the download item.");
+                    "Cannot execute download: no session provider is set on the download item.");
             }
 
-            var cookies = item.Cookies!;
             var requestedFormat = ExtractFormatFragment(item.AlbumUrl);
             var lookupUrl = NormalizeUrl(StripFragment(item.AlbumUrl));
 
@@ -60,12 +59,15 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             item.Phase = "fan_id_resolution";
             _logger.Debug("Bandcamp download proxy [{0}]: Phase 1 — Resolving fan_id", item.DownloadId);
 
-            var fanId = await _apiClient.ResolveFanIdAsync(cookies).ConfigureAwait(false);
-            if (fanId == null)
+            var session = await item.SessionProvider.GetSessionAsync(cancellationToken).ConfigureAwait(false);
+            if (session == null)
             {
                 throw new DownloadException(
                     "Failed to resolve Bandcamp fan_id. Session cookies may be invalid or expired.");
             }
+
+            var cookies = session.Cookies;
+            long? fanId = session.FanId;
 
             _logger.Trace("Bandcamp download proxy [{0}]: Resolved fan_id {1}", item.DownloadId, fanId);
 

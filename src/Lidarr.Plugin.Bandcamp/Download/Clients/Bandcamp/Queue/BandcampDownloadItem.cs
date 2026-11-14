@@ -1,4 +1,5 @@
 using System;
+using NzbDrone.Core.Download.Clients.Bandcamp.Session;
 
 namespace NzbDrone.Core.Download.Clients.Bandcamp
 {
@@ -77,10 +78,11 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         internal BandcampRetagContext? RetagContext { get; set; }
 
         /// <summary>
-        /// Internal: session cookies for authenticating with Bandcamp.
-        /// Not exposed to Lidarr — used only during download processing.
+        /// Internal: the session provider of the client definition that grabbed this item.
+        /// The proxy asks it for the current session when the item runs, so items queued
+        /// before a session renewal still use the renewed session.
         /// </summary>
-        internal string? Cookies { get; set; }
+        internal IBandcampSessionProvider? SessionProvider { get; set; }
     }
 
     /// <summary>
