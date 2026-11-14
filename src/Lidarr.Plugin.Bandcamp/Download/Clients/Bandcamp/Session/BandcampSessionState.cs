@@ -31,8 +31,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
     {
         public static readonly BandcampSessionState Initial = new(BandcampSessionStatus.Unknown, null);
 
-        public BandcampSessionState(BandcampSessionStatus status, DateTime? checkedAtUtc)
+        public BandcampSessionState(BandcampSessionStatus status, DateTime? checkedAtUtc, BandcampSessionProblem? problem = null)
         {
+            Problem = problem;
             Status = status;
             CheckedAtUtc = checkedAtUtc;
         }
@@ -41,5 +42,8 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
         /// <summary>Gets when the last live validation finished (UTC), or null if never.</summary>
         public DateTime? CheckedAtUtc { get; }
+
+        /// <summary>Gets why the session is unusable, for health reporting; null when there is nothing for the user to fix.</summary>
+        public BandcampSessionProblem? Problem { get; }
     }
 }

@@ -230,7 +230,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             {
                 _cached = null;
                 _logger.Debug("Bandcamp session [{0}]: fan_id lookup returned no fan; session invalid", DefinitionId);
-                SetState(BandcampSessionStatus.Invalid);
+                SetState(BandcampSessionStatus.Invalid, BandcampSessionProblem.CookieExpired);
                 return null;
             }
 
@@ -240,9 +240,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             return session;
         }
 
-        protected void SetState(BandcampSessionStatus status)
+        protected void SetState(BandcampSessionStatus status, BandcampSessionProblem? problem = null)
         {
-            _state = new BandcampSessionState(status, Clock());
+            _state = new BandcampSessionState(status, Clock(), problem);
         }
 
         private sealed class LoginRecord
