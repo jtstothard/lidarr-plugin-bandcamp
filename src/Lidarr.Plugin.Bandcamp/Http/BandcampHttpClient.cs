@@ -68,6 +68,8 @@ namespace NzbDrone.Core.Http.Bandcamp
                 req.StoreRequestCookie = false;
                 req.StoreResponseCookie = false;
                 req.AllowAutoRedirect = false;
+                req.LogHttpError = false;
+                req.LogResponseContent = false;
             };
 
             // Browser-like headers so Bandcamp serves full pages
@@ -107,7 +109,7 @@ namespace NzbDrone.Core.Http.Bandcamp
         public async Task<HttpResponse> ExecuteAsync(HttpRequest request, bool observeIdentity = true)
         {
             // Log the request URL without any headers (cookies are in headers)
-            _logger.Debug("Bandcamp request: {0} {1}", request.Method, request.Url);
+            _logger.Debug("Bandcamp request: {0}", request.Method);
 
             try
             {
@@ -117,17 +119,21 @@ namespace NzbDrone.Core.Http.Bandcamp
                     await ObserveIdentityAsync(request, response).ConfigureAwait(false);
                 }
 
-                _logger.Debug("Bandcamp response: {0} -> {1} ({2} bytes)",
-                    request.Url,
+                _logger.Debug("Bandcamp response: {0} ({1} bytes)",
                     (int)response.StatusCode,
                     response.ResponseData?.Length ?? 0);
 
                 return response;
             }
-            catch (Exception ex)
+            catch (OperationCanceledException)
             {
-                _logger.Debug(ex, "Bandcamp request failed: {0}", request.Url);
-                throw;
+                throw new OperationCanceledException("Bandcamp request cancelled");
+            }
+            catch (Exception)
+            {
+                _logger.Debug("Bandcamp request failed; check network and service availability");
+                // Upstream exceptions can embed cookies, bodies and signed URLs. No inner exception.
+                throw new System.IO.IOException("Bandcamp request failed; check network and service availability");
             }
         }
 
@@ -170,23 +176,27 @@ namespace NzbDrone.Core.Http.Bandcamp
         /// </summary>
         public async Task<HttpResponse> ExecuteRawAsync(HttpRequest request)
         {
-            _logger.Debug("Bandcamp request: {0} {1}", request.Method, request.Url);
+            _logger.Debug("Bandcamp request: {0}", request.Method);
 
             try
             {
                 var response = await _httpClient.ExecuteAsync(request);
                 await ObserveIdentityAsync(request, response).ConfigureAwait(false);
 
-                _logger.Debug("Bandcamp response: {0} -> {1}",
-                    request.Url,
+                _logger.Debug("Bandcamp response: {0}",
                     (int)response.StatusCode);
 
                 return response;
             }
-            catch (Exception ex)
+            catch (OperationCanceledException)
             {
-                _logger.Debug(ex, "Bandcamp request failed: {0}", request.Url);
-                throw;
+                throw new OperationCanceledException("Bandcamp request cancelled");
+            }
+            catch (Exception)
+            {
+                _logger.Debug("Bandcamp request failed; check network and service availability");
+                // Upstream exceptions can embed cookies, bodies and signed URLs. No inner exception.
+                throw new System.IO.IOException("Bandcamp request failed; check network and service availability");
             }
         }
     }
