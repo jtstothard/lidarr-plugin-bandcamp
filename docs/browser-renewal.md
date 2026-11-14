@@ -17,7 +17,7 @@ pwsh src/Lidarr.Plugin.Bandcamp.CookiePush/bin/Release/net8.0/playwright.ps1 ins
 Linux also needs Playwright's documented Chromium OS dependencies. No desktop browser belongs
 on the headless Lidarr host. The source targets Windows, macOS and Linux; this change has fixture
 coverage only, **not native browser/packaging qualification on any platform**. No prebuilt helper
-release is claimed. The server must run this plugin version with the `renewIdentity` action.
+release is claimed. The server must run this plugin version with the renewal begin/cancel/status protocol; older one-shot `renewIdentity` clients are refused.
 
 Create/save a Bandcamp download client as the authentication owner, using a distinct, unique
 Lidarr Name and an empty Shared Authentication selector. It may be disabled. Explicitly select
@@ -74,13 +74,38 @@ shared replacement transaction. There is no password login, normal settings PUT,
 indexer write, or second cookie store. Validation precedes one detached-settings persistence;
 activation follows successful persistence. Search and download then resolve that owner.
 
-Close the login window or press Ctrl-C to cancel before handoff; the prior saved session remains.
-The CLI has a ten-minute total deadline. Once an API request is submitted, cancellation, timeout
-or a lost connection cannot prove whether the server committed. The helper reports that ambiguity:
-inspect Lidarr's saved owner/status before retrying, rather than treating timeout as rollback.
-The synchronous host action has no request-cancellation propagation; its persistence is the commit
-point. The transaction coordinates plugin writers within one process, not arbitrary host/API edits
-or another Lidarr process. Keep administrative account mapping edits separate from renewal.
+Close the login window or press Ctrl-C before handoff to leave settings unchanged. After capture
+and profile cleanup, the helper obtains a server-issued operation ID, prints that **nonsecret** ID,
+and submits the candidate exactly once. The server binds the ID to the saved owner id and exact
+name. Begin/cancel/status carry no identity or other provider secrets. There is no candidate replay.
+The synchronous host action still receives no HTTP cancellation token; cancellation uses a separate
+host-authenticated action and does not depend on disconnect propagation.
+
+The protocol states are `Pending` → `Validating` → `Committing` → `Committed` (or `Refused`/`Unknown`).
+`cancelIdentityRenewal` atomically changes `Pending` or `Validating` to `Cancelled`. A `Cancelled`
+receipt acknowledges that **this operation cannot persist**, even if its delayed validation later
+finishes or its submission arrives after the cancel. It does not undo another writer's session.
+Immediately before entering the existing compare-and-replace store, validation and the operation
+share a gate: either cancel wins, or the state becomes `Committing`. This is the explicit point
+beyond which cancellation is refused. The actual database write is the durable commit; `Committing`
+is an irreversible *attempt*, not proof of success. It includes waiting for storage. No rollback
+is attempted. Activation still follows successful persistence through the existing transactional store.
+
+Ctrl-C or the ten-minute CLI deadline stops the local wait, then the helper uses up to **15 extra
+seconds** with a fresh token to request cancel and, when needed, read status for the same operation.
+A dropped submission response follows the same path. An acknowledged cancel reports unchanged by
+this operation; `Committed` reports success even when cancellation lost the race. A still-committing,
+unreachable, malformed, or unknown response reports uncertainty, never local timeout as remote cancel.
+Forced termination cannot send a cancel. Closing the browser before capture submits nothing; the
+browser has already closed before remote validation/persistence begins.
+
+Receipts are process-local, contain no cookie/fingerprint, and use a one-hour lease. New begins
+prune expired inactive receipts; active validation/commit receipts remain. Capacity is bounded at
+4096 and new begins refuse when full. Only begin can create an ID. Expired, pruned, unknown, or
+pre-restart IDs **cannot** submit work, so a delayed cancelled request cannot recreate itself after
+restart. Cancel/status are scoped to the original owner id and name; keep administrative renames,
+account mapping edits and renewal separate. The transaction coordinates plugin writers in one
+process, not arbitrary host/API edits or another Lidarr process.
 
 Profiles are cleaned on success, launch/read failure, window close and cooperative cancellation.
 Forced process termination, OS crashes, or filesystem refusal can leave a temporary profile;
@@ -90,14 +115,34 @@ profiles or raw browser errors to bug reports.
 
 ## Status and recovery
 
-Successful output means read-only validation and persistence both completed. The helper returns
+Keep the printed operation ID. With the same HTTPS server, API key and exact owner selection,
+reconcile without reading stdin, opening a browser or resending the candidate:
+
+```sh
+bandcamp-cookie-push --client-name 'Personal Bandcamp' --renewal-status <operation-id>
+bandcamp-cookie-push --client-name 'Personal Bandcamp' --cancel-renewal <operation-id>
+```
+
+These commands query/cancel that historical operation; a `Committed` receipt does not assert that
+its cookie is still current. They never write or restore a cookie. `Cancelled` is definitive for
+that operation. Lost cancel acknowledgement remains uncertain to the caller until status confirms
+it. A restart, receipt expiry, process crash during persistence, or database write whose success
+acknowledgement throws can leave **genuine unresolved commit ambiguity** (`Unknown`). The receipt
+is not persisted atomically with settings. Inspect the saved owner privately and current trusted
+status; a valid fan ID alone cannot identify which same-account renewal committed. If that does
+not establish the outcome, retain UNKNOWN and investigate; do not blindly retry the candidate,
+restore a prior cookie over a newer session, or claim cancellation succeeded.
+
+Successful output means read-only validation and persistence both completed for that operation. The helper returns
 0 on success, 2 for invalid invocation, and 1 for refusal/error/cancellation. System → Status and
 provider Test expose the shared session's typed diagnosis. No secret-bearing server or browser
 exception text is echoed.
 
 - `WrongAccount`: the previous identity is retained; log in with the intended account and verify
   the expected numeric fan ID independently.
-- `StorageFailure`: the previous identity is retained; repair Lidarr database storage/permissions.
+- `StorageFailure`: persistence acknowledgement failed. The in-memory prior identity is retained,
+  but the durable outcome may be UNKNOWN if storage saved before throwing. Inspect storage privately;
+  do not assume rollback or overwrite a newer session.
 - `ReplacementConflict`: another recovery/settings change won; reread the current owner before retrying.
 - `ConfigurationMissing`: use the unique saved owner's exact name; remove chained/self selectors.
 - `ChallengeOrUnrecognized`, `CookieExpired`, `Unavailable`, `RateLimited`: follow the corresponding
@@ -129,4 +174,5 @@ paths were deliberately replaced under #46. No whole historical branch merge rev
 The existing credential-login, cache, cooldown, monitor and download retry engine is retained.
 Tests exercise HTTP/API and Playwright boundaries with controlled responses and filesystem
 cleanup; they do not establish real Bandcamp login, live account parity or supported-platform
-runtime qualification. See [red/green evidence](verification/issue-51-red-green.txt).
+runtime qualification. See [initial red/green evidence](verification/issue-51-red-green.txt) and
+[cancellation protocol evidence](verification/issue-51-cancellation-red-green.txt).

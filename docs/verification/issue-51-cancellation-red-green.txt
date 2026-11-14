@@ -1,0 +1,142 @@
+#51 cancellation/commit protocol verification, 2026-11-14
+Base: 45b9633c5926cb3c9102a01b7ff49241e7d7ec5a (integration/46-bandcamp-auth).
+Approved seams: #46/#51 helper HTTP/API workflow, download-client renewal action,
+existing Playwright capture/profile lifecycle, external Bandcamp HTTP and repository persistence boundaries.
+No live Bandcamp, Lidarr, real credentials, browser login or physical/native qualification.
+All identities/API keys and error text in tests are synthetic.
+TDD slices were run serially; regression/race coverage followed the protocol slices.
+
+Setup: initial ignored dependency symlink failed CS0006 (reference output path mismatch).
+Preserved as ext/Lidarr-shared-reference. Used an ignored checkout-local source copy of the existing
+#51 dependency, excluding .git/_temp/_output. No dependency upgrades or warning suppression added.
+Repo-documented -p:TreatWarningsAsErrors=false retained. SDK 10.0.103.
+One later dotnet invocation exited 139 without output before running tests; a new invocation passed.
+
+1. Host cancellation during delayed validation (RED before implementation).
+Command: dotnet test tests/Lidarr.Plugin.Bandcamp.Test -c Release --filter HelperAcceptedCancellationDuringValidationPreservesPriorIdentity -p:TreatWarningsAsErrors=false -m:1 --nologo
+Actual baseline: missing cancel action returned no receipt; assertion helper encountered null.
+After implementation test obtains the new begin ID before submitting. The base could not acknowledge cancellation.
+Actual RED excerpt:
+
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.29]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperAcceptedCancellationDuringValidationPreservesPriorIdentity [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperAcceptedCancellationDuringValidationPreservesPriorIdentity [135 ms]
+  Error Message:
+   System.NullReferenceException : Object reference not set to an instance of an object.
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.ActionState(Object result) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-ad2594f8-87b8bdcd5942a913/tests/Lidarr.Plugin.Bandcamp.Test/Download/Clients/Bandcamp/BandcampCredentialLoginFixture.cs:line 349
+   at Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperAcceptedCancellationDuringValidationPreservesPriorIdentity() in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-ad2594f8-87b8bdcd5942a913/tests/Lidarr.Plugin.Bandcamp.Test/Download/Clients/Bandcamp/BandcampCredentialLoginFixture.cs:line 342
+--- End of stack trace from previous location ---
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 135 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+Actual GREEN (same filter plus existing expected-account/storage-refusal test):
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-ad2594f8-87b8bdcd5942a913/tests/Lidarr.Plugin.Bandcamp.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.Test.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:     4, Skipped:     0, Total:     4, Duration: 146 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+2. Combined actual helper -> serialized HTTP -> real download-client action -> real shared
+provider -> real transactional store, with controlled external Bandcamp/repository boundaries.
+Command: dotnet test tests/Lidarr.Plugin.Bandcamp.Test -c Release --filter HelperHttpWorkflowCancelsSubmittedValidationAndReconcilesReceipt -p:TreatWarningsAsErrors=false -m:1 --nologo
+RED after host protocol, before helper protocol: old helper had no begin/cancel handshake;
+validation was never entered and the test's bounded wait failed.
+Actual RED excerpt:
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:10.22]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperHttpWorkflowCancelsSubmittedValidationAndReconcilesReceipt [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperHttpWorkflowCancelsSubmittedValidationAndReconcilesReceipt [10 s]
+  Error Message:
+   System.TimeoutException : The operation has timed out.
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperHttpWorkflowCancelsSubmittedValidationAndReconcilesReceipt() in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-ad2594f8-87b8bdcd5942a913/tests/Lidarr.Plugin.Bandcamp.Test/Download/Clients/Bandcamp/BandcampCredentialLoginFixture.cs:line 371
+--- End of stack trace from previous location ---
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 10 s - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+Actual GREEN after helper handshake/cancel/reconciliation implementation:
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-ad2594f8-87b8bdcd5942a913/tests/Lidarr.Plugin.Bandcamp.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.Test.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 143 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+3. Storage outcome uncertainty preserves actionable typed diagnosis without secret details.
+Command: dotnet test tests/Lidarr.Plugin.Bandcamp.CookiePush.Test -c Release --filter Storage_refusal -m:1 --nologo
+(Test subsequently renamed Storage_uncertainty_reports_only_known_status_never_server_secret_details.)
+Actual RED excerpt before adding the safe StorageFailure uncertainty message:
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.10]     Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Storage_refusal_reports_only_known_status_never_server_secret_details [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Storage_refusal_reports_only_known_status_never_server_secret_details [14 ms]
+  Error Message:
+   Assert.Contains() Failure: Sub-string not found
+String:    "Renewal outcome is uncertain or still pen"···
+Not found: "StorageFailure"
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Storage_refusal_reports_only_known_status_never_server_secret_details() in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-ad2594f8-87b8bdcd5942a913/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/RenewalWorkflowFixture.cs:line 41
+--- End of stack trace from previous location ---
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 14 ms - Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (net10.0)
+
+Actual GREEN full helper project (18 tests):
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-ad2594f8-87b8bdcd5942a913/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    18, Skipped:     0, Total:    18, Duration: 273 ms - Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (net10.0)
+
+Race/regression extension (not claimed as separate red/green cycles):
+- accepted cancellation while validation is blocked, then release: no persistence;
+- same workflow with lost cancellation response: caller reports uncertain despite server cancellation;
+- cancellation before submission: delayed submission cannot start;
+- unknown IDs (including pre-restart/missing receipt semantics) and cross-owner IDs cannot submit/cancel;
+- blocked persistence: cancel loses at Committing, helper reports uncertain;
+  release storage, query status through helper CLI: Committed;
+- successful persistence but lost renewal response: cancel/status reconciles Committed;
+- later saved session survives receipt query and duplicate submission; no second write;
+- body crosses HTTP adapter into action, metadata actions contain no cookies;
+- existing wrong account, storage refusal, name-reassignment, shared-consumer and browser-close tests.
+Command: dotnet test tests/Lidarr.Plugin.Bandcamp.Test -c Release --filter 'Helper|CancellationBeforeSubmission' -p:TreatWarningsAsErrors=false -m:1 --nologo
+Actual output:
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-ad2594f8-87b8bdcd5942a913/tests/Lidarr.Plugin.Bandcamp.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.Test.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    10, Skipped:     0, Total:    10, Duration: 202 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+Pre-merge full build:
+dotnet build Lidarr.Plugin.Bandcamp.slnx -c Release -p:TreatWarningsAsErrors=false -m:1 --nologo
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-ad2594f8-87b8bdcd5942a913/tests/Lidarr.Plugin.Bandcamp.Test/Lidarr.Plugin.Bandcamp.Test.csproj : warning NU1903: Package 'System.Security.Cryptography.Pkcs' 9.0.4 has a known high severity vulnerability, https://github.com/advisories/GHSA-846f-f764-76mx
+    34 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:02.53
+
+Pre-merge full suite:
+dotnet test Lidarr.Plugin.Bandcamp.slnx -c Release --no-build --no-restore -p:TreatWarningsAsErrors=false -m:1 --nologo
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-ad2594f8-87b8bdcd5942a913/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    18, Skipped:     0, Total:    18, Duration: 263 ms - Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (net10.0)
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-ad2594f8-87b8bdcd5942a913/tests/Lidarr.Plugin.Bandcamp.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.Test.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:   219, Skipped:     0, Total:   219, Duration: 819 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+Post-merge verification:
+Implementation commit ada93b5; merge f8186c20ba715b4ec5ca3fd5a90d7a6540fbc976.
+Merged latest integration/46-bandcamp-auth 5c1dc20eba01b6645780c41ded4774b7cc8dba3e, including #52.
+No conflicts; inspected replacement transaction: operation gate still immediately precedes store compare-and-replace.
+dotnet build Lidarr.Plugin.Bandcamp.slnx -c Release -p:TreatWarningsAsErrors=false -m:1 --nologo
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-ad2594f8-87b8bdcd5942a913/tests/Lidarr.Plugin.Bandcamp.Test/Indexers/Bandcamp/BandcampIndexerFixture.cs(142,23): warning xUnit2031: Do not use a Where clause to filter before calling Assert.Single. Use the overload of Assert.Single that accepts a filtering function. (https://xunit.net/xunit.analyzers/rules/xUnit2031) [/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-ad2594f8-87b8bdcd5942a913/tests/Lidarr.Plugin.Bandcamp.Test/Lidarr.Plugin.Bandcamp.Test.csproj]
+    41 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:10.04
+dotnet test Lidarr.Plugin.Bandcamp.slnx -c Release --no-build --no-restore -p:TreatWarningsAsErrors=false -m:1 --nologo
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-ad2594f8-87b8bdcd5942a913/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    18, Skipped:     0, Total:    18, Duration: 263 ms - Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (net10.0)
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-ad2594f8-87b8bdcd5942a913/tests/Lidarr.Plugin.Bandcamp.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.Test.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:   268, Skipped:     0, Total:   268, Duration: 665 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+git diff --check: passed. Tracked worktree clean before this evidence-only append.
+No PR, push, live actions, cleanup, or subagents.

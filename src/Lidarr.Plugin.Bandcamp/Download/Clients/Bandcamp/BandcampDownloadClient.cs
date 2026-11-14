@@ -217,22 +217,46 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 }
                 catch (Exception) { return new { Success = false, Problem = "StorageFailure" }; }
             }
-            if (action != "renewIdentity") return base.RequestAction(action, query);
+            if (action is not ("beginIdentityRenewal" or "renewIdentity" or "cancelIdentityRenewal" or "identityRenewalStatus"))
+                return base.RequestAction(action, query);
+            if (Definition.Id <= 0) return new { Success = false, State = "Unknown", Problem = "InvalidRequest" };
+            if (action == "beginIdentityRenewal")
+            {
+                var owner = _sessionProviders.GetNamed(Definition.Name);
+                if (owner.DefinitionId != Definition.Id)
+                    return new { Success = false, State = "Unknown", Problem = "ConfigurationMissing" };
+                return BandcampIdentityRenewals.Begin(Definition.Id, Definition.Name)?.Receipt()
+                    ?? new { Success = false, State = "Unknown", Problem = "Unavailable" };
+            }
+
+            if (!query.TryGetValue("operationId", out var id) || !Guid.TryParseExact(id, "D", out var operationId))
+                return new { Success = false, State = "Unknown", Problem = "InvalidRequest" };
+            var operation = BandcampIdentityRenewals.Find(operationId, Definition.Id, Definition.Name);
+            if (operation == null) return new { Success = false, State = "Unknown", Problem = "UnknownOperation" };
+            if (action == "cancelIdentityRenewal") operation.Cancel();
+            if (action != "renewIdentity" || !operation.Start()) return operation.Receipt();
             try
             {
-                if (Definition.Id <= 0 || !query.TryGetValue("fanId", out var value) ||
-                    !long.TryParse(value, out var fanId) || fanId <= 0)
-                    return new { Success = false, Problem = "InvalidRequest" };
+                if (!query.TryGetValue("fanId", out var value) || !long.TryParse(value, out var fanId) || fanId <= 0)
+                {
+                    operation.Complete(false, "InvalidRequest");
+                    return operation.Receipt();
+                }
                 var provider = _sessionProviders.GetNamed(Definition.Name);
                 if (provider.DefinitionId != Definition.Id)
-                    return new { Success = false, Problem = "ConfigurationMissing" };
-                var session = provider.ReplaceIdentityForFanAsync(Settings.Cookies, fanId, Definition.Id).GetAwaiter().GetResult();
-                return new { Success = session != null, Problem = session == null ? provider.State.Problem?.Code : null };
+                {
+                    operation.Complete(false, "ConfigurationMissing");
+                    return operation.Receipt();
+                }
+                var session = provider.ReplaceIdentityForFanAsync(Settings.Cookies, fanId, Definition.Id,
+                    tryBeginCommit: operation.TryBeginCommit).GetAwaiter().GetResult();
+                operation.Complete(session != null, session == null ? provider.State.Problem?.Code : null);
             }
             catch (Exception)
             {
-                return new { Success = false, Problem = "RecoveryFailed" };
+                operation.Complete(false, "RecoveryFailed");
             }
+            return operation.Receipt();
         }
 
         /// <summary>

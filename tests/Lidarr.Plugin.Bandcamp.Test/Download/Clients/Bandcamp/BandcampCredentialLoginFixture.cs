@@ -282,11 +282,13 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             var registry = new BandcampSessionProviderRegistry(new BandcampApiClient(http, _logger),
                 new BandcampLoginClient(http, _logger), new BandcampSessionStore(_repository.Object), _logger, _repository.Object);
             var client = CreateClient(Settings(cookies: "identity=" + FreshIdentity), registry);
+            _repository.Setup(r => r.All()).Returns(new List<DownloadClientDefinition> { original });
+            var operationId = BeginRenewal(client);
             var reads = 0;
             _repository.Setup(r => r.All()).Returns(() => new List<DownloadClientDefinition> { ++reads == 1 ? original : reassigned });
             _repository.Setup(r => r.Find(7)).Returns(original);
             _repository.Setup(r => r.Find(8)).Returns(reassigned);
-            var result = client.RequestAction("renewIdentity", new Dictionary<string, string> { ["fanId"] = "12345678" });
+            var result = client.RequestAction("renewIdentity", new Dictionary<string, string> { ["fanId"] = "12345678", ["operationId"] = operationId });
             Assert.False((bool)result.GetType().GetProperty("Success")!.GetValue(result)!);
             _repository.Verify(r => r.SetFields(It.IsAny<DownloadClientDefinition>(),
                 It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()), Times.Never());
@@ -309,7 +311,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             _repository.Setup(r => r.Find(7)).Returns(owner);
             if (storageFails) _repository.Setup(r => r.SetFields(It.IsAny<DownloadClientDefinition>(),
                 It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>())).Throws(new System.IO.IOException("sentinel-secret"));
-            var result = client.RequestAction("renewIdentity", new Dictionary<string, string> { ["fanId"] = expectedFan });
+            var result = client.RequestAction("renewIdentity", new Dictionary<string, string> { ["fanId"] = expectedFan, ["operationId"] = BeginRenewal(client) });
             Assert.Equal(success, (bool)result.GetType().GetProperty("Success")!.GetValue(result)!);
             Assert.Equal(0, _loginPosts);
             Assert.Equal(success ? "identity=" + FreshIdentity : "identity=prior", saved.Cookies);
@@ -317,6 +319,203 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                 It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()), success || storageFails ? Times.Once() : Times.Never());
             if (storageFails) Assert.Equal("StorageFailure", result.GetType().GetProperty("Problem")!.GetValue(result));
         }
+
+        [Fact]
+        public async Task HelperAcceptedCancellationDuringValidationPreservesPriorIdentity()
+        {
+            var saved = Settings(cookies: "identity=prior", email: "", password: "");
+            var http = new BandcampHttpClient(_http.Object, _logger);
+            var registry = new BandcampSessionProviderRegistry(new BandcampApiClient(http, _logger),
+                null, new BandcampSessionStore(_repository.Object), _logger, _repository.Object);
+            var client = CreateClient(Settings(cookies: "identity=" + FreshIdentity), registry);
+            var owner = new DownloadClientDefinition { Id = 7, Name = "Bandcamp", Implementation = nameof(BandcampDownloadClient), Settings = saved };
+            _repository.Setup(r => r.All()).Returns(new List<DownloadClientDefinition> { owner });
+            _repository.Setup(r => r.Find(7)).Returns(owner);
+            var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            _homepageDelay = () => { entered.TrySetResult(); return release.Task; };
+            var query = new Dictionary<string, string> { ["fanId"] = "12345678", ["operationId"] = BeginRenewal(client) };
+            var pending = Task.Run(() => client.RequestAction("renewIdentity", query));
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            object cancellation;
+            try { cancellation = client.RequestAction("cancelIdentityRenewal", query); }
+            finally { release.TrySetResult(); }
+            var result = await pending.WaitAsync(TimeSpan.FromSeconds(10));
+            Assert.Equal("Cancelled", ActionState(cancellation));
+            Assert.Equal("Cancelled", ActionState(result));
+            Assert.Equal("identity=prior", saved.Cookies);
+            _repository.Verify(r => r.SetFields(It.IsAny<DownloadClientDefinition>(),
+                It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()), Times.Never());
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task HelperHttpWorkflowCancelsSubmittedValidationAndReconcilesReceipt(bool loseCancelResponse)
+        {
+            var saved = Settings(cookies: "identity=prior", email: "", password: "");
+            var http = new BandcampHttpClient(_http.Object, _logger);
+            var registry = new BandcampSessionProviderRegistry(new BandcampApiClient(http, _logger),
+                null, new BandcampSessionStore(_repository.Object), _logger, _repository.Object);
+            var client = CreateClient(Settings(cookies: "identity=" + FreshIdentity), registry);
+            var owner = new DownloadClientDefinition { Id = 7, Name = "Bandcamp", Implementation = nameof(BandcampDownloadClient), Settings = saved };
+            _repository.Setup(r => r.All()).Returns(new List<DownloadClientDefinition> { owner });
+            _repository.Setup(r => r.Find(7)).Returns(owner);
+            var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            _homepageDelay = () => { entered.TrySetResult(); return release.Task; };
+            using var cancellation = new CancellationTokenSource();
+            var output = new System.IO.StringWriter(); var error = new System.IO.StringWriter();
+            var transport = new RenewalActionTransport(client) { LoseCancelResponse = loseCancelResponse };
+            var pending = Lidarr.Plugin.Bandcamp.CookiePush.CookiePushCommand.RunAsync(
+                new[] { "--client-name", "Bandcamp", "--fan-id", "12345678" },
+                new System.IO.StringReader("identity=" + FreshIdentity), output, error,
+                key => key == "LIDARR_URL" ? "https://lidarr.example" : "sentinel-key", transport,
+                cancellationToken: cancellation.Token);
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            cancellation.Cancel();
+            int exit;
+            try { exit = await pending.WaitAsync(TimeSpan.FromSeconds(10)); }
+            finally { release.TrySetResult(); }
+            await transport.Submitted!.WaitAsync(TimeSpan.FromSeconds(10));
+            Assert.Equal(1, exit);
+            if (loseCancelResponse) Assert.Contains("uncertain", error.ToString());
+            else Assert.Contains("Cancellation acknowledged", error.ToString());
+            Assert.Equal("identity=prior", saved.Cookies);
+            Assert.DoesNotContain(FreshIdentity, output.ToString() + error);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task HelperCommitRaceReportsUncertaintyThenReconcilesWithoutRollback(bool loseResponse)
+        {
+            var saved = Settings(cookies: "identity=prior", email: "", password: "");
+            var http = new BandcampHttpClient(_http.Object, _logger);
+            var registry = new BandcampSessionProviderRegistry(new BandcampApiClient(http, _logger),
+                null, new BandcampSessionStore(_repository.Object), _logger, _repository.Object);
+            var client = CreateClient(Settings(cookies: "identity=" + FreshIdentity), registry);
+            var owner = new DownloadClientDefinition { Id = 7, Name = "Bandcamp", Implementation = nameof(BandcampDownloadClient), Settings = saved };
+            _repository.Setup(r => r.All()).Returns(new List<DownloadClientDefinition> { owner });
+            _repository.Setup(r => r.Find(7)).Returns(owner);
+            var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var release = new ManualResetEventSlim(loseResponse);
+            var persisted = "identity=prior";
+            var writes = 0;
+            _repository.Setup(r => r.SetFields(It.IsAny<DownloadClientDefinition>(),
+                It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()))
+                .Callback<DownloadClientDefinition, Expression<Func<DownloadClientDefinition, object>>[]>((d, _) =>
+                {
+                    entered.TrySetResult();
+                    if (!release.Wait(TimeSpan.FromSeconds(10))) throw new TimeoutException();
+                    persisted = ((BandcampDownloadSettings)d.Settings).Cookies;
+                    Interlocked.Increment(ref writes);
+                });
+            using var cancellation = new CancellationTokenSource();
+            var output = new System.IO.StringWriter(); var error = new System.IO.StringWriter();
+            var transport = new RenewalActionTransport(client) { LoseResponse = loseResponse };
+            var pending = Lidarr.Plugin.Bandcamp.CookiePush.CookiePushCommand.RunAsync(
+                new[] { "--client-name", "Bandcamp", "--fan-id", "12345678" },
+                new System.IO.StringReader("identity=" + FreshIdentity), output, error,
+                key => key == "LIDARR_URL" ? "https://lidarr.example" : "sentinel-key", transport,
+                cancellationToken: cancellation.Token);
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            if (!loseResponse) cancellation.Cancel();
+            int exit;
+            try { exit = await pending.WaitAsync(TimeSpan.FromSeconds(10)); }
+            finally { release.Set(); }
+            await transport.Submitted!.WaitAsync(TimeSpan.FromSeconds(10));
+            Assert.Equal(loseResponse ? 0 : 1, exit);
+            if (!loseResponse)
+            {
+                Assert.Contains("uncertain", error.ToString());
+                Assert.DoesNotContain("Cancellation acknowledged", error.ToString());
+            }
+            Assert.Equal("identity=" + FreshIdentity, persisted);
+            Assert.Equal(1, writes);
+            // Later sessions must never be rolled back by reconciliation of this receipt.
+            saved.Cookies = "identity=newer-session";
+            var statusOutput = new System.IO.StringWriter();
+            var status = await Lidarr.Plugin.Bandcamp.CookiePush.CookiePushCommand.RunAsync(
+                new[] { "--client-name", "Bandcamp", "--renewal-status", transport.OperationId! },
+                new System.IO.StringReader("must-not-be-read"), statusOutput, System.IO.TextWriter.Null,
+                key => key == "LIDARR_URL" ? "https://lidarr.example" : "sentinel-key", new RenewalActionTransport(client));
+            Assert.Equal(0, status);
+            Assert.Contains("saved", statusOutput.ToString());
+            Assert.Equal("identity=newer-session", saved.Cookies);
+            Assert.Equal(1, writes);
+            var duplicate = client.RequestAction("renewIdentity", new Dictionary<string, string>
+                { ["operationId"] = transport.OperationId!, ["fanId"] = "12345678" });
+            Assert.Equal("Committed", ActionState(duplicate));
+            Assert.Equal(1, writes);
+        }
+
+        [Fact]
+        public void CancellationBeforeSubmissionAndUnknownOrOtherOwnerIdsNeverCommit()
+        {
+            var saved = Settings(cookies: "identity=prior");
+            var http = new BandcampHttpClient(_http.Object, _logger);
+            var registry = new BandcampSessionProviderRegistry(new BandcampApiClient(http, _logger),
+                null, new BandcampSessionStore(_repository.Object), _logger, _repository.Object);
+            var client = CreateClient(Settings(cookies: "identity=" + FreshIdentity), registry);
+            var owner = new DownloadClientDefinition { Id = 7, Name = "Bandcamp", Implementation = nameof(BandcampDownloadClient), Settings = saved };
+            _repository.Setup(r => r.All()).Returns(new List<DownloadClientDefinition> { owner });
+            _repository.Setup(r => r.Find(7)).Returns(owner);
+            var query = new Dictionary<string, string> { ["operationId"] = BeginRenewal(client), ["fanId"] = "12345678" };
+            Assert.Equal("Cancelled", ActionState(client.RequestAction("cancelIdentityRenewal", query)));
+            Assert.Equal("Cancelled", ActionState(client.RequestAction("renewIdentity", query)));
+            query["operationId"] = Guid.NewGuid().ToString("D");
+            Assert.Equal("Unknown", ActionState(client.RequestAction("renewIdentity", query)));
+            query["operationId"] = BeginRenewal(client);
+            client.Definition.Id = 8;
+            Assert.Equal("Unknown", ActionState(client.RequestAction("renewIdentity", query)));
+            Assert.Equal("Unknown", ActionState(client.RequestAction("cancelIdentityRenewal", query)));
+            Assert.Equal("identity=prior", saved.Cookies);
+            Assert.Empty(_homepageCookies);
+            _repository.Verify(r => r.SetFields(It.IsAny<DownloadClientDefinition>(),
+                It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()), Times.Never());
+        }
+
+        private sealed class RenewalActionTransport(BandcampDownloadClient client) : System.Net.Http.HttpMessageHandler
+        {
+            public Task<object>? Submitted { get; private set; }
+            public string? OperationId { get; private set; }
+            public bool LoseResponse { get; init; }
+            public bool LoseCancelResponse { get; init; }
+            protected override async Task<System.Net.Http.HttpResponseMessage> SendAsync(System.Net.Http.HttpRequestMessage request, CancellationToken token)
+            {
+                if (request.Method == System.Net.Http.HttpMethod.Get)
+                    return Json("""[{"id":7,"name":"Bandcamp","implementation":"BandcampDownloadClient","fields":[]}]""");
+                var uri = request.RequestUri!;
+                var action = uri.AbsolutePath.Split('/').Last();
+                var query = uri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(p => p.Split('=', 2)).ToDictionary(p => p[0], p => Uri.UnescapeDataString(p[1]));
+                var body = System.Text.Json.Nodes.JsonNode.Parse(await request.Content!.ReadAsStringAsync(token))!;
+                Assert.Equal(7, body["id"]!.GetValue<int>());
+                Assert.Equal("Bandcamp", body["name"]!.GetValue<string>());
+                if (action == "renewIdentity")
+                    ((BandcampDownloadSettings)client.Definition.Settings).Cookies = body["fields"]![0]!["value"]!.GetValue<string>();
+                else Assert.Empty(body["fields"]!.AsArray());
+                var work = Task.Run(() => client.RequestAction(action, query));
+                if (action == "renewIdentity") Submitted = work;
+                var result = await work.WaitAsync(token);
+                if (action == "beginIdentityRenewal")
+                    OperationId = (string)result.GetType().GetProperty("OperationId")!.GetValue(result)!;
+                if ((action == "renewIdentity" && LoseResponse) || (action == "cancelIdentityRenewal" && LoseCancelResponse)) throw new System.Net.Http.HttpRequestException("sentinel-key response lost");
+                return Json(System.Text.Json.JsonSerializer.Serialize(result,
+                    new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
+            }
+            private static System.Net.Http.HttpResponseMessage Json(string json) => new(HttpStatusCode.OK)
+                { Content = new System.Net.Http.StringContent(json) };
+        }
+
+        private static string BeginRenewal(BandcampDownloadClient client)
+        {
+            var receipt = client.RequestAction("beginIdentityRenewal", new Dictionary<string, string>());
+            return (string)receipt.GetType().GetProperty("OperationId")!.GetValue(receipt)!;
+        }
+
+        private static string? ActionState(object? result) => result?.GetType().GetProperty("State")?.GetValue(result) as string;
 
         [Fact]
         public async Task ImportedCandidateIsValidatedAndPersistedWithoutPasswordLogin()
