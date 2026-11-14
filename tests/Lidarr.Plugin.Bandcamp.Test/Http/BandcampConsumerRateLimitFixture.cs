@@ -44,6 +44,14 @@ public class BandcampConsumerRateLimitFixture
         var search = new BandcampSharedSessionProvider(() => owner);
         var download = new BandcampSharedSessionProvider(() => owner);
         var session = (await search.GetSessionAsync())!;
+        session.RateLimitObserver!("600");
+        session.RateLimitObserver!("120");
+        Assert.Contains(initial.AddSeconds(600).ToString("yyyy-MM-dd HH:mm:ss"), search.State.Problem!.Description);
+        now = initial.AddSeconds(600);
+        session = (await search.GetSessionAsync())!;
+        initial = now;
+        if (retryAfter.EndsWith("GMT", StringComparison.Ordinal))
+            retryAfter = now.AddSeconds(waitSeconds).ToString("r");
         limited = true;
         using (api.ObserveSession(session))
         {
@@ -75,6 +83,6 @@ public class BandcampConsumerRateLimitFixture
         Assert.Equal(BandcampSessionStatus.Valid, search.State.Status);
         Assert.Null(owner.LastLoginOutcome);
         Assert.Equal("identity=prior", settings.Cookies);
-        Assert.Equal(4, requests); // initial validation, 429, due validation, recovered collection
+        Assert.Equal(5, requests); // initial validation, 429, due validation, recovered collection
     }
 }

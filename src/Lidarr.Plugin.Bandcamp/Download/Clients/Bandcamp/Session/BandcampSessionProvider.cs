@@ -35,6 +35,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         private volatile BandcampSessionState _state = BandcampSessionState.Initial;
         private volatile CachedSession? _cached;
         private volatile RateLimitRecord? _rateLimit;
+        private readonly object _rateLimitLock = new();
 
         public BandcampSessionProvider(
             int definitionId,
@@ -534,9 +535,14 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         private void SetRateLimit(string? retryAfter)
         {
             var until = BandcampRetryAfter.UntilUtc(retryAfter, Clock());
-            var problem = BandcampSessionProblem.RateLimited(until);
-            _rateLimit = new RateLimitRecord(until, problem);
-            SetState(BandcampSessionStatus.RateLimited, problem);
+            lock (_rateLimitLock)
+            {
+                if (_rateLimit is { } current && current.UntilUtc > until)
+                    until = current.UntilUtc;
+                var problem = BandcampSessionProblem.RateLimited(until);
+                _rateLimit = new RateLimitRecord(until, problem);
+                SetState(BandcampSessionStatus.RateLimited, problem);
+            }
         }
 
         protected void SetState(BandcampSessionStatus status, BandcampSessionProblem? problem = null)
