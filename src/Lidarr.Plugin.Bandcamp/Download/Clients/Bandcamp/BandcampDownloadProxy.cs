@@ -139,6 +139,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         private async Task ExecuteFromPhase2Async(
             BandcampDownloadItem item, Session.BandcampSession session, CancellationToken cancellationToken)
         {
+            using var observation = _apiClient.ObserveSession(session, cancellationToken);
             var requestedFormat = ExtractFormatFragment(item.AlbumUrl);
             var lookupUrl = NormalizeUrl(StripFragment(item.AlbumUrl));
 
