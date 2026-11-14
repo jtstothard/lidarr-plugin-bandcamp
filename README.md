@@ -33,7 +33,7 @@ Bandcamp will now show up as an available indexer and download client.
 
 1. **Settings → Download Clients → Add** (`+`)
 2. Pick **Bandcamp**
-3. Enter your Bandcamp **Email** and **Password** (recommended), or paste your cookie into **Session Cookie (optional)**. See [Download client sign-in](#download-client-sign-in).
+3. Paste your `identity` cookie into **Session Cookie (optional)**. You can also add your Bandcamp **Email** and **Password**, but Bandcamp currently asks for a captcha on every login. See [Download client sign-in](#download-client-sign-in).
 4. Set **Download Path** to somewhere Lidarr can write to (like `/downloads/bandcamp`)
 5. **Test**, then **Save**
 
@@ -50,7 +50,7 @@ You need to enable the Bandcamp protocol or Lidarr won't use it for searches:
 
 The download client has two ways to sign in.
 
-**Email and password (recommended).** The plugin logs in itself, saves the session cookie it gets into **Session Cookie**, and logs in again when that session expires. It checks the session before each grab and once an hour.
+**Email and password.** The plugin logs in itself, saves the session cookie it gets into **Session Cookie**, and logs in again when that session expires. It checks the session before each grab and once an hour.
 
 **Cookie only.** Leave Email and Password empty and paste your `identity` cookie (see below). This is how earlier versions worked, and existing setups keep working with no changes. You'll need to paste a fresh cookie when it expires.
 
@@ -62,7 +62,7 @@ When there's no valid session, the plugin refuses new grabs instead of failing t
 |---|---|
 | Bad credentials | Fix the Email or Password and save. The plugin won't retry a rejected login until you change them. |
 | Verification needed | Bandcamp emailed you a code for a new device. Enter it in **Verification Code** and save. It's used once, then cleared. |
-| Captcha required | Bandcamp wants a captcha, which the plugin can't solve. Log into bandcamp.com in a browser and paste the `identity` cookie into **Session Cookie**. |
+| Captcha required | Bandcamp wants a captcha (as of November 2026 it asks for one on every login, so expect this if you use email and password), which the plugin can't solve. Log into bandcamp.com in a browser and paste the `identity` cookie into **Session Cookie**. |
 | Cookie expired | Paste a fresh cookie, or add your Email and Password so the plugin renews it for you. |
 
 After a verification or captcha challenge, the plugin waits 6 hours between login attempts so it doesn't hammer Bandcamp or get your account locked. Entering a verification code skips that wait.

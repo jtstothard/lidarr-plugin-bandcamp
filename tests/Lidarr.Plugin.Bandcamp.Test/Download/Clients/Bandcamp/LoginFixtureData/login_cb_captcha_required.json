@@ -1,1 +1,1 @@
-{"ok":false,"errors":[{"field":"recaptcha","reason":"required"}]}
+{"ok":false,"errors":[{"field":"login.captcha","reason":"missing"}]}

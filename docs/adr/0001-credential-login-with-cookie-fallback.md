@@ -47,3 +47,7 @@ cookie out of browser DevTools.
   pasted cookie still works. Verification codes and captchas (#32) fall back to cookie paste.
 - The mobile app's `/oauth_login` flow (proof-of-work and HMAC headers) was rejected as harder to
   maintain than the web form.
+
+## Update 2026-11-14
+
+A live check showed Bandcamp currently requires a reCAPTCHA token on every web login (`login.captcha` / `missing`). Credential login therefore ends in Captcha required today, and the pasted cookie is the working path. The decision stands: the flow is correct if Bandcamp stops demanding a captcha for some logins, and the gate, health check and write-back still apply to cookie mode.

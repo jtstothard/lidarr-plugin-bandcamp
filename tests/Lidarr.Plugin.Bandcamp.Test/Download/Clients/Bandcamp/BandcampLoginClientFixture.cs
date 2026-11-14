@@ -78,6 +78,16 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             Assert.Contains("client_id=4E8C2B1A9F", _loginPost.Headers.GetSingleValue("Cookie"));
         }
 
+        [Fact]
+        public async Task Login_SendsCsrfTokenFromLoginPageMeta()
+        {
+            SetupLogin("login_cb_success.json");
+
+            await CreateClient().LoginAsync("fan@example.com", "hunter2");
+
+            Assert.Equal("Rj8kQ2mVx7LpN4cT9bWz", _loginPost!.Headers.GetSingleValue("X-CSRF-TOKEN"));
+        }
+
         [Theory]
         [InlineData("login_cb_bad_credentials.json", BandcampLoginOutcome.BadCredentials)]
         [InlineData("login_cb_verification_required.json", BandcampLoginOutcome.VerificationRequired)]

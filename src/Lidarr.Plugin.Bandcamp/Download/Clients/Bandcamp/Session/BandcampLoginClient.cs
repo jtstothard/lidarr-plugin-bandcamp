@@ -55,7 +55,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
     /// <summary>
     /// Email + password to identity cookie, using Bandcamp's web login form:
     /// GET https://bandcamp.com/login (crumb + pre-login cookies), then a form POST to
-    /// https://bandcamp.com/login_cb, which answers JSON ({"ok":true} or {"ok":false,"errors":[...]})
+    /// https://bandcamp.com/login_cb with the page's csrf-token as X-CSRF-TOKEN, which answers JSON ({"ok":true} or {"ok":false,"errors":[...]})
     /// and sets the identity cookie on success. Goes through BandcampHttpClient for rate
     /// limiting and credential-safe logging.
     /// </summary>
@@ -66,6 +66,10 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
         private static readonly Regex CrumbsRegex = new(
             @"id=""js-crumbs-data""\s+data-crumbs=""([^""]+)""",
+            RegexOptions.Compiled);
+
+        private static readonly Regex CsrfTokenRegex = new(
+            @"<meta\s+name=""csrf-token""\s+content=""([^""]+)""",
             RegexOptions.Compiled);
 
         private readonly BandcampHttpClient _httpClient;
@@ -94,6 +98,13 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 builder.Headers.Set("Accept", "application/json, text/javascript, */*; q=0.01");
                 builder.Headers.Set("X-Requested-With", "XMLHttpRequest");
                 builder.Headers.Set("Referer", LoginPageUrl);
+
+                // Bandcamp's own login form sends the page's csrf-token meta as this header.
+                var csrf = CsrfTokenRegex.Match(page.Content ?? string.Empty);
+                if (csrf.Success)
+                {
+                    builder.Headers.Set("X-CSRF-TOKEN", WebUtility.HtmlDecode(csrf.Groups[1].Value));
+                }
                 builder.Post()
                     .AddFormParameter("user.name", email)
                     .AddFormParameter("login.password", password)
