@@ -274,6 +274,51 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         }
 
         [Fact]
+        public void HelperDoesNotFollowANameReassignedBetweenSelectionAndReplacement()
+        {
+            var original = new DownloadClientDefinition { Id = 7, Name = "Bandcamp", Implementation = nameof(BandcampDownloadClient), Settings = Settings(cookies: "identity=prior") };
+            var reassigned = new DownloadClientDefinition { Id = 8, Name = "Bandcamp", Implementation = nameof(BandcampDownloadClient), Settings = Settings(cookies: "identity=other") };
+            var http = new BandcampHttpClient(_http.Object, _logger);
+            var registry = new BandcampSessionProviderRegistry(new BandcampApiClient(http, _logger),
+                new BandcampLoginClient(http, _logger), new BandcampSessionStore(_repository.Object), _logger, _repository.Object);
+            var client = CreateClient(Settings(cookies: "identity=" + FreshIdentity), registry);
+            var reads = 0;
+            _repository.Setup(r => r.All()).Returns(() => new List<DownloadClientDefinition> { ++reads == 1 ? original : reassigned });
+            _repository.Setup(r => r.Find(7)).Returns(original);
+            _repository.Setup(r => r.Find(8)).Returns(reassigned);
+            var result = client.RequestAction("renewIdentity", new Dictionary<string, string> { ["fanId"] = "12345678" });
+            Assert.False((bool)result.GetType().GetProperty("Success")!.GetValue(result)!);
+            _repository.Verify(r => r.SetFields(It.IsAny<DownloadClientDefinition>(),
+                It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()), Times.Never());
+        }
+
+        [Theory]
+        [InlineData("99", false, false)]
+        [InlineData("12345678", true, false)]
+        [InlineData("12345678", false, true)]
+        public void HelperActionValidatesExpectedAccountBeforeSharedCommit(string expectedFan, bool success, bool storageFails)
+        {
+            var saved = Settings(cookies: "identity=prior", email: "", password: "");
+            var bandcampHttp = new BandcampHttpClient(_http.Object, _logger);
+            var registry = new BandcampSessionProviderRegistry(new BandcampApiClient(bandcampHttp, _logger),
+                new BandcampLoginClient(bandcampHttp, _logger), new BandcampSessionStore(_repository.Object), _logger, _repository.Object);
+            var candidate = Settings(cookies: "identity=" + FreshIdentity, email: "", password: "");
+            var client = CreateClient(candidate, registry);
+            var owner = new DownloadClientDefinition { Id = 7, Name = "Bandcamp", Implementation = nameof(BandcampDownloadClient), Settings = saved };
+            _repository.Setup(r => r.All()).Returns(new List<DownloadClientDefinition> { owner });
+            _repository.Setup(r => r.Find(7)).Returns(owner);
+            if (storageFails) _repository.Setup(r => r.SetFields(It.IsAny<DownloadClientDefinition>(),
+                It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>())).Throws(new System.IO.IOException("sentinel-secret"));
+            var result = client.RequestAction("renewIdentity", new Dictionary<string, string> { ["fanId"] = expectedFan });
+            Assert.Equal(success, (bool)result.GetType().GetProperty("Success")!.GetValue(result)!);
+            Assert.Equal(0, _loginPosts);
+            Assert.Equal(success ? "identity=" + FreshIdentity : "identity=prior", saved.Cookies);
+            _repository.Verify(r => r.SetFields(It.IsAny<DownloadClientDefinition>(),
+                It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()), success || storageFails ? Times.Once() : Times.Never());
+            if (storageFails) Assert.Equal("StorageFailure", result.GetType().GetProperty("Problem")!.GetValue(result));
+        }
+
+        [Fact]
         public async Task ImportedCandidateIsValidatedAndPersistedWithoutPasswordLogin()
         {
             var settings = Settings(cookies: "identity=prior", email: "", password: "");

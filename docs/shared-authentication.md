@@ -79,3 +79,7 @@ Settings have Lidarr's existing database/API/backup exposure; no stronger encryp
 The per-definition gate coordinates plugin writers in one process, not arbitrary host/API edits
 or cross-process writers. No live account operation, production rollout, browser packaging,
 Subsonic parity or cookie-lifetime guarantee is established by these regression fixtures.
+
+## User-assisted renewal
+
+The [desktop/browser helper](browser-renewal.md) imports through the same transaction with an explicit expected fan ID. Older helper options that printed cookies or updated indexers separately are superseded.

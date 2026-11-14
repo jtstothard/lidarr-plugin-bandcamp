@@ -40,6 +40,8 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         /// Validates an externally obtained identity read-only, then saves it before activation.
         /// A cancelled, invalid, unsaved or superseded candidate leaves the old identity intact.
         /// </summary>
+        Task<BandcampSession?> ReplaceIdentityForFanAsync(string cookies, long expectedFanId, int expectedDefinitionId, CancellationToken cancellationToken = default);
+
         Task<BandcampSession?> ReplaceIdentityAsync(string cookies, CancellationToken cancellationToken = default);
 
         /// <summary>

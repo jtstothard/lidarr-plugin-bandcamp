@@ -153,3 +153,7 @@ MIT. See [LICENSE](LICENSE).
 ## Support the project
 
 [☕ Ko-fi](https://ko-fi.com/trshpotato)
+
+## Browser or desktop renewal helper
+
+For CAPTCHA, verification/2FA, and headless servers, use the [isolated desktop helper and manual fallback](docs/browser-renewal.md). It validates the intended fan account and transactionally replaces one named shared owner for both search and downloads. Native browser/platform qualification remains pending.
