@@ -1,5 +1,8 @@
 # Packaged session-health compatibility seam (#56)
 
+For the corrected package, support matrix, reproducible build commands and #58 handoff,
+see [SUPPORT.md](SUPPORT.md). The diagnostic control below remains historical #56 evidence.
+
 From the repository root, with Python 3 and .NET SDK 10.0.103:
 
 ```sh

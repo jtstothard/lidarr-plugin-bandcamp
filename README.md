@@ -131,3 +131,9 @@ MIT. See [LICENSE](LICENSE).
 ## Support the project
 
 [☕ Ko-fi](https://ko-fi.com/trshpotato)
+
+## Lidarr runtime compatibility
+
+The corrected session-health check supports the pinned Lidarr 3.1.4.5029 and
+3.2.1.5196 nightly builds. See the [support policy and packaged-runtime checks](tests/PackagedCompatibility/SUPPORT.md)
+for exact inputs, scope and reproduction commands. Other builds require qualification.
