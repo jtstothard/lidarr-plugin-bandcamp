@@ -138,8 +138,11 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             Assert.Equal(BandcampSessionProblem.ConfigurationMissing, registry.Find(client.Definition.Id)!.State.Problem);
         }
 
-        [Fact]
-        public async Task NamedOwnerRenewalRepairsSearchAndRealDownloadWithoutConsumerCookieWrites()
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public async Task NamedOwnerRecoveryRepairsSearchAndRealDownloadWithoutConsumerCookieWrites(bool passiveRotation, bool downloadRotation)
         {
             var owner = new DownloadClientDefinition
             {
@@ -166,19 +169,32 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             {
                 if (request.Url.FullUri == "https://bandcamp.com")
                 {
-                    return Text(cookie == NewCookie ? ValidHomepage : DeadHomepage, request);
+                    return Text(cookie == NewCookie || passiveRotation ? ValidHomepage : DeadHomepage, request);
                 }
 
                 if (request.Url.FullUri == DownloadPageUrl)
                 {
-                    Assert.Equal(NewCookie, cookie);
-                    return Text(DownloadPage, request);
+                    Assert.True(cookie == NewCookie || (passiveRotation && cookie == OldCookie));
+                    var response = Text(DownloadPage, request);
+                    if (downloadRotation && cookie == OldCookie)
+                    {
+                        response.Headers.Add("Set-Cookie", "identity=new-cookie; Path=/; Secure");
+                    }
+
+                    return response;
                 }
 
                 if (request.Url.FullUri == "https://bandcamp.com/api/fancollection/1/collection_items")
                 {
-                    Assert.Equal(NewCookie, cookie);
-                    return Text(@"{""redownload_urls"":{""a111"":""https://bandcamp.com/download?type=album&id=111""},""items"":[{""item_id"":111,""item_type"":""album"",""sale_item_type"":""a"",""sale_item_id"":111,""token"":""tok"",""item_url"":""https://fresh.bandcamp.com/album/fresh"",""item_title"":""Fresh"",""band_name"":""Fresh""}]}", request);
+                    Assert.True(cookie == NewCookie || (passiveRotation && cookie == OldCookie));
+                    var response = Text(@"{""redownload_urls"":{""a111"":""https://bandcamp.com/download?type=album&id=111""},""items"":[{""item_id"":111,""item_type"":""album"",""sale_item_type"":""a"",""sale_item_id"":111,""token"":""tok"",""item_url"":""https://fresh.bandcamp.com/album/fresh"",""item_title"":""Fresh"",""band_name"":""Fresh""}]}", request);
+                    if (passiveRotation && !downloadRotation && cookie == OldCookie)
+                    {
+                        response.Headers.Add("Set-Cookie", "identity=new-cookie; Domain=.bandcamp.com; Path=/; Secure; HttpOnly");
+                        response.Headers.Add("Set-Cookie", "tracking=unrelated; Path=/; Secure");
+                    }
+
+                    return response;
                 }
 
                 return Files(request);
@@ -186,10 +202,16 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             var api = new BandcampApiClient(new BandcampHttpClient(http.Object, _logger), _logger);
             var registry = new BandcampSessionProviderRegistry(api, null, new BandcampSessionStore(repository.Object), _logger, repository.Object);
             var selectedBeforeRenewal = registry.GetNamed("Fan account");
-            Assert.Null(await selectedBeforeRenewal.GetSessionAsync());
-            Assert.NotNull(await selectedBeforeRenewal.ReplaceIdentityAsync(NewCookie));
-            Assert.Equal(NewCookie, (await registry.GetNamed("Fan account").GetSessionAsync())!.Cookies);
-
+            if (passiveRotation)
+            {
+                var selected = await selectedBeforeRenewal.GetSessionAsync();
+                Assert.Equal(OldCookie, selected!.Cookies);
+            }
+            else
+            {
+                Assert.Null(await selectedBeforeRenewal.GetSessionAsync());
+                Assert.NotNull(await selectedBeforeRenewal.ReplaceIdentityAsync(NewCookie));
+            }
             var client = CreateClient(http, registry);
             Settings(client).AuthConfiguration = "Fan account";
             var indexerSettings = new NzbDrone.Core.Indexers.Bandcamp.BandcampIndexerSettings
@@ -201,11 +223,15 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             {
                 Definition = new IndexerDefinition { Id = 72, Name = "Search", Enable = true, Settings = indexerSettings }
             };
-            var releases = await indexer.Fetch(new NzbDrone.Core.IndexerSearch.Definitions.ArtistSearchCriteria { Artist = new Artist { Name = "Fresh" } });
-            Assert.NotEmpty(releases);
+            if (!downloadRotation)
+            {
+                Assert.NotEmpty(await indexer.Fetch(new NzbDrone.Core.IndexerSearch.Definitions.ArtistSearchCriteria { Artist = new Artist { Name = "Fresh" } }));
+            }
             var id = await client.Download(CreateRemoteAlbum(), Mock.Of<IIndexer>());
             var item = await WaitForFinished(client, id);
             Assert.Equal(DownloadItemStatus.Completed, item.Status);
+            Assert.Equal(NewCookie, (await registry.GetNamed("Fan account").GetSessionAsync())!.Cookies);
+            Assert.NotEmpty(await indexer.Fetch(new NzbDrone.Core.IndexerSearch.Definitions.ArtistSearchCriteria { Artist = new Artist { Name = "Fresh" } }));
             var output = Directory.GetFiles(_tempRoot, "*.flac", SearchOption.AllDirectories).Single();
             Assert.Equal(new byte[] { 0x66, 0x4C, 0x61, 0x43, 0, 0, 0, 0x22 }, File.ReadAllBytes(output));
             Assert.Equal(1, writes);

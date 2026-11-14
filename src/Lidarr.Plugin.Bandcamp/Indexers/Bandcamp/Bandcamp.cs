@@ -112,6 +112,7 @@ namespace NzbDrone.Core.Indexers.Bandcamp
                     return new ValidationFailure("Cookies", "Could not verify Bandcamp identity cookie.");
                 }
 
+                using var observation = _apiClient.ObserveSession(session);
                 var collection = await _apiClient.GetDownloadableCollectionAsync(session.Cookies, session.FanId, maxPages: 1)
                     .ConfigureAwait(false);
 
@@ -166,6 +167,7 @@ namespace NzbDrone.Core.Indexers.Bandcamp
                 return results;
             }
 
+            using var observation = _apiClient.ObserveSession(session);
             var collection = await _apiClient.GetDownloadableCollectionAsync(session.Cookies, session.FanId)
                 .ConfigureAwait(false);
 
@@ -208,6 +210,7 @@ namespace NzbDrone.Core.Indexers.Bandcamp
                 return results;
             }
 
+            using var observation = _apiClient.ObserveSession(session);
             var collection = await _apiClient.GetDownloadableCollectionAsync(session.Cookies, session.FanId)
                 .ConfigureAwait(false);
 
