@@ -163,6 +163,9 @@ public sealed class CookiePushCommandFixture
 
         Assert.Equal(0, exitCode);
         Assert.Contains("--client-id", output.ToString());
+        Assert.Contains("--print-cookie", output.ToString());
+        Assert.Contains("--dry-run", output.ToString());
+        Assert.Contains("opens a visible browser", output.ToString());
         Assert.Contains("LIDARR_API_KEY", output.ToString());
         Assert.Equal(string.Empty, error.ToString());
     }
