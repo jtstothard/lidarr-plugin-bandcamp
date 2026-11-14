@@ -1,0 +1,23 @@
+{
+  "runtime": {
+    "version": "3.2.1.5196",
+    "releaseApi": "https://api.github.com/repos/Lidarr/Lidarr/releases/tags/v3.2.1.5196",
+    "releaseCommit": "6af1274a11957270a308fd0448ffe624a8e264d0",
+    "url": "https://github.com/Lidarr/Lidarr/releases/download/v3.2.1.5196/Lidarr.develop.3.2.1.5196.linux-core-x64.tar.gz",
+    "sha256": "009ce48af3faab34578dd1fcd3945cae7db42f5449c7999e2ffd20d60a22ec06",
+    "coreSha256": "7ca8d80b4ea680546f81b4c48787ed5a44550654e97684e3fe2465b7e7862294",
+    "releaseId": 438043540,
+    "assetId": 722940621,
+    "publishedAt": "2026-11-08T15:52:21Z"
+  },
+  "plugin": {
+    "version": "1.1.2",
+    "releaseApi": "https://api.github.com/repos/jtstothard/lidarr-plugin-bandcamp/releases/tags/v1.1.2",
+    "url": "https://github.com/jtstothard/lidarr-plugin-bandcamp/releases/download/v1.1.2/Lidarr.Plugin.Bandcamp.net8.0.zip",
+    "sha256": "705cbb9da6073cc7e4a1fe2a6b26223f795005990ff06b28288dea6480f6891a",
+    "dllSha256": "dbb8637f1760756f87caf5b2dcc0b3e728fe49d2b9fd2576155e57f46e505cf9",
+    "releaseId": 445508560,
+    "assetId": 748413573,
+    "publishedAt": "2026-11-14T18:38:49Z"
+  }
+}
