@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using NLog;
 
@@ -25,18 +26,25 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         private readonly ConcurrentDictionary<int, BandcampSessionProvider> _providers = new();
         private readonly BandcampApiClient _apiClient;
         private readonly Logger _logger;
+        private readonly Func<DateTime>? _clock;
 
         public BandcampSessionProviderRegistry(BandcampApiClient apiClient, Logger logger)
+            : this(apiClient, logger, null)
+        {
+        }
+
+        public BandcampSessionProviderRegistry(BandcampApiClient apiClient, Logger logger, Func<DateTime>? clock)
         {
             _apiClient = apiClient;
             _logger = logger;
+            _clock = clock;
         }
 
         public IBandcampSessionProvider Get(int definitionId, BandcampDownloadSettings settings)
         {
             var provider = _providers.GetOrAdd(
                 definitionId,
-                id => new BandcampSessionProvider(id, settings, _apiClient, _logger));
+                id => new BandcampSessionProvider(id, settings, _apiClient, _logger, _clock));
             provider.UpdateSettings(settings);
             return provider;
         }

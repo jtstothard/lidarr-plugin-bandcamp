@@ -24,11 +24,18 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
 {
     public class BandcampDownloadClientQueueFixture
     {
+        private const string LiveHomepage =
+            @"<html><body><div id=""HomepageApp"" data-blob=""{&quot;pageContext&quot;:{&quot;identity&quot;:{&quot;fanId&quot;:12345678,&quot;isLoggedIn&quot;:true}}}""></div></body></html>";
+
         [Fact]
         public async Task Download_QueuedByOneClient_IsVisibleFromAnotherClientInstance()
         {
             var logger = LogManager.GetCurrentClassLogger();
             var httpClient = new Mock<IHttpClient>();
+            httpClient
+                .Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
+                .ReturnsAsync((HttpRequest request) =>
+                    new HttpResponse(request, new HttpHeader(), LiveHomepage, System.Net.HttpStatusCode.OK));
             var apiClient = new BandcampApiClient(new BandcampHttpClient(httpClient.Object, logger), logger);
             var registry = new BandcampDownloadRegistry();
             var proxy = new BlockingProxy();
@@ -64,8 +71,8 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             var logger = LogManager.GetCurrentClassLogger();
             var httpClient = new Mock<IHttpClient>();
             var firstRequestGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var homepageCookies = new ConcurrentQueue<string>();
-            var homepageCalls = 0;
+            var downloadPageCookies = new ConcurrentQueue<string>();
+            var downloadPageCalls = 0;
 
             httpClient
                 .Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
@@ -73,17 +80,20 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                 {
                     if (request.Url.FullUri == "https://bandcamp.com")
                     {
-                        homepageCookies.Enqueue(request.Headers.GetSingleValue("Cookie"));
-                        if (Interlocked.Increment(ref homepageCalls) == 1)
+                        return new HttpResponse(request, new HttpHeader(), LiveHomepage, System.Net.HttpStatusCode.OK);
+                    }
+
+                    if (request.Url.FullUri.StartsWith("https://bandcamp.com/download"))
+                    {
+                        downloadPageCookies.Enqueue(request.Headers.GetSingleValue("Cookie"));
+                        if (Interlocked.Increment(ref downloadPageCalls) == 1)
                         {
                             await firstRequestGate.Task;
                         }
-
-                        // Dead session: no fanId, so each item fails at fan_id resolution.
-                        return new HttpResponse(request, new HttpHeader(), "<html></html>", System.Net.HttpStatusCode.OK);
                     }
 
-                    return new HttpResponse(request, new HttpHeader(), "{}", System.Net.HttpStatusCode.OK);
+                    // No download data on the page, so each item fails after using its session.
+                    return new HttpResponse(request, new HttpHeader(), "<html></html>", System.Net.HttpStatusCode.OK);
                 });
 
             var bandcampHttp = new BandcampHttpClient(httpClient.Object, logger);
@@ -95,7 +105,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             var client = CreateClient(queue, apiClient, logger, sessions, "identity=old-cookie");
 
             await client.Download(CreateRemoteAlbum("111"), Mock.Of<IIndexer>());
-            await WaitUntil(() => Volatile.Read(ref homepageCalls) == 1);
+            await WaitUntil(() => Volatile.Read(ref downloadPageCalls) == 1);
             await client.Download(CreateRemoteAlbum("222"), Mock.Of<IIndexer>());
 
             // Session renewed (e.g. user pasted a fresh cookie) while the second item is still queued.
@@ -104,7 +114,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
 
             await WaitUntil(() => client.GetItems().Count(i => i.Status == DownloadItemStatus.Failed) == 2);
 
-            Assert.Equal(new[] { "identity=old-cookie", "identity=new-cookie" }, homepageCookies.ToArray());
+            Assert.Equal(new[] { "identity=old-cookie", "identity=new-cookie" }, downloadPageCookies.ToArray());
         }
 
         private static RemoteAlbum CreateRemoteAlbum(string id)
