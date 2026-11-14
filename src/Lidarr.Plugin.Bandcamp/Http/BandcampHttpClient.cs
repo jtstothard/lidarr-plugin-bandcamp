@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using NLog;
 using NzbDrone.Common.Http;
@@ -18,6 +19,24 @@ namespace NzbDrone.Core.Http.Bandcamp
             "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
 
         private static readonly TimeSpan RateLimitInterval = TimeSpan.FromSeconds(2);
+
+        private readonly AsyncLocal<Func<string, string, Task>?> _identityObserver = new();
+
+        internal IDisposable ObserveIdentity(Func<string, string, Task> observer)
+        {
+            var previous = _identityObserver.Value;
+            _identityObserver.Value = observer;
+            return new ObservationScope(() => _identityObserver.Value = previous);
+        }
+
+        private sealed class ObservationScope : IDisposable
+        {
+            private Action? _restore;
+
+            internal ObservationScope(Action restore) => _restore = restore;
+
+            public void Dispose() => Interlocked.Exchange(ref _restore, null)?.Invoke();
+        }
 
         private readonly IHttpClient _httpClient;
         private readonly Logger _logger;
@@ -42,7 +61,14 @@ namespace NzbDrone.Core.Http.Bandcamp
             };
 
             // Set RateLimitKey via PostProcess since HttpRequestBuilder doesn't expose it directly
-            builder.PostProcess = req => req.RateLimitKey = "bandcamp";
+            builder.PostProcess = req =>
+            {
+                req.RateLimitKey = "bandcamp";
+                // Never let the host jar or a redirect expand the account credential scope.
+                req.StoreRequestCookie = false;
+                req.StoreResponseCookie = false;
+                req.AllowAutoRedirect = false;
+            };
 
             // Browser-like headers so Bandcamp serves full pages
             builder.Headers.Set("User-Agent", BrowserUserAgent);
@@ -54,7 +80,7 @@ namespace NzbDrone.Core.Http.Bandcamp
             // Users may paste just the identity cookie value, or the full cookie string.
             // If it doesn't contain '=', assume it's just the identity value.
             var cookieHeader = NormalizeCookieHeader(cookies);
-            if (!string.IsNullOrWhiteSpace(cookieHeader))
+            if (BandcampIdentityCookie.IsAccountOrigin(url) && !string.IsNullOrWhiteSpace(cookieHeader))
             {
                 builder.Headers.Set("Cookie", cookieHeader);
             }
@@ -78,7 +104,7 @@ namespace NzbDrone.Core.Http.Bandcamp
         /// Use .Content on the response to access the string body.
         /// Logs URL and status but never logs cookie values.
         /// </summary>
-        public async Task<HttpResponse> ExecuteAsync(HttpRequest request)
+        public async Task<HttpResponse> ExecuteAsync(HttpRequest request, bool observeIdentity = true)
         {
             // Log the request URL without any headers (cookies are in headers)
             _logger.Debug("Bandcamp request: {0} {1}", request.Method, request.Url);
@@ -86,6 +112,10 @@ namespace NzbDrone.Core.Http.Bandcamp
             try
             {
                 var response = await _httpClient.ExecuteAsync(request);
+                if (observeIdentity)
+                {
+                    await ObserveIdentityAsync(request, response).ConfigureAwait(false);
+                }
 
                 _logger.Debug("Bandcamp response: {0} -> {1} ({2} bytes)",
                     request.Url,
@@ -101,6 +131,40 @@ namespace NzbDrone.Core.Http.Bandcamp
             }
         }
 
+        internal static string? GetIdentityCandidate(HttpResponse response)
+        {
+            var request = response.Request;
+            if ((int)response.StatusCode < 200 || (int)response.StatusCode >= 300 ||
+                !BandcampIdentityCookie.IsAccountOrigin(request.Url.FullUri))
+            {
+                return null;
+            }
+
+            var sent = request.Headers.GetValues("Cookie");
+            if (sent?.Length != 1 || BandcampIdentityCookie.Identity(sent[0]) == null)
+            {
+                return null;
+            }
+
+            var candidate = BandcampIdentityCookie.Candidate(response.Headers.GetValues("Set-Cookie"));
+            return candidate == BandcampIdentityCookie.Identity(sent[0]) ? null : candidate;
+        }
+
+        private async Task ObserveIdentityAsync(HttpRequest request, HttpResponse response)
+        {
+            if (!BandcampIdentityCookie.IsAccountOrigin(request.Url.FullUri)) return;
+            var candidate = GetIdentityCandidate(response);
+            if (candidate == null) return;
+            var sent = request.Headers.GetValues("Cookie");
+            if (sent?.Length != 1) return;
+
+            var observer = _identityObserver.Value;
+            if (observer != null)
+            {
+                await observer(sent[0], candidate).ConfigureAwait(false);
+            }
+        }
+
         /// <summary>
         /// Executes an HTTP request and returns the raw response (for non-string content).
         /// </summary>
@@ -111,6 +175,7 @@ namespace NzbDrone.Core.Http.Bandcamp
             try
             {
                 var response = await _httpClient.ExecuteAsync(request);
+                await ObserveIdentityAsync(request, response).ConfigureAwait(false);
 
                 _logger.Debug("Bandcamp response: {0} -> {1}",
                     request.Url,

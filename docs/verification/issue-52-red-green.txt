@@ -1,0 +1,38 @@
+Issue #52 red/green evidence
+Base: integration/46-bandcamp-auth 849e619b2974010af871edfed25c1fc766b2695c
+
+Command (each red followed by implementation, then rerun):
+dotnet test tests/Lidarr.Plugin.Bandcamp.Test -c Release --filter FullyQualifiedName~BandcampIdentityRotationFixture -m:1 -p:TreatWarningsAsErrors=false --no-restore
+
+Actual recorded red results:
+Initial rotation slice
+Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.AuthenticatedRotationIsValidatedSavedMinimallyAndSurvivesProcessReread [112 ms]
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 112 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+Attribute rejection slice
+Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Path=/; Secure; Max-Age=invalid") [4 ms]
+Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Path=/; Secure; Unknown=attribut"···) [< 1 ms]
+Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Path=/; Secure; Max-Age=0") [< 1 ms]
+Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Path=/; Secure; Expires=Thu, 01 "···) [< 1 ms]
+Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Path=/; Secure; HttpOnly=invalid") [< 1 ms]
+Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Path=/; Secure; SameSite=invalid") [< 1 ms]
+Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Path=/; Secure; Expires=invalid") [< 1 ms]
+Failed!  - Failed:     7, Passed:    12, Skipped:     0, Total:    19, Duration: 150 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+Owner isolation slice
+Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.RotationBelongsOnlyToTheSelectedOwnerEvenWhenAnotherOwnerHasTheSameCookie [4 ms]
+Failed!  - Failed:     1, Passed:    40, Skipped:     0, Total:    41, Duration: 158 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+Malformed flags/control characters slice
+Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Path=/; Secure; HttpOnly=") [107 ms]
+Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Path=/; Secure=") [1 ms]
+Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated\n; Path=/; Secure") [< 1 ms]
+Failed!  - Failed:     3, Passed:    43, Skipped:     0, Total:    46, Duration: 156 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+Pre-integration final checks:
+dotnet build Lidarr.Plugin.Bandcamp.slnx -c Release -m:1 -p:TreatWarningsAsErrors=false
+40 Warning(s), 0 Error(s). Existing host/package/analyzer warnings remain.
+dotnet test tests/Lidarr.Plugin.Bandcamp.Test -c Release -m:1 -p:TreatWarningsAsErrors=false --no-restore
+Passed!  - Failed:     0, Passed:   257, Skipped:     0, Total:   257, Duration: 721 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+Fixtures prove regression behavior only. No live Bandcamp account actions or lifetime qualification.

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using NLog;
 using NzbDrone.Common.Http;
@@ -64,6 +65,10 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             _logger = logger;
         }
 
+        /// <summary>Confines passive response rotation to the explicitly selected session owner.</summary>
+        public IDisposable ObserveSession(Session.BandcampSession session, CancellationToken cancellationToken = default) =>
+            _httpClient.ObserveIdentity((expected, candidate) => session.ObserveIdentityAsync(expected, candidate, cancellationToken));
+
         /// <summary>
         /// Resolves the fan_id for the authenticated user by fetching the Bandcamp
         /// homepage and extracting it from the embedded data-blob JSON.
@@ -96,7 +101,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             {
                 var builder = _httpClient.CreateRequestBuilder(BandcampBaseUrl, cookies);
                 builder.SuppressHttpError = true;
-                response = await _httpClient.ExecuteAsync(builder.Build()).ConfigureAwait(false);
+                response = await _httpClient.ExecuteAsync(builder.Build(), observeIdentity: false).ConfigureAwait(false);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -133,7 +138,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                     {
                         if (response.StatusCode == System.Net.HttpStatusCode.OK && id.ValueKind == JsonValueKind.Number && id.TryGetInt64(out var fanId) && fanId > 0)
                         {
-                            return new(Session.BandcampValidationOutcome.Valid, fanId);
+                            return new(Session.BandcampValidationOutcome.Valid, fanId) { IdentityCandidate = BandcampHttpClient.GetIdentityCandidate(response) };
                         }
 
                         if (((int)response.StatusCode == 200 || (int)response.StatusCode == 401 || (int)response.StatusCode == 403) &&
@@ -147,7 +152,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                     if (response.StatusCode == System.Net.HttpStatusCode.OK && root.ValueKind == JsonValueKind.Object &&
                         root.TryGetProperty("fan_id", out var snake) && snake.ValueKind == JsonValueKind.Number && snake.TryGetInt64(out var snakeId) && snakeId > 0)
                     {
-                        return new(Session.BandcampValidationOutcome.Valid, snakeId);
+                        return new(Session.BandcampValidationOutcome.Valid, snakeId) { IdentityCandidate = BandcampHttpClient.GetIdentityCandidate(response) };
                     }
                 }
                 catch (JsonException)

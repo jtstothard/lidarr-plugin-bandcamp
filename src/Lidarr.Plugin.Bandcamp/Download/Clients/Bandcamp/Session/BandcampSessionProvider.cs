@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using NLog;
+using NzbDrone.Core.Http.Bandcamp;
 
 namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 {
@@ -303,6 +304,25 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             return await ReplaceIdentityAsync(result.Cookies, settings, expectedCookies, credentials, cancellationToken).ConfigureAwait(false);
         }
 
+        private Task<BandcampSession?> ObserveIdentityAsync(string expectedHeader, string candidate, CancellationToken cancellationToken)
+        {
+            lock (_loginLock)
+            {
+                var settings = _settings;
+                var cached = _cached;
+                // Only a still-current, successfully validated session authorizes passive rotation.
+                // Bind the transaction to the identity that actually produced the response.
+                if (cached == null || cached.Session.Cookies != settings.Cookies ||
+                    Clock() - cached.ValidatedAtUtc >= ValidationCacheDuration ||
+                    BandcampHttpClient.NormalizeCookieHeader(settings.Cookies) != expectedHeader)
+                {
+                    return Task.FromResult<BandcampSession?>(null);
+                }
+
+                return ReplaceIdentityAsync(candidate, settings, settings.Cookies, settings.CredentialKey(), cancellationToken);
+            }
+        }
+
         public virtual Task<BandcampSession?> ReplaceIdentityAsync(string cookies, CancellationToken cancellationToken = default)
         {
             lock (_loginLock)
@@ -387,7 +407,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 // Persistence is the commit point. Only now publish the validated identity.
                 _settings.Cookies = cookies;
                 settings.Cookies = cookies;
-                var session = new BandcampSession(cookies, fanId.Value);
+                var session = new BandcampSession(cookies, fanId.Value) { IdentityObserver = ObserveIdentityAsync };
                 _cached = new CachedSession(session, Clock());
                 SetState(BandcampSessionStatus.Valid);
                 return session;
@@ -479,9 +499,15 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 return (null, true);
             }
 
-            var session = new BandcampSession(cookies, fanId.Value);
+            var session = new BandcampSession(cookies, fanId.Value) { IdentityObserver = ObserveIdentityAsync };
             _cached = new CachedSession(session, Clock());
             SetState(BandcampSessionStatus.Valid);
+            if (validation.IdentityCandidate is { } candidate)
+            {
+                var replacement = await ObserveIdentityAsync(BandcampHttpClient.NormalizeCookieHeader(cookies), candidate, cancellationToken).ConfigureAwait(false);
+                return (replacement ?? session, false);
+            }
+
             return (session, false);
         }
 
