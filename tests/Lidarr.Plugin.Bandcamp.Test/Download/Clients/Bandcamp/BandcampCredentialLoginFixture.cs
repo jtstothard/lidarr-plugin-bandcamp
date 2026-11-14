@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
@@ -168,6 +169,54 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                 VerificationCode = verificationCode,
                 DownloadPath = "/tmp/bandcamp"
             };
+        }
+
+        [Fact]
+        public async Task NamedConsumersCoalesceTheExistingLoginAndPersistOneOwner()
+        {
+            var settings = Settings(cookies: "identity=prior");
+            var definition = new DownloadClientDefinition { Id = 7, Name = "Shared fan", Implementation = nameof(BandcampDownloadClient), Settings = settings };
+            var saved = Newtonsoft.Json.JsonConvert.SerializeObject(settings);
+            _repository.Setup(r => r.All()).Returns(new List<DownloadClientDefinition> { definition });
+            _repository.Setup(r => r.Find(7)).Returns(() => new DownloadClientDefinition
+            {
+                Id = 7, Name = "Shared fan", Implementation = nameof(BandcampDownloadClient),
+                Settings = Newtonsoft.Json.JsonConvert.DeserializeObject<BandcampDownloadSettings>(saved)!
+            });
+            _repository.Setup(r => r.SetFields(It.IsAny<DownloadClientDefinition>(), It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()))
+                .Callback<DownloadClientDefinition, Expression<Func<DownloadClientDefinition, object>>[]>((d, _) => saved = Newtonsoft.Json.JsonConvert.SerializeObject(d.Settings));
+            var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _loginDelay = () => { entered.TrySetResult(true); return release.Task; };
+            var http = new BandcampHttpClient(_http.Object, _logger);
+            var registry = new BandcampSessionProviderRegistry(new BandcampApiClient(http, _logger),
+                new BandcampLoginClient(http, _logger), new BandcampSessionStore(_repository.Object), _logger, _repository.Object);
+            var first = registry.GetNamed("Shared fan").GetSessionAsync();
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            var second = registry.Get(8, new BandcampDownloadSettings { AuthConfiguration = "Shared fan", Cookies = "identity=other-account" }).GetSessionAsync();
+            release.SetResult(true);
+            var results = await Task.WhenAll(first, second);
+            Assert.All(results, result => Assert.Equal("identity=" + FreshIdentity, result?.Cookies));
+            Assert.Equal(1, _loginPosts);
+            _repository.Verify(r => r.SetFields(It.IsAny<DownloadClientDefinition>(), It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task OwnerChangedToConsumerCannotReceiveAnotherAccountsChallengeMetadata()
+        {
+            _loginCbFixture = "login_cb_captcha_required.json";
+            var settings = Settings(cookies: "identity=prior");
+            var client = CreateClient(settings);
+            _loginDelay = () =>
+            {
+                _repository.Setup(r => r.Find(7)).Returns(new DownloadClientDefinition
+                {
+                    Id = 7, Settings = new BandcampDownloadSettings { AuthConfiguration = "Another account", Cookies = "identity=prior" }
+                });
+                return Task.CompletedTask;
+            };
+            Assert.False((await Task.Run(() => client.Test())).IsValid);
+            _repository.Verify(r => r.SetFields(It.IsAny<DownloadClientDefinition>(), It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()), Times.Never);
         }
 
         [Theory]

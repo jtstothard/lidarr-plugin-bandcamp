@@ -11,7 +11,7 @@ namespace NzbDrone.Core.Indexers.Bandcamp
         {
             RuleFor(c => c.BaseUrl).ValidRootUrl();
             RuleFor(c => c.Cookies).NotEmpty()
-                .When(c => !string.IsNullOrWhiteSpace(c.BaseUrl))
+                .When(c => !string.IsNullOrWhiteSpace(c.BaseUrl) && string.IsNullOrWhiteSpace(c.AuthConfiguration))
                 .WithMessage("Session cookies are required to access Bandcamp");
         }
     }
@@ -33,6 +33,9 @@ namespace NzbDrone.Core.Indexers.Bandcamp
 
         [FieldDefinition(2, Type = FieldType.Number, Label = "Early Download Limit", HelpText = "Time before release date Lidarr will download from this indexer, empty is no limit", Unit = "days", Advanced = true)]
         public int? EarlyReleaseLimit { get; set; }
+
+        [FieldDefinition(3, Label = "Shared Authentication", Type = FieldType.Textbox, HelpText = "Exact name of a saved Bandcamp download client that owns authentication (its Shared Authentication must be empty). Uses its current session for search. Leave empty to keep the legacy independent cookie. Existing local cookie is retained for downgrade, not updated by shared renewal.")]
+        public string AuthConfiguration { get; set; } = "";
 
         public NzbDroneValidationResult Validate()
         {

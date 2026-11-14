@@ -6,13 +6,23 @@
 
 **Identity cookie**
 : The `identity` cookie Bandcamp issues to a logged-in fan. It is the fan session's token, stored in
-  the client's `Cookies` setting, either pasted by the user or written there after a login. Its own
+  the authentication owner's `Cookies` setting, either pasted by the user or written there after a login. Its own
   expiry field is ignored.
 
+**Authentication owner / named configuration**
+: A saved Bandcamp download-client definition with a unique Name and empty Shared Authentication
+  selector. It owns one account's cookie, credentials and challenge state in existing Lidarr provider
+  settings. Consumers select its exact name explicitly; no account equivalence is inferred.
+
+**Shared Authentication selector**
+: The name of an authentication owner selected by an indexer or downloader. Local legacy secrets
+  remain saved but inactive while selected. Empty means independent legacy authentication.
+
 **Session provider**
-: The per-client-definition component that hands out the current fan session. It validates the
+: The per-authentication-owner component that hands out the current fan session. It validates the
   identity cookie, logs in with the stored credentials when the cookie is dead (one login at a time),
-  writes the fresh cookie back to settings, and records the session state.
+  validates a replacement before atomically saving it, and records the typed session state.
+  Named consumers resolve current saved owner settings when executing; they do not own cookie copies.
 
 **Login challenge**
 : A login Bandcamp won't complete with email and password alone: an emailed verification code

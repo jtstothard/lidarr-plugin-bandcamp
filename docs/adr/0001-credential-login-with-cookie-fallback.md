@@ -75,3 +75,17 @@ Regression evidence uses the approved settings, session/credential-login, monito
 public download seams with controlled time, serialized persisted rereads, cancellation,
 competing recovery providers and injected repository failures. No live account qualification
 is implied by those fixtures.
+
+## Update: named shared ownership (#46, #50)
+
+A saved Bandcamp downloader with an empty Shared Authentication selector is a named auth owner.
+Indexer and downloader definitions may explicitly select its unique Lidarr Name. The registry
+resolves saved settings for execution, keys the existing engine by owner id, and delegates to
+that engine. It does not add credential-login scheduling or silently infer account equivalence.
+Legacy definitions stay independent until deliberately mapped, with every legacy secret retained.
+
+This uses the existing host provider settings/repository/API instead of a second persistence
+system. One validated persisted replacement updates the owner alone and repairs both consumers.
+The supported downgrade representation is the owner's legacy cookie/credential fields; consumer
+legacy fields are retained but not synchronized. Before downgrade they require deliberate account
+reconciliation and cookie copy. See [migration and limitations](../shared-authentication.md).

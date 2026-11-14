@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -10,6 +12,7 @@ using NzbDrone.Common.Disk;
 using NzbDrone.Common.Http;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Download;
+using NzbDrone.Core.Download.Clients;
 using NzbDrone.Core.Download.Clients.Bandcamp;
 using NzbDrone.Core.Download.Clients.Bandcamp.Session;
 using NzbDrone.Core.Http.Bandcamp;
@@ -52,6 +55,177 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         private readonly string _tempRoot = Path.Combine(Path.GetTempPath(), "bandcamp-renewal-tests", Guid.NewGuid().ToString("N"));
         private readonly Logger _logger = LogManager.GetCurrentClassLogger();
         private int _downloadPageRequests;
+
+        [Fact]
+        public async Task DistinctNamedOwnersKeepSeparateSessionsEvenWhenBothAreValid()
+        {
+            var owners = new List<DownloadClientDefinition>
+            {
+                new() { Id = 70, Name = "Personal", Implementation = nameof(BandcampDownloadClient), Settings = new BandcampDownloadSettings { Cookies = OldCookie } },
+                new() { Id = 71, Name = "Other", Implementation = nameof(BandcampDownloadClient), Settings = new BandcampDownloadSettings { Cookies = NewCookie } }
+            };
+            var repository = new Mock<IDownloadClientRepository>();
+            repository.Setup(r => r.All()).Returns(owners);
+            repository.Setup(r => r.Find(It.IsAny<int>())).Returns((int id) => owners.Single(o => o.Id == id));
+            var http = Http((request, cookie) => Text(ValidHomepage, request));
+            var api = new BandcampApiClient(new BandcampHttpClient(http.Object, _logger), _logger);
+            var registry = new BandcampSessionProviderRegistry(api, null, new BandcampSessionStore(repository.Object), _logger, repository.Object);
+            var personal = registry.GetNamed("Personal");
+            var other = registry.GetNamed("Other");
+            Assert.Equal(OldCookie, (await personal.GetSessionAsync())!.Cookies);
+            Assert.Equal(NewCookie, (await other.GetSessionAsync())!.Cookies);
+            Assert.Equal(OldCookie, (await personal.GetSessionAsync())!.Cookies);
+            Assert.NotEqual(personal.DefinitionId, other.DefinitionId);
+            repository.Verify(r => r.SetFields(It.IsAny<DownloadClientDefinition>(), It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ChangingOwnerToReferenceDuringRecoveryRetainsItsLegacySecrets()
+        {
+            var settings = new BandcampDownloadSettings { Cookies = OldCookie, Email = "owner@example.test", Password = "secret" };
+            var owner = new DownloadClientDefinition { Id = 70, Name = "Owner", Implementation = nameof(BandcampDownloadClient), Settings = settings };
+            var repository = new Mock<IDownloadClientRepository>();
+            repository.Setup(r => r.All()).Returns(new List<DownloadClientDefinition> { owner });
+            repository.Setup(r => r.Find(70)).Returns(owner);
+            var writes = 0;
+            repository.Setup(r => r.SetFields(It.IsAny<DownloadClientDefinition>(), It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()))
+                .Callback(() => writes++);
+            var http = Http((request, cookie) =>
+            {
+                owner.Settings = new BandcampDownloadSettings
+                {
+                    Cookies = OldCookie, Email = "owner@example.test", Password = "secret", AuthConfiguration = "Different account"
+                };
+                return Text(ValidHomepage, request);
+            });
+            var api = new BandcampApiClient(new BandcampHttpClient(http.Object, _logger), _logger);
+            var registry = new BandcampSessionProviderRegistry(api, null, new BandcampSessionStore(repository.Object), _logger, repository.Object);
+            Assert.Null(await registry.GetNamed("Owner").ReplaceIdentityAsync(NewCookie));
+            Assert.Equal(0, writes);
+            Assert.Equal(OldCookie, ((BandcampDownloadSettings)owner.Settings).Cookies);
+            Assert.Equal("Different account", ((BandcampDownloadSettings)owner.Settings).AuthConfiguration);
+        }
+
+        [Theory]
+        [InlineData("missing")]
+        [InlineData("duplicate")]
+        [InlineData("chain")]
+        public async Task InvalidNamedSelectionRefusesRatherThanUsingAnotherAccountsLegacyCookie(string scenario)
+        {
+            var owner = new DownloadClientDefinition
+            {
+                Id = 70, Name = "Owner", Implementation = nameof(BandcampDownloadClient),
+                Settings = new BandcampDownloadSettings { Cookies = NewCookie, AuthConfiguration = scenario == "chain" ? "Another" : "" }
+            };
+            var definitions = scenario == "missing" ? new List<DownloadClientDefinition>() : new List<DownloadClientDefinition> { owner };
+            if (scenario == "duplicate")
+            {
+                definitions.Add(new DownloadClientDefinition { Id = 71, Name = "Owner", Implementation = nameof(BandcampDownloadClient), Settings = new BandcampDownloadSettings { Cookies = "identity=different-account" } });
+            }
+
+            var repository = new Mock<IDownloadClientRepository>();
+            repository.Setup(r => r.All()).Returns(definitions);
+            repository.Setup(r => r.Find(70)).Returns(owner);
+            var http = Http((request, cookie) => throw new InvalidOperationException("Must refuse before HTTP"));
+            var api = new BandcampApiClient(new BandcampHttpClient(http.Object, _logger), _logger);
+            var registry = new BandcampSessionProviderRegistry(api, null, new BandcampSessionStore(repository.Object), _logger, repository.Object);
+            var client = CreateClient(http, registry);
+            Settings(client).AuthConfiguration = "Owner";
+            Assert.Contains(client.Test().Errors, failure => failure.PropertyName == "AuthConfiguration");
+            var error = await Assert.ThrowsAsync<DownloadClientAuthenticationException>(() => client.Download(CreateRemoteAlbum(), Mock.Of<IIndexer>()));
+            Assert.Contains("exact unique name", error.Message);
+            Assert.Equal(OldCookie, Settings(client).Cookies);
+            Assert.Equal(BandcampSessionProblem.ConfigurationMissing, registry.Find(client.Definition.Id)!.State.Problem);
+        }
+
+        [Fact]
+        public async Task NamedOwnerRenewalRepairsSearchAndRealDownloadWithoutConsumerCookieWrites()
+        {
+            var owner = new DownloadClientDefinition
+            {
+                Id = 70, Name = "Fan account", Enable = false, Implementation = nameof(BandcampDownloadClient),
+                Settings = new BandcampDownloadSettings { Cookies = OldCookie, Email = "fan@example.test", Password = "secret", DownloadPath = "/owner" }
+            };
+            var saved = System.Text.Json.JsonSerializer.Serialize((BandcampDownloadSettings)owner.Settings);
+            var repository = new Mock<IDownloadClientRepository>();
+            repository.Setup(r => r.All()).Returns(() => new List<DownloadClientDefinition> { owner });
+            repository.Setup(r => r.Find(70)).Returns(() =>
+            {
+                owner.Settings = System.Text.Json.JsonSerializer.Deserialize<BandcampDownloadSettings>(saved)!;
+                return owner;
+            });
+            var writes = 0;
+            repository.Setup(r => r.SetFields(It.IsAny<DownloadClientDefinition>(), It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()))
+                .Callback<DownloadClientDefinition, Expression<Func<DownloadClientDefinition, object>>[]>((d, fields) =>
+                {
+                    Assert.Equal(70, d.Id);
+                    saved = System.Text.Json.JsonSerializer.Serialize((BandcampDownloadSettings)d.Settings);
+                    writes++;
+                });
+            var http = Http((request, cookie) =>
+            {
+                if (request.Url.FullUri == "https://bandcamp.com")
+                {
+                    return Text(cookie == NewCookie ? ValidHomepage : DeadHomepage, request);
+                }
+
+                if (request.Url.FullUri == DownloadPageUrl)
+                {
+                    Assert.Equal(NewCookie, cookie);
+                    return Text(DownloadPage, request);
+                }
+
+                if (request.Url.FullUri == "https://bandcamp.com/api/fancollection/1/collection_items")
+                {
+                    Assert.Equal(NewCookie, cookie);
+                    return Text(@"{""redownload_urls"":{""a111"":""https://bandcamp.com/download?type=album&id=111""},""items"":[{""item_id"":111,""item_type"":""album"",""sale_item_type"":""a"",""sale_item_id"":111,""token"":""tok"",""item_url"":""https://fresh.bandcamp.com/album/fresh"",""item_title"":""Fresh"",""band_name"":""Fresh""}]}", request);
+                }
+
+                return Files(request);
+            });
+            var api = new BandcampApiClient(new BandcampHttpClient(http.Object, _logger), _logger);
+            var registry = new BandcampSessionProviderRegistry(api, null, new BandcampSessionStore(repository.Object), _logger, repository.Object);
+            var selectedBeforeRenewal = registry.GetNamed("Fan account");
+            Assert.Null(await selectedBeforeRenewal.GetSessionAsync());
+            Assert.NotNull(await selectedBeforeRenewal.ReplaceIdentityAsync(NewCookie));
+            Assert.Equal(NewCookie, (await registry.GetNamed("Fan account").GetSessionAsync())!.Cookies);
+
+            var client = CreateClient(http, registry);
+            Settings(client).AuthConfiguration = "Fan account";
+            var indexerSettings = new NzbDrone.Core.Indexers.Bandcamp.BandcampIndexerSettings
+            {
+                AuthConfiguration = "Fan account", Cookies = "identity=other-legacy-account", EarlyReleaseLimit = 8
+            };
+            var indexer = new NzbDrone.Core.Indexers.Bandcamp.BandcampIndexer(http.Object, api,
+                Mock.Of<IIndexerStatusService>(), Mock.Of<IConfigService>(), Mock.Of<NzbDrone.Core.Parser.IParsingService>(), _logger, registry)
+            {
+                Definition = new IndexerDefinition { Id = 72, Name = "Search", Enable = true, Settings = indexerSettings }
+            };
+            var releases = await indexer.Fetch(new NzbDrone.Core.IndexerSearch.Definitions.ArtistSearchCriteria { Artist = new Artist { Name = "Fresh" } });
+            Assert.NotEmpty(releases);
+            var id = await client.Download(CreateRemoteAlbum(), Mock.Of<IIndexer>());
+            var item = await WaitForFinished(client, id);
+            Assert.Equal(DownloadItemStatus.Completed, item.Status);
+            var output = Directory.GetFiles(_tempRoot, "*.flac", SearchOption.AllDirectories).Single();
+            Assert.Equal(new byte[] { 0x66, 0x4C, 0x61, 0x43, 0, 0, 0, 0x22 }, File.ReadAllBytes(output));
+            Assert.Equal(1, writes);
+            Assert.Equal(OldCookie, Settings(client).Cookies);
+            Assert.Equal("identity=other-legacy-account", indexerSettings.Cookies);
+            Assert.Equal(8, indexerSettings.EarlyReleaseLimit);
+            Assert.False(owner.Enable);
+            var persisted = System.Text.Json.JsonSerializer.Deserialize<BandcampDownloadSettings>(saved)!;
+            Assert.Equal("fan@example.test", persisted.Email);
+            Assert.Equal("secret", persisted.Password);
+            Assert.Equal("/owner", persisted.DownloadPath);
+
+            // An owner client/factory may still hold its pre-renewal settings snapshot.
+            var staleOwner = new BandcampDownloadSettings { Cookies = OldCookie };
+            Assert.Equal(NewCookie, (await registry.Get(70, staleOwner).GetSessionAsync())?.Cookies);
+
+            // Recreate the registry from persisted settings, as after a process restart.
+            var restarted = new BandcampSessionProviderRegistry(api, null, new BandcampSessionStore(repository.Object), _logger, repository.Object);
+            Assert.Equal(NewCookie, (await restarted.GetNamed("Fan account").GetSessionAsync())!.Cookies);
+        }
 
         [Fact]
         public async Task GetItems_SessionDiesAfterPhase1AndRenews_ItemRetriesAndCompletes()
@@ -269,7 +443,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             }
         }
 
-        private BandcampDownloadClient CreateClient(Mock<IHttpClient> http)
+        private BandcampDownloadClient CreateClient(Mock<IHttpClient> http, IBandcampSessionProviderRegistry? registry = null)
         {
             var bandcampHttp = new BandcampHttpClient(http.Object, _logger);
             var apiClient = new BandcampApiClient(bandcampHttp, _logger);
@@ -278,7 +452,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
 
             var client = new BandcampDownloadClient(
                 queue,
-                new BandcampSessionProviderRegistry(apiClient, null, null, _logger),
+                registry ?? new BandcampSessionProviderRegistry(apiClient, null, null, _logger),
                 Mock.Of<IAlbumService>(),
                 Mock.Of<IReleaseService>(),
                 Mock.Of<ITrackService>(),

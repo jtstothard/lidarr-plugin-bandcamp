@@ -218,15 +218,16 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             try
             {
                 var hasCredentials = Settings.HasCredentials();
-                var provider = SessionProvider;
-                var session = hasCredentials
+                var provider = _sessionProviders.GetForTest(Definition.Id, Settings);
+                var session = hasCredentials || !string.IsNullOrWhiteSpace(Settings.AuthConfiguration)
                     ? provider.RenewAsync().GetAwaiter().GetResult()
                     : provider.ValidateAsync().GetAwaiter().GetResult();
 
                 if (session == null && provider.State.Problem != null)
                 {
                     var problem = provider.State.Problem;
-                    var field = problem == BandcampSessionProblem.BadCredentials ? "Password"
+                    var field = problem == BandcampSessionProblem.ConfigurationMissing ? nameof(BandcampDownloadSettings.AuthConfiguration)
+                        : problem == BandcampSessionProblem.BadCredentials ? "Password"
                         : problem == BandcampSessionProblem.VerificationNeeded ? "VerificationCode" : "Cookies";
                     failures.Add(new ValidationFailure(field, problem.Description));
                 }

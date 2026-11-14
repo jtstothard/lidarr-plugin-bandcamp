@@ -41,7 +41,8 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                     throw new InvalidOperationException("Bandcamp definition is unavailable for session persistence");
                 }
 
-                if (settings.Cookies != expectedCookies || settings.CredentialKey() != expectedCredentials)
+                if (!string.IsNullOrWhiteSpace(settings.AuthConfiguration) ||
+                    settings.Cookies != expectedCookies || settings.CredentialKey() != expectedCredentials)
                 {
                     return false;
                 }
@@ -84,6 +85,11 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 if (definition?.Settings is not BandcampDownloadSettings settings)
                 {
                     throw new InvalidOperationException("Bandcamp definition is unavailable for session persistence");
+                }
+
+                if (!string.IsNullOrWhiteSpace(settings.AuthConfiguration))
+                {
+                    throw new InvalidOperationException("Bandcamp authentication owner changed during recovery");
                 }
 
                 var candidate = settings.Copy();
