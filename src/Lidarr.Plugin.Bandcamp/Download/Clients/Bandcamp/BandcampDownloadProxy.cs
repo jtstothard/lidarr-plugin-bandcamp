@@ -150,8 +150,8 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
             // Phase 2: Find purchase in collection
             item.Phase = "purchase_resolution";
-            _logger.Debug("Bandcamp download proxy [{0}]: Phase 2 — Resolving download page for URL: {1}",
-                item.DownloadId, lookupUrl);
+            _logger.Debug("Bandcamp download proxy [{0}]: Phase 2 — Resolving download page",
+                item.DownloadId);
 
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -171,7 +171,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 if (purchase == null)
                 {
                     throw new DownloadException(
-                        $"Failed to resolve purchase for album URL '{lookupUrl}'. " +
+                        "Failed to resolve purchase for the requested album. " +
                         "The album may not be in your Bandcamp collection.");
                 }
 

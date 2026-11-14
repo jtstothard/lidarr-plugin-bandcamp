@@ -29,6 +29,7 @@ namespace NzbDrone.Core.Indexers.Bandcamp
     public class BandcampIndexer : HttpIndexerBase<BandcampIndexerSettings>
     {
         private readonly BandcampApiClient _apiClient;
+        private readonly IIndexerRepository? _repository;
         private readonly IBandcampSessionProviderRegistry? _sessionProviders;
 
         public override string Name => "Bandcamp";
@@ -44,11 +45,30 @@ namespace NzbDrone.Core.Indexers.Bandcamp
                                IConfigService configService,
                                IParsingService parsingService,
                                Logger logger,
-                               IBandcampSessionProviderRegistry? sessionProviders = null)
+                               IBandcampSessionProviderRegistry? sessionProviders = null,
+                               IIndexerRepository? repository = null)
             : base(httpClient, indexerStatusService, configService, parsingService, logger)
         {
+            _repository = repository;
             _apiClient = apiClient;
             _sessionProviders = sessionProviders;
+        }
+
+        // Host-authenticated POST action. Never follows Shared Authentication to clear an owner.
+        public override object RequestAction(string action, IDictionary<string, string> query)
+        {
+            if (action != "clearLocalCredentials") return base.RequestAction(action, query);
+            try
+            {
+                var definition = Definition.Id > 0 ? _repository?.Find(Definition.Id) : null;
+                if (definition?.Implementation != nameof(BandcampIndexer) || definition.Settings is not BandcampIndexerSettings current)
+                    return new { Success = false, Problem = "ConfigurationMissing" };
+                var candidate = new BandcampIndexerSettings { Cookies = string.Empty, BaseUrl = current.BaseUrl,
+                    AuthConfiguration = current.AuthConfiguration, EarlyReleaseLimit = current.EarlyReleaseLimit };
+                _repository!.SetFields(new IndexerDefinition { Id = Definition.Id, Settings = candidate }, d => d.Settings);
+                return new { Success = true, Message = "Clears only this plugin definition's local cookie; does not revoke Bandcamp server sessions or erase backups, browser sessions or other definitions." };
+            }
+            catch (Exception) { return new { Success = false, Problem = "StorageFailure" }; }
         }
 
         public override IIndexerRequestGenerator GetRequestGenerator()

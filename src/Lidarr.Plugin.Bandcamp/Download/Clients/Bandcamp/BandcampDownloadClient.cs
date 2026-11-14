@@ -208,6 +208,15 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         // Resolve the saved named owner, never apply proposed settings or call password login.
         public override object RequestAction(string action, IDictionary<string, string> query)
         {
+            if (action == "clearLocalCredentials")
+            {
+                try
+                {
+                    return new { Success = _sessionProviders.ClearLocalCredentials(Definition.Id),
+                        Message = "Clears only this plugin definition's local credentials; does not revoke Bandcamp server sessions or erase backups, browser sessions or other definitions." };
+                }
+                catch (Exception) { return new { Success = false, Problem = "StorageFailure" }; }
+            }
             if (action is not ("beginIdentityRenewal" or "renewIdentity" or "cancelIdentityRenewal" or "identityRenewalStatus"))
                 return base.RequestAction(action, query);
             if (Definition.Id <= 0) return new { Success = false, State = "Unknown", Problem = "InvalidRequest" };

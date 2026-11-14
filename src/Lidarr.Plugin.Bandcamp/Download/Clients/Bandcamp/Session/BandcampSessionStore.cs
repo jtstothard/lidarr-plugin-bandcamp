@@ -17,6 +17,8 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
         void SaveCookies(int definitionId, string cookies);
 
+        void ClearLocalCredentials(int definitionId) => throw new NotSupportedException();
+
         /// <summary>Clears the one-time verification code from the saved settings.</summary>
         void ClearVerificationCode(int definitionId);
     }
@@ -75,6 +77,23 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         public void SaveCookies(int definitionId, string cookies)
         {
             Update(definitionId, s => s.Cookies = cookies);
+        }
+
+        public void ClearLocalCredentials(int definitionId)
+        {
+            lock (Gates.GetOrAdd(definitionId, _ => new object()))
+            {
+                var definition = _repository.Find(definitionId);
+                if (definitionId <= 0 || definition?.Implementation != nameof(BandcampDownloadClient) ||
+                    definition.Settings is not BandcampDownloadSettings settings)
+                    throw new InvalidOperationException("Bandcamp definition unavailable");
+                var candidate = settings.Copy();
+                candidate.Email = candidate.Password = candidate.VerificationCode = candidate.Cookies = string.Empty;
+                candidate.ChallengeUntilUtc = null;
+                candidate.ChallengeProblem = null;
+                // Clear this definition only, including inactive legacy secrets. Never follow its selector.
+                _repository.SetFields(new DownloadClientDefinition { Id = definitionId, Settings = candidate }, d => d.Settings);
+            }
         }
 
         private void Update(int definitionId, Action<BandcampDownloadSettings> change)

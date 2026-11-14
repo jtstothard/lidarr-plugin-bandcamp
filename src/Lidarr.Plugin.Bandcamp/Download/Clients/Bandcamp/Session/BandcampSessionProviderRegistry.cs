@@ -20,6 +20,8 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
         IBandcampSessionProvider GetNamed(string name);
 
+        bool ClearLocalCredentials(int definitionId) => false;
+
         // Host Test validates the proposed unsaved settings; execution uses saved settings.
         IBandcampSessionProvider GetForTest(int definitionId, BandcampDownloadSettings settings) => Get(definitionId, settings);
 
@@ -135,6 +137,16 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
                 return GetOwner(definition.Id, settings);
             });
+        }
+
+        public bool ClearLocalCredentials(int definitionId)
+        {
+            if (_sessionStore == null || _repository == null || definitionId <= 0) return false;
+            _sessionStore.ClearLocalCredentials(definitionId);
+            var saved = _repository.Find(definitionId);
+            if (saved?.Settings is not BandcampDownloadSettings current) return false;
+            if (_providers.TryGetValue(definitionId, out var provider)) provider.UpdateSettings(current);
+            return true;
         }
 
         public IBandcampSessionProvider? Find(int definitionId)

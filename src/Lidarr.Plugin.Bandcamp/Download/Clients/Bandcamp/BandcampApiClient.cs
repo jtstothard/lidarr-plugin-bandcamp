@@ -205,9 +205,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             {
                 return ParseCollectionResponse(content);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.Debug(ex, "Bandcamp API: Failed to parse collection response");
+                _logger.Debug( "Bandcamp API: Failed to parse collection response");
                 return new List<BandcampCollectionItem>();
             }
         }
@@ -268,7 +268,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         public async Task<BandcampCollectionItem?> FindPurchaseByUrlAsync(
             string cookies, long fanId, string albumUrl)
         {
-            _logger.Debug("Bandcamp API: Searching collection for album URL: {0}", albumUrl);
+            _logger.Debug("Bandcamp API: Searching collection for album URL");
 
             string? olderThanToken = null;
             var maxPages = 20; // Safety limit
@@ -298,7 +298,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 olderThanToken = items.Last().Token;
             }
 
-            _logger.Debug("Bandcamp API: Purchase not found in collection for URL: {0}", albumUrl);
+            _logger.Debug("Bandcamp API: Purchase not found in collection");
             return null;
         }
 
@@ -313,9 +313,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             {
                 return ParseAlbumDurationSeconds(content);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.Debug(ex, "Bandcamp API: Failed to parse album duration from page {0}", albumUrl);
+                _logger.Debug( "Bandcamp API: Failed to parse album duration from page");
                 return null;
             }
         }
@@ -329,7 +329,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         public async Task<BandcampDownloadPageData?> GetDownloadPageDataAsync(
             string cookies, string downloadPageUrl)
         {
-            _logger.Debug("Bandcamp API: Fetching download page pagedata from {0}", downloadPageUrl);
+            _logger.Debug("Bandcamp API: Fetching download page pagedata");
 
             var builder = _httpClient.CreateRequestBuilder(downloadPageUrl, cookies);
             var request = builder.Build();
@@ -347,9 +347,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                         System.Net.WebUtility.HtmlDecode(blobMatch.Groups[1].Value));
                     return ParseDownloadPagedata(blobJson);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    _logger.Debug(ex, "Bandcamp API: Failed to parse data-blob from download page");
+                    _logger.Debug( "Bandcamp API: Failed to parse data-blob from download page");
                 }
             }
 
@@ -361,9 +361,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 {
                     return ParseDownloadPagedata(pagedataMatch.Groups[1].Value);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    _logger.Debug(ex, "Bandcamp API: Failed to parse pagedata from download page");
+                    _logger.Debug( "Bandcamp API: Failed to parse pagedata from download page");
                 }
             }
 
@@ -559,7 +559,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 await destination.WriteAsync(buffered).ConfigureAwait(false);
             }
 
-            _logger.Debug("Bandcamp API: File download response received (Content-Type: {0})", contentType);
+            _logger.Debug("Bandcamp API: File download response received");
             return response;
         }
 

@@ -157,3 +157,7 @@ MIT. See [LICENSE](LICENSE).
 ## Browser or desktop renewal helper
 
 For CAPTCHA, verification/2FA, and headless servers, use the [isolated desktop helper and manual fallback](docs/browser-renewal.md). It validates the intended fan account and transactionally replaces one named shared owner for both search and downloads. Native browser/platform qualification remains pending.
+
+Local credential clearing and known host DB/API/backup/Trace exposure are described in the
+[secret-hygiene guide](docs/secret-hygiene.md). The [bounded web-canary protocol](docs/web-canary.md)
+is opt-in only; its default tool invocation performs no account access.

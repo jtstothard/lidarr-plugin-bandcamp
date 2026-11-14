@@ -1,0 +1,109 @@
+Issue #53 verification, 2026-11-14
+Initial clean base: 5c1dc20eba01b6645780c41ded4774b7cc8dba3e
+Merged integration: c941bac (includes dedicated #51 cancellation/commit fix).
+Merge conflict in RequestAction resolved by retaining clearLocalCredentials before the complete integration cancellation protocol.
+No cancellation protocol reimplementation. No tests removed.
+
+Actual host SHA: e42a7ca4fd633e021d69da7daa0368b870b0282e
+
+HTTP secret red (actual output excerpt):
+[xUnit.net 00:00:00.19]     Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.IdentityOnlyFlowsToAccountHttpsOrigin(url: "https://user@bandcamp.com", allowed: False) [FAIL]
+[xUnit.net 00:00:00.24]     Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.TransportFailureNeverExposesRequestOrUpstreamException(raw: False) [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.IdentityOnlyFlowsToAccountHttpsOrigin(url: "https://user@bandcamp.com", allowed: False) [< 1 ms]
+  Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.TransportFailureNeverExposesRequestOrUpstreamException(raw: False) [48 ms]
+String: ···"OperationException: password-53-very-priv"···
+Found:  "password-53-very-private"
+[xUnit.net 00:00:00.25]     Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.TransportFailureNeverExposesRequestOrUpstreamException(raw: True) [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.TransportFailureNeverExposesRequestOrUpstreamException(raw: True) [2 ms]
+String: ···"OperationException: password-53-very-priv"···
+Found:  "password-53-very-private"
+Failed!  - Failed:     3, Passed:     7, Skipped:     0, Total:    10, Duration: 133 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+Downloader clear red (actual output excerpt):
+[xUnit.net 00:00:00.19]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampClearCredentialsFixture.ClearActionErasesOnlySelectedLocalSavedCopiesAndReportsStorageFailure(consumer: False, storageFails: True) [FAIL]
+[xUnit.net 00:00:00.19]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampClearCredentialsFixture.ClearActionErasesOnlySelectedLocalSavedCopiesAndReportsStorageFailure(consumer: True, storageFails: False) [FAIL]
+[xUnit.net 00:00:00.20]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampClearCredentialsFixture.ClearActionErasesOnlySelectedLocalSavedCopiesAndReportsStorageFailure(consumer: False, storageFails: False) [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampClearCredentialsFixture.ClearActionErasesOnlySelectedLocalSavedCopiesAndReportsStorageFailure(consumer: False, storageFails: True) [74 ms]
+String:    "null"
+  Failed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampClearCredentialsFixture.ClearActionErasesOnlySelectedLocalSavedCopiesAndReportsStorageFailure(consumer: True, storageFails: False) [1 ms]
+String:    "null"
+  Failed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampClearCredentialsFixture.ClearActionErasesOnlySelectedLocalSavedCopiesAndReportsStorageFailure(consumer: False, storageFails: False) [< 1 ms]
+String:    "null"
+Failed!  - Failed:     3, Passed:     0, Skipped:     0, Total:     3, Duration: 76 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+Indexer clear red (actual output excerpt):
+[xUnit.net 00:00:00.18]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampClearCredentialsFixture.IndexerClearRemovesOnlyItsLegacyCookieAndPreservesSharedSelection(storageFails: True) [FAIL]
+[xUnit.net 00:00:00.18]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampClearCredentialsFixture.IndexerClearRemovesOnlyItsLegacyCookieAndPreservesSharedSelection(storageFails: False) [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampClearCredentialsFixture.IndexerClearRemovesOnlyItsLegacyCookieAndPreservesSharedSelection(storageFails: True) [61 ms]
+String:    "null"
+  Failed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampClearCredentialsFixture.IndexerClearRemovesOnlyItsLegacyCookieAndPreservesSharedSelection(storageFails: False) [< 1 ms]
+String:    "null"
+Failed!  - Failed:     2, Passed:     0, Skipped:     0, Total:     2, Duration: 63 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+API diagnostics red (actual output excerpt):
+[xUnit.net 00:00:00.23]     Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.LoginAndSessionDiagnosticsNeverEchoSentinelResponseBodiesOrCredentials [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.LoginAndSessionDiagnosticsNeverEchoSentinelResponseBodiesOrCredentials [122 ms]
+String: ···"m/album/title?token=generated-53-private "···
+Found:  "generated-53-private"
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 122 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+Download proxy red (actual output excerpt):
+[xUnit.net 00:00:00.25]     Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.DownloadFailureDoesNotExposeSignedAlbumUrlInLogsOrException [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.DownloadFailureDoesNotExposeSignedAlbumUrlInLogsOrException [131 ms]
+String: ···"m/album/title?token=generated-53-private "···
+Found:  "generated-53-private"
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 131 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+First green (actual output excerpt):
+Passed!  - Failed:     0, Passed:    12, Skipped:     0, Total:    12, Duration: 103 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+Indexer/API green (actual output excerpt):
+Passed!  - Failed:     0, Passed:    15, Skipped:     0, Total:    15, Duration: 142 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+Download proxy green (actual output excerpt):
+Passed!  - Failed:     0, Passed:    16, Skipped:     0, Total:    16, Duration: 132 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+Clear restart/cache green (actual output excerpt):
+Passed!  - Failed:     0, Passed:     6, Skipped:     0, Total:     6, Duration: 128 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+The first HTTP run also had one harness failure: HttpUri rejects userinfo URLs at construction.
+That case was removed from the scope matrix, without changing production handling of userinfo URLs.
+The two HTTP secret failures were actual raw upstream exception disclosure. API/proxy red failures
+were signed URL disclosure. Clear red failures were absent RequestAction behavior (null response).
+No post-hoc production rollback was used to manufacture these reds.
+
+Each .NET red/green command used:
+dotnet test tests/Lidarr.Plugin.Bandcamp.Test -c Release -m:1 -p:TreatWarningsAsErrors=false --no-restore --filter <fixture/test named above>
+An initial restore process exited 139 after 'Determining projects to restore'; the serialized
+--disable-parallel restore succeeded. A post-merge no-restore test attempt failed NETSDK1004
+because #51 added the helper project reference. One unchanged rerun also failed; solution restore
+then resolved the missing assets. These are not test passes. Final logs below are successful runs.
+
+Final commands, run serially after integration merge:
+dotnet restore Lidarr.Plugin.Bandcamp.slnx -m:1 -p:TreatWarningsAsErrors=false --disable-parallel
+dotnet test tests/Lidarr.Plugin.Bandcamp.Test -c Release -m:1 -p:TreatWarningsAsErrors=false --no-restore --logger 'console;verbosity=detailed'
+dotnet test tests/Lidarr.Plugin.Bandcamp.CookiePush.Test -c Release -m:1 -p:TreatWarningsAsErrors=false --no-restore --logger 'console;verbosity=detailed'
+python3 -m unittest discover -s tools/bandcamp-evaluation
+dotnet build Lidarr.Plugin.Bandcamp.slnx -c Release -m:1 -p:TreatWarningsAsErrors=false --no-restore
+
+285 plugin tests + 20 helper tests + 6 Python tests passed. Release build: 17 warnings, 0 errors.
+Full output is retained beside this file in issue-53-{plugin,helper,build}-release.txt and issue-53-python.txt.
+The plugin detailed output includes actual captured safe NLog messages, exception strings and state
+diagnostics. Helper tests capture stdout/stderr in memory. Canary tests use mocked transport only;
+only the default PLAN_ONLY tool invocation ran, reporting requests=0.
+
+Actual fixture output assertions retained and exercised:
+NamedOwnerRecoveryRepairsSearchAndRealDownloadWithoutConsumerCookieWrites: public search/download
+recovery, current identity, persistence reread and actual output FLAC signature bytes.
+ExecuteDownloadAsync_ArchiveStreamedIntoResponseStream_ExtractsWithoutResponseData and
+ExecuteDownloadAsync_StatdownloadStreamsArchiveDirectly_ExtractsWithoutResponseData:
+real temporary ZIP extraction/file assertions under mocked HTTP, not live archive quality.
+The merged cancellation suite exercises cancellation/commit arbitration. Existing pre-grab,
+renewal failure, retry exhaustion, storage failure and restart fixtures all passed.
+HTTPS identity scope is tested through DownloadFileAsync's actual emitted HTTP request and
+existing shared search/download consumers; host cookie jar/redirect behavior is asserted disabled.
+
+Remaining gates: host HTTP Trace may expose full URLs/error bodies; DB/API/backups remain
+password-equivalent exposure; native container/action binding/browser/platform behavior is unqualified.
+No live account access, revocation, changes, push, PR, cleanup or subagents. #47 remains INCONCLUSIVE.
+See docs/secret-hygiene.md and docs/web-canary.md. Do not declare #53 fully release-qualified.

@@ -418,6 +418,8 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
 
         private static HttpResponse Files(HttpRequest request)
         {
+            if (request.Url.Host != "bandcamp.com") Assert.Null(request.Headers.GetValues("Cookie"));
+            Assert.False(request.StoreRequestCookie); Assert.False(request.StoreResponseCookie); Assert.False(request.AllowAutoRedirect);
             return request.Url.FullUri switch
             {
                 "https://bandcamp.com/statdownload/album/111?sig=flac&.format=flac&.json=true" =>

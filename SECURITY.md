@@ -36,3 +36,10 @@ Out of scope:
 ## Response
 
 The maintainer will acknowledge reports as soon as possible on a best-effort basis. This is a solo-maintained open source project without a fixed SLA.
+
+## Local clearing and host exposure
+
+See [local credentials and verification limits](docs/secret-hygiene.md) for the scoped
+`clearLocalCredentials` API action, DB/API/backup exposure and known host HTTP Trace
+logging limits. Local clearing does **not** revoke Bandcamp sessions. Presentation masking
+is not an at-rest encryption guarantee. Do not collect host HTTP Trace logs with real secrets.
