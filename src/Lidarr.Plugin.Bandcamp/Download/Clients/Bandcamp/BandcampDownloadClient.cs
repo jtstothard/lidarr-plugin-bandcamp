@@ -7,6 +7,7 @@ using NLog;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.Http;
 using NzbDrone.Core.Configuration;
+using NzbDrone.Core.Download.Clients;
 using NzbDrone.Core.Download.Clients.Bandcamp.Session;
 using NzbDrone.Core.Indexers;
 using NzbDrone.Core.Localization;
@@ -79,6 +80,25 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             {
                 _logger.Debug("Bandcamp download client: Release has no DownloadUrl — cannot enqueue download");
                 throw new DownloadException("Cannot download: release has no Bandcamp album URL.");
+            }
+
+            // Pre-grab auth gate: refuse at the client level (Lidarr's download-client failure
+            // and backoff) rather than enqueue an item that would fail, be blocklisted and re-searched.
+            BandcampSession? session;
+            try
+            {
+                session = await SessionProvider.GetSessionAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                throw new DownloadClientUnavailableException("Unable to validate the Bandcamp session", ex);
+            }
+
+            if (session == null)
+            {
+                _logger.Warn("Bandcamp download client: No valid Bandcamp session; refusing grab");
+                throw new DownloadClientAuthenticationException(
+                    "Bandcamp session is invalid or expired. Update the session cookie in the download client settings.");
             }
 
             var title = remoteAlbum.Release.Title ?? remoteAlbum.Release.Album ?? albumUrl;

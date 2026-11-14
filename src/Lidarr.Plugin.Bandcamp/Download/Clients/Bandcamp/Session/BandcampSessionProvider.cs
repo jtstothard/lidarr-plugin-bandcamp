@@ -20,10 +20,14 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
     /// </summary>
     public class BandcampSessionProvider : IBandcampSessionProvider
     {
+        /// <summary>How long a successful validation is reused before a fresh live lookup.</summary>
+        public static readonly TimeSpan ValidationCacheDuration = TimeSpan.FromMinutes(15);
+
         private readonly BandcampApiClient _apiClient;
         private readonly Logger _logger;
         private volatile BandcampDownloadSettings _settings;
         private volatile BandcampSessionState _state = BandcampSessionState.Initial;
+        private volatile CachedSession? _cached;
 
         public BandcampSessionProvider(
             int definitionId,
@@ -56,8 +60,21 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             _settings = settings;
         }
 
+        /// <summary>
+        /// Returns the last validated session while it is younger than
+        /// <see cref="ValidationCacheDuration"/> and the configured cookie is unchanged;
+        /// otherwise runs a live validation.
+        /// </summary>
         public virtual Task<BandcampSession?> GetSessionAsync(CancellationToken cancellationToken = default)
         {
+            var cached = _cached;
+            if (cached != null &&
+                cached.Session.Cookies == _settings.Cookies &&
+                Clock() - cached.ValidatedAtUtc < ValidationCacheDuration)
+            {
+                return Task.FromResult<BandcampSession?>(cached.Session);
+            }
+
             return ValidateAsync(cancellationToken);
         }
 
@@ -76,6 +93,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
             if (string.IsNullOrWhiteSpace(cookies))
             {
+                _cached = null;
                 SetState(BandcampSessionStatus.Missing);
                 return null;
             }
@@ -87,24 +105,41 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             }
             catch
             {
+                _cached = null;
                 SetState(BandcampSessionStatus.Error);
                 throw;
             }
 
             if (fanId == null)
             {
+                _cached = null;
                 _logger.Debug("Bandcamp session [{0}]: fan_id lookup returned no fan; session invalid", DefinitionId);
                 SetState(BandcampSessionStatus.Invalid);
                 return null;
             }
 
+            var session = new BandcampSession(cookies, fanId.Value);
+            _cached = new CachedSession(session, Clock());
             SetState(BandcampSessionStatus.Valid);
-            return new BandcampSession(cookies, fanId.Value);
+            return session;
         }
 
         protected void SetState(BandcampSessionStatus status)
         {
             _state = new BandcampSessionState(status, Clock());
+        }
+
+        private sealed class CachedSession
+        {
+            public CachedSession(BandcampSession session, DateTime validatedAtUtc)
+            {
+                Session = session;
+                ValidatedAtUtc = validatedAtUtc;
+            }
+
+            public BandcampSession Session { get; }
+
+            public DateTime ValidatedAtUtc { get; }
         }
     }
 }
