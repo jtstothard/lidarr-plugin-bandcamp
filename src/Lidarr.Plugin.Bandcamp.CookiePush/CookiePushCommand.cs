@@ -22,6 +22,9 @@ public static class CookiePushCommand
           --client-name <name> Bandcamp download client name
           --print-cookie       Print identity=<cookie> instead of connecting to Lidarr
           --dry-run            Report the selected client without updating or testing it
+          --update-indexer     Also update and test a Bandcamp indexer
+          --indexer-id <id>    Bandcamp indexer id
+          --indexer-name <name> Bandcamp indexer name
           -h, --help           Show this help
 
         Pass the cookie on stdin, never as a command-line argument. The cookie is only
@@ -148,6 +151,37 @@ public static class CookiePushCommand
         body = new StringContent(client.ToJsonString(), Encoding.UTF8, "application/json");
         await SendAsync<JsonObject>(http, HttpMethod.Post, "api/v1/downloadclient/test", body, cancellationToken, isTest: true);
         output.WriteLine("Lidarr download client Test passed.");
+
+        if (options.UpdateIndexer)
+        {
+            var indexers = await SendAsync<JsonArray>(http, HttpMethod.Get, "api/v1/indexer", null, cancellationToken);
+            var bandcampIndexers = indexers.Where(node =>
+                string.Equals(node?["implementation"]?.GetValue<string>(), "Bandcamp", StringComparison.OrdinalIgnoreCase)).ToList();
+            var selectedIndexers = options.IndexerId.HasValue
+                ? bandcampIndexers.Where(node => node?["id"]?.GetValue<int>() == options.IndexerId).ToList()
+                : options.IndexerName is not null
+                    ? bandcampIndexers.Where(node => string.Equals(node?["name"]?.GetValue<string>(), options.IndexerName, StringComparison.OrdinalIgnoreCase)).ToList()
+                    : bandcampIndexers;
+            if (selectedIndexers.Count != 1)
+            {
+                throw new UsageException("Choose one Bandcamp indexer with --indexer-id <id> or --indexer-name <name>.");
+            }
+
+            var indexer = selectedIndexers[0]!.AsObject();
+            var indexerId = indexer["id"]!.GetValue<int>();
+            var indexerCookieField = indexer["fields"]!.AsArray().Single(field =>
+                string.Equals(field?["name"]?.GetValue<string>(), "cookies", StringComparison.OrdinalIgnoreCase));
+            indexerCookieField!["value"] = cookie.StartsWith("identity=", StringComparison.OrdinalIgnoreCase) ? cookie : "identity=" + cookie;
+
+            body = new StringContent(indexer.ToJsonString(), Encoding.UTF8, "application/json");
+            await SendAsync<JsonObject>(http, HttpMethod.Put, $"api/v1/indexer/{indexerId}", body, cancellationToken);
+            output.WriteLine($"Updated Session Cookie for '{indexer["name"]?.GetValue<string>()}' (id {indexerId}).");
+
+            body = new StringContent(indexer.ToJsonString(), Encoding.UTF8, "application/json");
+            await SendAsync<JsonObject>(http, HttpMethod.Post, "api/v1/indexer/test", body, cancellationToken, isTest: true);
+            output.WriteLine("Lidarr indexer Test passed.");
+        }
+
         return 0;
     }
 
@@ -176,7 +210,7 @@ public static class CookiePushCommand
 
     private sealed class LidarrException(string message) : Exception(message);
 
-    private sealed record Options(string? Url, string? ApiKey, int? ClientId, string? ClientName, bool PrintCookie, bool DryRun)
+    private sealed record Options(string? Url, string? ApiKey, int? ClientId, string? ClientName, bool PrintCookie, bool DryRun, bool UpdateIndexer, int? IndexerId, string? IndexerName)
     {
         public static Options Parse(IReadOnlyList<string> args, Func<string, string?> environment)
         {
@@ -186,6 +220,9 @@ public static class CookiePushCommand
             string? clientName = null;
             var printCookie = false;
             var dryRun = false;
+            var updateIndexer = false;
+            int? indexerId = null;
+            string? indexerName = null;
             for (var i = 0; i < args.Count; i++)
             {
                 switch (args[i])
@@ -214,6 +251,21 @@ public static class CookiePushCommand
                     case "--dry-run":
                         dryRun = true;
                         break;
+                    case "--update-indexer":
+                        updateIndexer = true;
+                        break;
+                    case "--indexer-id":
+                        var indexerIdValue = ReadValue(args, ref i);
+                        if (!int.TryParse(indexerIdValue, out var parsedIndexerId) || parsedIndexerId <= 0)
+                        {
+                            throw new UsageException("--indexer-id must be a positive integer.");
+                        }
+
+                        indexerId = parsedIndexerId;
+                        break;
+                    case "--indexer-name":
+                        indexerName = ReadValue(args, ref i);
+                        break;
                     default:
                         throw new UsageException("Unknown option. Use --help for usage.");
                 }
@@ -222,6 +274,11 @@ public static class CookiePushCommand
             if (clientId.HasValue && clientName is not null)
             {
                 throw new UsageException("Use either --client-id or --client-name, not both.");
+            }
+
+            if (indexerId.HasValue && indexerName is not null)
+            {
+                throw new UsageException("Use either --indexer-id or --indexer-name, not both.");
             }
 
             url ??= environment("LIDARR_URL");
@@ -241,7 +298,7 @@ public static class CookiePushCommand
                 throw new UsageException("Lidarr API key is required. Use --api-key or LIDARR_API_KEY.");
             }
 
-            return new Options(url, apiKey, clientId, clientName, printCookie, dryRun);
+            return new Options(url, apiKey, clientId, clientName, printCookie, dryRun, updateIndexer, indexerId, indexerName);
         }
 
         private static string ReadValue(IReadOnlyList<string> args, ref int index)
