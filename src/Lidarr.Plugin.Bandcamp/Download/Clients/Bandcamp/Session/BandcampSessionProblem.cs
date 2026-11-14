@@ -13,7 +13,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
         public static readonly BandcampSessionProblem CookieExpired = new(
             "CookieExpired",
-            "Bandcamp positively signed the session out; renew in your browser and paste a fresh identity cookie, or configure complete email and password credentials");
+            "Bandcamp positively signed the session out; renew in your browser and paste a fresh identity cookie, or configure complete email and password credentials; the isolated desktop helper is documented in docs/browser-renewal.md");
 
         public static readonly BandcampSessionProblem BadCredentials = new(
             "BadCredentials",
@@ -25,7 +25,10 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
         public static readonly BandcampSessionProblem CaptchaRequired = new(
             "CaptchaRequired",
-            "Bandcamp asked for a captcha, which can't be solved here; paste a session cookie from your browser into the client settings (login is retried at most every " + CooldownText + ")");
+            "Bandcamp asked for a captcha, which can't be solved here; use the isolated desktop helper (docs/browser-renewal.md) or paste a session cookie from your browser into the client settings (login is retried at most every " + CooldownText + ")");
+
+        public static readonly BandcampSessionProblem WrongAccount = new(
+            "WrongAccount", "the candidate belongs to a different fan account; the saved identity was retained; repeat browser login with the intended account");
 
         public static readonly BandcampSessionProblem ReplacementConflict = new(
             "ReplacementConflict",

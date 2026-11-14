@@ -9,9 +9,11 @@
     <Project Path="ext/Lidarr/src/NzbDrone.Core/Lidarr.Core.csproj" />
   </Folder>
   <Folder Name="/src/">
+    <Project Path="src/Lidarr.Plugin.Bandcamp.CookiePush/Lidarr.Plugin.Bandcamp.CookiePush.csproj" />
     <Project Path="src/Lidarr.Plugin.Bandcamp/Lidarr.Plugin.Bandcamp.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/Lidarr.Plugin.Bandcamp.CookiePush.Test.csproj" />
     <Project Path="tests/Lidarr.Plugin.Bandcamp.Test/Lidarr.Plugin.Bandcamp.Test.csproj" />
   </Folder>
 </Solution>

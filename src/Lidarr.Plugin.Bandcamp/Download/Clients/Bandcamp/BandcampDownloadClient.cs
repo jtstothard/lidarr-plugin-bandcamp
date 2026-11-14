@@ -204,6 +204,28 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             };
         }
 
+        // Host-authenticated action: candidate travels only in the masked Cookies body field.
+        // Resolve the saved named owner, never apply proposed settings or call password login.
+        public override object RequestAction(string action, IDictionary<string, string> query)
+        {
+            if (action != "renewIdentity") return base.RequestAction(action, query);
+            try
+            {
+                if (Definition.Id <= 0 || !query.TryGetValue("fanId", out var value) ||
+                    !long.TryParse(value, out var fanId) || fanId <= 0)
+                    return new { Success = false, Problem = "InvalidRequest" };
+                var provider = _sessionProviders.GetNamed(Definition.Name);
+                if (provider.DefinitionId != Definition.Id)
+                    return new { Success = false, Problem = "ConfigurationMissing" };
+                var session = provider.ReplaceIdentityForFanAsync(Settings.Cookies, fanId, Definition.Id).GetAwaiter().GetResult();
+                return new { Success = session != null, Problem = session == null ? provider.State.Problem?.Code : null };
+            }
+            catch (Exception)
+            {
+                return new { Success = false, Problem = "RecoveryFailed" };
+            }
+        }
+
         /// <summary>
         /// Validates the download client configuration:
         /// 1. Tests cookie auth by attempting fan_id resolution
