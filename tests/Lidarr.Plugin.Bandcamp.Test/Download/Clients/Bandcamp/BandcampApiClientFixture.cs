@@ -814,6 +814,62 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         }
 
         [Fact]
+        public void NoCredentialValuesLoggedInSourceFiles()
+        {
+            var srcDir = System.IO.Path.GetFullPath(
+                System.IO.Path.Combine(
+                    System.IO.Path.GetDirectoryName(typeof(BandcampApiClientFixture).Assembly.Location)!,
+                    "..", "..", "..", "..", "..",
+                    "src", "Lidarr.Plugin.Bandcamp"));
+
+            Assert.True(System.IO.Directory.Exists(srcDir), $"Source directory not found: {srcDir}");
+
+            var argPattern = new System.Text.RegularExpressions.Regex(
+                @"[,(]\s*[\w.]*(email|password|verificationcode|code)\s*[,)]",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            var violations = new System.Collections.Generic.List<string>();
+
+            foreach (var file in System.IO.Directory.GetFiles(srcDir, "*.cs", System.IO.SearchOption.AllDirectories))
+            {
+                var lines = System.IO.File.ReadAllLines(file);
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    var line = lines[i].Trim();
+                    if (line.StartsWith("//") || (!line.Contains("_logger.") && !line.Contains("Logger.")))
+                    {
+                        continue;
+                    }
+
+                    // Strip string literals so only arguments are checked.
+                    var code = System.Text.RegularExpressions.Regex.Replace(line, "\"(?:[^\"\\\\]|\\\\.)*\"", "\"\"");
+                    if (argPattern.IsMatch(code))
+                    {
+                        violations.Add($"{System.IO.Path.GetFileName(file)}:{i + 1}: {line}");
+                    }
+                }
+            }
+
+            Assert.Empty(violations);
+        }
+
+        [Theory]
+        [InlineData("Email")]
+        [InlineData("Password")]
+        [InlineData("VerificationCode")]
+        public void CredentialFieldsUsePrivacyLevelPassword(string property)
+        {
+            var prop = typeof(BandcampDownloadSettings).GetProperty(property);
+            Assert.NotNull(prop);
+
+            var attr = prop!.GetCustomAttributes(false)
+                .OfType<NzbDrone.Core.Annotations.FieldDefinitionAttribute>()
+                .FirstOrDefault();
+
+            Assert.NotNull(attr);
+            Assert.Equal(PrivacyLevel.Password, attr!.Privacy);
+        }
+
+        [Fact]
         public void CookieFieldUsesPrivacyLevelPassword()
         {
             // Verify that the Cookies field in BandcampDownloadSettings is marked with PrivacyLevel.Password

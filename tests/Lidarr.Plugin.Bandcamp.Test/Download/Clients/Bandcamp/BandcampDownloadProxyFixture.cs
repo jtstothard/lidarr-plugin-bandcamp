@@ -9,6 +9,7 @@ using Moq;
 using NLog;
 using NzbDrone.Common.Http;
 using NzbDrone.Core.Download.Clients.Bandcamp;
+using NzbDrone.Core.Download.Clients.Bandcamp.Session;
 using NzbDrone.Core.Http.Bandcamp;
 using NzbDrone.Core.MediaFiles;
 using Xunit;
@@ -19,6 +20,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
     {
         private readonly Mock<IHttpClient> _httpClientMock;
         private readonly BandcampDownloadProxy _subject;
+        private readonly BandcampApiClient _apiClient;
         private readonly string _tempRoot;
 
         public BandcampDownloadProxyFixture()
@@ -26,8 +28,8 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             _httpClientMock = new Mock<IHttpClient>();
             var logger = LogManager.GetCurrentClassLogger();
             var bandcampHttpClient = new BandcampHttpClient(_httpClientMock.Object, logger);
-            var apiClient = new BandcampApiClient(bandcampHttpClient, logger);
-            _subject = new BandcampDownloadProxy(apiClient, bandcampHttpClient, logger);
+            _apiClient = new BandcampApiClient(bandcampHttpClient, logger);
+            _subject = new BandcampDownloadProxy(_apiClient, bandcampHttpClient, logger);
             _tempRoot = Path.Combine(Path.GetTempPath(), "bandcamp-proxy-tests", Guid.NewGuid().ToString("N"));
         }
 
@@ -190,12 +192,13 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             {
                 AlbumUrl = "https://bandcamp.com/download?type=album&id=111#format=flac",
                 Title = "Fresh - Fresh [FLAC]",
-                OutputPath = _tempRoot
+                OutputPath = _tempRoot,
+                SessionProvider = new BandcampSessionProvider(
+                    1,
+                    new BandcampDownloadSettings { Cookies = "identity=testcookie" },
+                    _apiClient,
+                    LogManager.GetCurrentClassLogger())
             };
-
-            typeof(BandcampDownloadItem)
-                .GetProperty("Cookies", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
-                !.SetValue(item, "identity=testcookie");
 
             await _subject.ExecuteDownloadAsync(item, CancellationToken.None);
 

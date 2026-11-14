@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentValidation.Results;
@@ -7,6 +8,8 @@ using NLog;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.Http;
 using NzbDrone.Core.Configuration;
+using NzbDrone.Core.Download.Clients;
+using NzbDrone.Core.Download.Clients.Bandcamp.Session;
 using NzbDrone.Core.Indexers;
 using NzbDrone.Core.Localization;
 using NzbDrone.Core.Music;
@@ -31,7 +34,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
     public class BandcampDownloadClient : DownloadClientBase<BandcampDownloadSettings>
     {
         private readonly IBandcampDownloadQueue _taskQueue;
-        private readonly BandcampApiClient _apiClient;
+        private readonly IBandcampSessionProviderRegistry _sessionProviders;
         private readonly IAlbumService _albumService;
         private readonly IReleaseService _releaseService;
         private readonly ITrackService _trackService;
@@ -41,7 +44,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
         public BandcampDownloadClient(
             IBandcampDownloadQueue taskQueue,
-            BandcampApiClient apiClient,
+            IBandcampSessionProviderRegistry sessionProviders,
             IAlbumService albumService,
             IReleaseService releaseService,
             ITrackService trackService,
@@ -53,11 +56,16 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             : base(configService, diskProvider, remotePathMappingService, localizationService, logger)
         {
             _taskQueue = taskQueue;
-            _apiClient = apiClient;
+            _sessionProviders = sessionProviders;
             _albumService = albumService;
             _releaseService = releaseService;
             _trackService = trackService;
         }
+
+        /// <summary>
+        /// Gets this client definition's session provider, pointed at the current settings.
+        /// </summary>
+        private IBandcampSessionProvider SessionProvider => _sessionProviders.Get(Definition.Id, Settings);
 
         /// <summary>
         /// Enqueues an album download from Bandcamp. Extracts the album URL from the
@@ -75,6 +83,26 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 throw new DownloadException("Cannot download: release has no Bandcamp album URL.");
             }
 
+            // Pre-grab auth gate: refuse at the client level (Lidarr's download-client failure
+            // and backoff) rather than enqueue an item that would fail, be blocklisted and re-searched.
+            var provider = SessionProvider;
+            BandcampSession? session;
+            try
+            {
+                session = await provider.GetSessionAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                throw new DownloadClientUnavailableException("Unable to validate the Bandcamp session", ex);
+            }
+
+            if (session == null)
+            {
+                _logger.Warn("Bandcamp download client: No valid Bandcamp session; refusing grab");
+                var cause = provider.State.Problem?.Description ?? "no usable session; set your email and password or a session cookie in the client settings";
+                throw new DownloadClientAuthenticationException("Bandcamp session unusable: " + cause);
+            }
+
             var title = remoteAlbum.Release.Title ?? remoteAlbum.Release.Album ?? albumUrl;
             var downloadId = Guid.NewGuid().ToString("N");
             var retagContext = BuildRetagContext(remoteAlbum);
@@ -86,7 +114,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 ? $"{retagContext.ArtistName} - {retagContext.AlbumTitle}"
                 : title;
             var albumDir = MakeValidDirectoryName(folderTitle);
-            var outputPath = System.IO.Path.Combine(downloadPath, $"{albumDir}-{downloadId[..8]}");
+            var outputPath = Path.Combine(downloadPath, $"{albumDir}-{downloadId[..8]}");
 
             var item = new BandcampDownloadItem
             {
@@ -94,7 +122,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 AlbumUrl = albumUrl,
                 Title = title,
                 OutputPath = outputPath,
-                Cookies = Settings.Cookies,
+                SessionProvider = SessionProvider,
                 RetagContext = retagContext
             };
 
@@ -185,12 +213,22 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         {
             _logger.Debug("Bandcamp download client: Running connection test");
 
-            // Test cookie auth — resolve fan_id to verify cookies are valid
+            // Test auth: validate the cookie (live fan_id lookup); with credentials set, a dead
+            // or missing cookie triggers a login and the outcome is reported per field.
             try
             {
-                var fanId = _apiClient.ResolveFanIdAsync(Settings.Cookies).GetAwaiter().GetResult();
+                var hasCredentials = Settings.HasCredentials();
+                var provider = SessionProvider;
+                var session = hasCredentials
+                    ? provider.RenewAsync().GetAwaiter().GetResult()
+                    : provider.ValidateAsync().GetAwaiter().GetResult();
 
-                if (fanId == null)
+                if (session == null && hasCredentials)
+                {
+                    failures.Add(LoginFailure(provider));
+                    _logger.Debug("Bandcamp download client: Login test failed ({0})", provider.LastLoginOutcome);
+                }
+                else if (session == null)
                 {
                     failures.Add(new ValidationFailure("Cookies",
                         "Could not verify session cookies. Make sure you're pasting the 'identity' cookie " +
@@ -225,6 +263,21 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             {
                 _logger.Debug("Bandcamp download client: Download path test passed");
             }
+        }
+
+        private static ValidationFailure LoginFailure(IBandcampSessionProvider provider)
+        {
+            return provider.LastLoginOutcome switch
+            {
+                BandcampLoginOutcome.BadCredentials => new ValidationFailure("Password",
+                    "Bandcamp rejected the email or password. Login won't be retried until you change them."),
+                BandcampLoginOutcome.VerificationRequired => new ValidationFailure("VerificationCode",
+                    "Bandcamp emailed you a verification code. Enter it here and save; it is used once, then cleared."),
+                BandcampLoginOutcome.CaptchaRequired => new ValidationFailure("Cookies",
+                    "Bandcamp asked for a captcha, which can't be solved here. Paste a session cookie from your browser instead."),
+                _ => new ValidationFailure("Email",
+                    "Could not log in to Bandcamp: " + (provider.LastLoginMessage ?? "unknown error"))
+            };
         }
 
         /// <summary>
@@ -379,7 +432,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         /// </summary>
         private static string MakeValidDirectoryName(string title)
         {
-            var invalid = System.IO.Path.GetInvalidFileNameChars();
+            var invalid = Path.GetInvalidFileNameChars();
             var name = title;
 
             foreach (var c in invalid)

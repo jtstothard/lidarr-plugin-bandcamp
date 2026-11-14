@@ -10,7 +10,7 @@ Bandcamp indexer and download client for Lidarr. Searches your Bandcamp collecti
 
 - Lidarr on the **nightly** branch (plugins aren't on stable yet)
 - A Bandcamp account with at least one purchased album
-- A browser to grab your session cookie
+- Your Bandcamp email and password, or a browser to grab your session cookie
 
 ## Installing
 
@@ -33,7 +33,7 @@ Bandcamp will now show up as an available indexer and download client.
 
 1. **Settings → Download Clients → Add** (`+`)
 2. Pick **Bandcamp**
-3. Same cookie as above in **Session Cookies**
+3. Paste your `identity` cookie into **Session Cookie (optional)**. You can also add your Bandcamp **Email** and **Password**, but Bandcamp currently asks for a captcha on every login. See [Download client sign-in](#download-client-sign-in).
 4. Set **Download Path** to somewhere Lidarr can write to (like `/downloads/bandcamp`)
 5. **Test**, then **Save**
 
@@ -46,6 +46,29 @@ You need to enable the Bandcamp protocol or Lidarr won't use it for searches:
 3. Toggle **Bandcamp** on
 4. Save
 
+## Download client sign-in
+
+The download client has two ways to sign in.
+
+**Email and password.** The plugin logs in itself, saves the session cookie it gets into **Session Cookie**, and logs in again when that session expires. It checks the session before each grab and once an hour.
+
+**Cookie only.** Leave Email and Password empty and paste your `identity` cookie (see below). This is how earlier versions worked, and existing setups keep working with no changes. You'll need to paste a fresh cookie when it expires.
+
+If both are set, the saved cookie is used while it's valid, and the plugin logs in when it isn't.
+
+When there's no valid session, the plugin refuses new grabs instead of failing them. Lidarr shows a download-client error and backs off, so releases aren't blocklisted or searched again. A health warning on **System → Status** names the cause, and it clears itself once the session works again:
+
+| Health warning cause | What to do |
+|---|---|
+| Bad credentials | Fix the Email or Password and save. The plugin won't retry a rejected login until you change them. |
+| Verification needed | Bandcamp emailed you a code for a new device. Enter it in **Verification Code** and save. It's used once, then cleared. |
+| Captcha required | Bandcamp wants a captcha (as of November 2026 it asks for one on every login, so expect this if you use email and password), which the plugin can't solve. Log into bandcamp.com in a browser and paste the `identity` cookie into **Session Cookie**. |
+| Cookie expired | Paste a fresh cookie, or add your Email and Password so the plugin renews it for you. |
+
+After a verification or captcha challenge, the plugin waits 6 hours between login attempts so it doesn't hammer Bandcamp or get your account locked. Entering a verification code skips that wait.
+
+Email, password, verification code and cookie are stored in Lidarr's settings as masked fields and never logged. Anyone with access to Lidarr's database or API key can read them.
+
 ## Getting your cookie
 
 The plugin authenticates using the `identity` cookie from your browser.
@@ -54,15 +77,15 @@ The plugin authenticates using the `identity` cookie from your browser.
 1. Log into [bandcamp.com](https://bandcamp.com)
 2. Open DevTools (`F12`) → **Application** tab → **Cookies** → `https://bandcamp.com`
 3. Find `identity`, copy its value
-4. Paste that into the Session Cookies field
+4. Paste that into the indexer's **Session Cookies** field, or the download client's **Session Cookie (optional)** field
 
 **Firefox:**
 1. Log into [bandcamp.com](https://bandcamp.com)
 2. Open Developer Tools (`F12`) → **Storage** tab → **Cookies** → `https://bandcamp.com`
 3. Find `identity`, copy its value
-4. Paste that into the Session Cookies field
+4. Paste that into the indexer's **Session Cookies** field, or the download client's **Session Cookie (optional)** field
 
-The cookie expires eventually. When downloads start failing, just grab a fresh one.
+The cookie expires eventually. With Email and Password set, the plugin renews it for you. Otherwise, grab a fresh one when the health warning says it has expired.
 
 ## Supported formats
 
@@ -82,7 +105,8 @@ Lidarr picks the best one based on your quality profile.
 ## Limitations
 
 - Only downloads albums you've bought on Bandcamp. No public search.
-- The `identity` cookie expires. Re-export it when things stop working.
+- The indexer still uses a pasted `identity` cookie, which expires. Re-export it when searches stop working.
+- Login can't get past a Bandcamp captcha. Paste a cookie instead.
 - Searches your collection, not the full Bandcamp catalog.
 
 ## Troubleshooting
@@ -90,8 +114,8 @@ Lidarr picks the best one based on your quality profile.
 **Plugin doesn't show up in Lidarr**
 You need the nightly branch, not stable. Go to Settings → General → change branch to `nightly`, save, and update.
 
-**Authentication errors / downloads fail**
-Your cookie expired. Get a fresh one from your browser.
+**Authentication errors / grabs refused**
+Check the Bandcamp health warning on System → Status and follow the matching step in [Download client sign-in](#download-client-sign-in).
 
 **Search returns nothing**
 Check that you actually bought the album on Bandcamp. Also make sure the Bandcamp protocol is enabled in your Delay Profile (Settings → Profiles → Delay Profiles).

@@ -46,26 +46,64 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         public async Task ExecuteDownloadAsync(
             BandcampDownloadItem item, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(item.Cookies))
+            if (item.SessionProvider == null)
             {
                 throw new DownloadException(
-                    "Cannot execute download: session cookies are not set on the download item.");
+                    "Cannot execute download: no session provider is set on the download item.");
             }
 
-            var cookies = item.Cookies!;
-            var requestedFormat = ExtractFormatFragment(item.AlbumUrl);
-            var lookupUrl = NormalizeUrl(StripFragment(item.AlbumUrl));
+            var session = await ResolveSessionAsync(item, cancellationToken).ConfigureAwait(false);
 
+            try
+            {
+                await ExecuteFromPhase2Async(item, session, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // The session may have died after Phase 1. Renew once and retry from Phase 1,
+                // but only when renewal yields a different working session: if the same
+                // session still validates, the failure wasn't an auth failure.
+                var renewed = await item.SessionProvider.RenewAsync(cancellationToken).ConfigureAwait(false);
+                if (renewed == null || renewed.Cookies == session.Cookies)
+                {
+                    throw;
+                }
+
+                _logger.Debug("Bandcamp download proxy [{0}]: Session renewed after failure in phase '{1}'; retrying from Phase 1",
+                    item.DownloadId, item.Phase);
+            }
+
+            item.Status = BandcampDownloadStatus.Resolving;
+            session = await ResolveSessionAsync(item, cancellationToken).ConfigureAwait(false);
+            await ExecuteFromPhase2Async(item, session, cancellationToken).ConfigureAwait(false);
+        }
+
+        private async Task<Session.BandcampSession> ResolveSessionAsync(
+            BandcampDownloadItem item, CancellationToken cancellationToken)
+        {
             // Phase 1: Resolve fan_id
             item.Phase = "fan_id_resolution";
             _logger.Debug("Bandcamp download proxy [{0}]: Phase 1 — Resolving fan_id", item.DownloadId);
 
-            var fanId = await _apiClient.ResolveFanIdAsync(cookies).ConfigureAwait(false);
-            if (fanId == null)
+            var session = await item.SessionProvider!.GetSessionAsync(cancellationToken).ConfigureAwait(false);
+            if (session == null)
             {
                 throw new DownloadException(
                     "Failed to resolve Bandcamp fan_id. Session cookies may be invalid or expired.");
             }
+
+            return session;
+        }
+
+        private async Task ExecuteFromPhase2Async(
+            BandcampDownloadItem item, Session.BandcampSession session, CancellationToken cancellationToken)
+        {
+            var requestedFormat = ExtractFormatFragment(item.AlbumUrl);
+            var lookupUrl = NormalizeUrl(StripFragment(item.AlbumUrl));
+
+            var cookies = session.Cookies;
+            long? fanId = session.FanId;
 
             _logger.Trace("Bandcamp download proxy [{0}]: Resolved fan_id {1}", item.DownloadId, fanId);
 

@@ -33,7 +33,52 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
 
             Assert.False(result.IsValid);
             Assert.Contains(result.Errors, e => e.PropertyName == "Cookies");
-            Assert.Contains(result.Errors, e => e.ErrorMessage.Contains("Session cookies are required"));
+            Assert.Contains(result.Errors, e => e.ErrorMessage.Contains("email and password, or a session cookie"));
+        }
+
+        [Fact]
+        public void Validate_EmailAndPasswordWithoutCookie_ReturnsNoErrors()
+        {
+            var settings = new BandcampDownloadSettings
+            {
+                Email = "fan@example.com",
+                Password = "hunter2",
+                DownloadPath = "/tmp/bandcamp-downloads"
+            };
+
+            var result = settings.Validate();
+
+            Assert.True(result.IsValid, string.Join(", ", result.Errors.Select(e => e.ErrorMessage)));
+        }
+
+        [Fact]
+        public void Validate_EmailWithoutPasswordOrCookie_ReturnsPasswordError()
+        {
+            var settings = new BandcampDownloadSettings
+            {
+                Email = "fan@example.com",
+                DownloadPath = "/tmp/bandcamp-downloads"
+            };
+
+            var result = settings.Validate();
+
+            Assert.False(result.IsValid);
+            Assert.Contains(result.Errors, e => e.PropertyName == "Password");
+        }
+
+        [Fact]
+        public void Validate_PasswordWithoutEmailOrCookie_ReturnsEmailError()
+        {
+            var settings = new BandcampDownloadSettings
+            {
+                Password = "hunter2",
+                DownloadPath = "/tmp/bandcamp-downloads"
+            };
+
+            var result = settings.Validate();
+
+            Assert.False(result.IsValid);
+            Assert.Contains(result.Errors, e => e.PropertyName == "Email");
         }
 
         [Fact]
@@ -69,6 +114,29 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         {
             var settings = new BandcampDownloadSettings();
             Assert.Equal("", settings.Cookies);
+        }
+
+        [Fact]
+        public void DefaultCredentials_AreEmpty()
+        {
+            var settings = new BandcampDownloadSettings();
+            Assert.Equal("", settings.Email);
+            Assert.Equal("", settings.Password);
+            Assert.Equal("", settings.VerificationCode);
+        }
+
+        [Fact]
+        public void Validate_VerificationCodeIsOptional()
+        {
+            var settings = new BandcampDownloadSettings
+            {
+                Email = "fan@example.com",
+                Password = "hunter2",
+                VerificationCode = "123456",
+                DownloadPath = "/downloads"
+            };
+
+            Assert.True(settings.Validate().IsValid);
         }
 
         [Fact]
