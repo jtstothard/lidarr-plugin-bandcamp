@@ -29,5 +29,13 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         /// cache. Used by Test().
         /// </summary>
         Task<BandcampSession?> ValidateAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Called when a session that was handed out has stopped working. Returns a session
+        /// usable right now (the same one if it still validates), or null when none can be
+        /// obtained. Cookie mode re-validates the current settings; login mode obtains a
+        /// fresh session here.
+        /// </summary>
+        Task<BandcampSession?> RenewAsync(CancellationToken cancellationToken = default);
     }
 }

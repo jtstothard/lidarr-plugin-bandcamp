@@ -61,6 +61,15 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             return ValidateAsync(cancellationToken);
         }
 
+        /// <summary>
+        /// Cookie mode: renewal is a live re-validation of the current settings' cookie,
+        /// which picks up a cookie replaced since the session was handed out.
+        /// </summary>
+        public virtual Task<BandcampSession?> RenewAsync(CancellationToken cancellationToken = default)
+        {
+            return ValidateAsync(cancellationToken);
+        }
+
         public virtual async Task<BandcampSession?> ValidateAsync(CancellationToken cancellationToken = default)
         {
             var cookies = _settings.Cookies;
