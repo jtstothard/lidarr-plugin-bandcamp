@@ -1,0 +1,76 @@
+Issue #49 implementation verification
+Base confirmed before edits: 5692f3c24cbd6b4541941a421268ace957616e37
+Branch: t3/bandcamp-auth-validation
+Integration merged: fa6a376 (includes #47 and #48)
+No live account operations. Tests use recorded HTTP responses and injected repository storage.
+Local Lidarr references copied into ignored ext/ to avoid shared build outputs.
+
+Red/green slices (each red executed before its implementation change):
+
+settings
+red: Failed!  - Failed:     2, Passed:     0, Skipped:     0, Total:     2, Duration: 16 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+green: Passed!  - Failed:     0, Passed:    13, Skipped:     0, Total:    13, Duration: 25 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+restart
+red: Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 166 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+green: Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 145 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+candidate
+red: Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 130 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+green: Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 141 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+storage
+red: Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 215 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+green: Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 161 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+concurrent
+red: Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 129 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+green: Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 202 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+code
+red: Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 132 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+green: Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 136 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+challenge-storage
+red: Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 124 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+green: Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 127 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+import
+red: Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 85 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+green: Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 121 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+New public replacement seam first returned null; successful import assertion failed before wiring the transaction.
+
+import-typed
+red: Failed!  - Failed:     3, Passed:     0, Skipped:     0, Total:     3, Duration: 105 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+green: Passed!  - Failed:     0, Passed:     3, Skipped:     0, Total:     3, Duration: 122 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+empty-import
+red: Failed!  - Failed:     2, Passed:     0, Skipped:     0, Total:     2, Duration: 114 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+green: Passed!  - Failed:     0, Passed:     2, Skipped:     0, Total:     2, Duration: 94 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+stale-challenge
+red: Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 122 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+green: Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 138 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+Additional regression coverage: restart monitor reconstructed from serialized repository-write
+payload, cancellation during candidate validation, commit-before-activation, process reread,
+competing independent providers, download storage-refusal diagnosis, existing single-flight
+and rejected-credential suppression, one-time codes, pre-grab gate and download retries.
+The prior concurrent-different-credentials expectation was updated: a superseded successful
+login must not activate an old account candidate.
+
+Final commands:
+dotnet restore Lidarr.Plugin.Bandcamp.slnx -p:TreatWarningsAsErrors=false
+dotnet build Lidarr.Plugin.Bandcamp.slnx -c Release -p:TreatWarningsAsErrors=false
+dotnet test Lidarr.Plugin.Bandcamp.slnx -c Release --filter FullyQualifiedName~Bandcamp -p:TreatWarningsAsErrors=false
+    34 Warning(s)
+    0 Error(s)
+Passed!  - Failed:     0, Passed:   197, Skipped:     0, Total:   197, Duration: 647 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+Limitations: no live Bandcamp qualification, managed browser integration, host database fault
+injection, or cross-process/host-writer compare-and-swap. Atomic persistence uses one Lidarr
+SetFields settings write on a detached copy; plugin writers serialize per definition and
+compare saved identity/credentials before replacement. A storage failure prevents durable
+challenge protection from being guaranteed across restart, although in-process suppression
+remains. Existing upstream dependency vulnerability warnings and Sentry configuration notices
+remain; dependencies were not changed by this ticket.

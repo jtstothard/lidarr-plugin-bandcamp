@@ -66,6 +66,15 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                 .ReturnsAsync(response);
         }
 
+        [Fact]
+        public async Task ResolveFanIdAsync_TransportFailure_DoesNotReportSignedOutToLegacyCallers()
+        {
+            _innerHttpClientMock.Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
+                .ThrowsAsync(new System.Net.Http.HttpRequestException("simulated outage"));
+            var ex = await Assert.ThrowsAsync<DownloadException>(() => CreateClient().ResolveFanIdAsync("identity=prior"));
+            Assert.Contains("availability", ex.Message);
+        }
+
         #region ResolveFanIdAsync Tests
 
         [Fact]
