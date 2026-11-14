@@ -89,3 +89,12 @@ system. One validated persisted replacement updates the owner alone and repairs 
 The supported downgrade representation is the owner's legacy cookie/credential fields; consumer
 legacy fields are retained but not synchronized. Before downgrade they require deliberate account
 reconciliation and cookie copy. See [migration and limitations](../shared-authentication.md).
+
+## Update: isolated desktop handoff (#46, #51)
+
+The existing #40/#41 helper is aligned with named ownership: visible temporary Bandcamp-only
+browser capture, minimal identity, explicit expected fan id, selected owner id binding, and one
+read-only validation/replacement transaction. The host-authenticated `renewIdentity` RequestAction
+accepts the candidate in the masked Cookies body field; it never applies proposed provider settings
+or performs a password login. Older print-cookie, write-before-Test and separate indexer-update
+paths are superseded. See [workflow and qualification limits](../browser-renewal.md).

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NLog;
@@ -332,8 +333,24 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             }
         }
 
+        public Task<BandcampSession?> ReplaceIdentityForFanAsync(string cookies, long expectedFanId, int expectedDefinitionId, CancellationToken cancellationToken = default)
+        {
+            if (expectedDefinitionId != DefinitionId || expectedFanId <= 0 || !cookies.StartsWith("identity=", StringComparison.Ordinal) ||
+                cookies.Length <= 9 || cookies.Length > 16393 ||
+                cookies.Substring(9).Any(c => c <= 32 || c >= 127 || c == ';' || c == ','))
+            {
+                return Task.FromResult<BandcampSession?>(null);
+            }
+
+            lock (_loginLock)
+            {
+                var settings = _settings;
+                return ReplaceIdentityAsync(cookies, settings, settings.Cookies, settings.CredentialKey(), cancellationToken, expectedFanId);
+            }
+        }
+
         private async Task<BandcampSession?> ReplaceIdentityAsync(
-            string cookies, BandcampDownloadSettings settings, string expectedCookies, string credentials, CancellationToken cancellationToken)
+            string cookies, BandcampDownloadSettings settings, string expectedCookies, string credentials, CancellationToken cancellationToken, long? expectedFanId = null)
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (_rateLimit is { } limit && Clock() < limit.UntilUtc)
@@ -373,6 +390,12 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             if (fanId == null)
             {
                 SetState(BandcampSessionStatus.Invalid, BandcampSessionProblem.CookieExpired);
+                return null;
+            }
+
+            if (expectedFanId.HasValue && fanId != expectedFanId.Value)
+            {
+                SetState(BandcampSessionStatus.Invalid, BandcampSessionProblem.WrongAccount);
                 return null;
             }
 

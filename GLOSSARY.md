@@ -32,3 +32,6 @@
 : The check in `Download()` that asks the session provider for a valid session before enqueueing a
   grab. With no session available, the grab fails as a download-client failure (Lidarr backoff)
   instead of a failed, blocklisted release.
+
+**User-assisted renewal**
+: A visible isolated Bandcamp login on the user's desktop, followed by minimal identity extraction and read-only expected-fan validation through the named owner's existing replacement transaction. The user personally completes CAPTCHA, verification and account selection.
