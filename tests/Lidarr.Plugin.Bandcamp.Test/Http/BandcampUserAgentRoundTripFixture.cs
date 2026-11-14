@@ -75,9 +75,9 @@ namespace Lidarr.Plugin.Bandcamp.Test.Http
                 .CreateRequestBuilder(_baseUrl + "/", "identity=abc")
                 .Build();
 
-            var ex = await Assert.ThrowsAsync<NotSupportedException>(
+            // Type only, not message: rewording upstream shouldn't break CI.
+            await Assert.ThrowsAsync<NotSupportedException>(
                 () => CreateDispatcher(builtIn: true).GetResponseAsync(request, new CookieContainer()));
-            Assert.Contains("User-Agent other than Lidarr not allowed", ex.Message);
         }
 
         public void Dispose()
