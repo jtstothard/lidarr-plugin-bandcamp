@@ -52,6 +52,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             Assert.Equal(HealthCheckResult.Warning, warning.Type);
             Assert.Contains("My Bandcamp", warning.Message);
             Assert.Contains(BandcampSessionProblem.CookieExpired.Description, warning.Message);
+            Assert.Contains("bandcamp-cookie-push", warning.Message);
             Assert.Equal(BandcampSessionProblem.CookieExpired, provider.State.Problem);
 
             _homepage = LiveHomepage;

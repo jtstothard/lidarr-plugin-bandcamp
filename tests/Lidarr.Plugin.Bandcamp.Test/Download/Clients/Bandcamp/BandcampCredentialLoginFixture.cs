@@ -331,6 +331,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             Assert.Equal(1, _loginPosts);
             Assert.Equal(BandcampSessionProblem.CaptchaRequired, registry.Find(7)!.State.Problem);
             Assert.Contains("cookie", HealthMessage(registry), StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("bandcamp-cookie-push", HealthMessage(registry));
         }
 
         [Theory]
