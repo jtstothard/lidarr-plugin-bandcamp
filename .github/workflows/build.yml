@@ -118,3 +118,22 @@ jobs:
           prerelease: false
           files: |
             ${{ env.PLUGIN_NAME }}.net8.0.zip
+
+  cookie-push:
+    name: Cookie push (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Build and test cookie push
+        run: dotnet test tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/Lidarr.Plugin.Bandcamp.CookiePush.Test.csproj -c Release
