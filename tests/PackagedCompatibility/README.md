@@ -1,5 +1,8 @@
 # Packaged session-health compatibility seam (#56)
 
+For the implemented release-publication gate and scanner, see
+[RELEASE-GATE.md](RELEASE-GATE.md). The #56 notes below describe the retained diagnostic.
+
 For the corrected package, support matrix, reproducible build commands and #58 handoff,
 see [SUPPORT.md](SUPPORT.md). The diagnostic control below remains historical #56 evidence.
 

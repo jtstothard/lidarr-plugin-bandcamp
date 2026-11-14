@@ -1,5 +1,7 @@
 # Session-health runtime support (#57)
 
+Release publication is now gated by [RELEASE-GATE.md](RELEASE-GATE.md) (#58).
+
 The corrected plugin supports the two exact Lidarr builds below. The oldest supported
 build is **3.1.4.5029**. The pinned current nightly is **3.2.1.5196** (the newest public
 release entry on 2026-11-14). No compatibility claim is made for earlier builds,
@@ -95,9 +97,9 @@ and observable results. Paths under disposable directories are normalized in the
 `--scenario healthy` (repeatable) supports focused diagnostics; release qualification
 must omit this option so all five scenarios run. Cached archives are hash-checked every use.
 
-#58 should package once, run this command against that ZIP, retain its receipt and hashes,
-run the supplementary direct-reference scanner, and publish those same checked bytes only
-if all gates pass. This implementation does not add publication gating or the scanner.
+#58 packages once and runs `gate.py` against that ZIP, retaining the receipt and hashes.
+Publication requires both the behavioral matrix and supplementary direct-reference scan;
+see RELEASE-GATE.md for exact commands, CI topology and recorded evidence.
 A scanner cannot verify the reflective adapter's semantic reason selection; the behavioral
 matrix is authoritative. Missing scanner dependencies must still fail #58's scan.
 
