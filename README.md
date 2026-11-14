@@ -128,11 +128,11 @@ Flags override environment variables. Only the URL and API key have environment-
 | `--api-key <key>` | `LIDARR_API_KEY`; prefer the environment variable to avoid putting the key in command history or process arguments. |
 | `--client-id <id>` | Select an existing Bandcamp download client by positive numeric id. |
 | `--client-name <name>` | Select by name, case-insensitively; quote names containing spaces. Use either id or name, not both. With neither, exactly one Bandcamp client must exist. |
-| `--update-indexer` | After saving and successfully testing the download client, also save and test a Bandcamp indexer's cookie. |
+| `--update-indexer` | Select both providers before writing, then save and test the download client followed by the Bandcamp indexer. |
 | `--indexer-id <id>` | Select the indexer by positive numeric id; requires `--update-indexer` to have an effect. |
 | `--indexer-name <name>` | Select the indexer by name, case-insensitively. Use either indexer id or name, not both. With neither, exactly one Bandcamp indexer must exist. |
 | `--print-cookie` | Capture and print `identity=<cookie>` without contacting Lidarr; no URL or API key needed. Takes precedence over dry-run and indexer updates. |
-| `--dry-run` | Capture a cookie and read Lidarr's download-client list to report the selected client. Requires URL/API key, but does not save, Test, select or inspect an indexer, even with `--update-indexer`. |
+| `--dry-run` | Capture a cookie and read Lidarr's download-client list to report the selected client. With `--update-indexer`, also read, select and report the indexer. Requires URL/API key; sends no PUT or POST and runs no provider Test. Missing or ambiguous selections fail before any writes. |
 | `-h`, `--help` | Show usage; use alone. |
 
 For example, to refresh both configured providers:
@@ -141,11 +141,13 @@ For example, to refresh both configured providers:
 dotnet src/Lidarr.Plugin.Bandcamp.CookiePush/bin/Release/net8.0/bandcamp-cookie-push.dll --client-name 'Bandcamp downloads' --update-indexer --indexer-name 'Bandcamp collection'
 ```
 
-The download-client update happens first. An indexer selection, save or Test failure leaves that client updated; there is no rollback. Check the reported step before retrying.
+Both requested providers are selected before any writes. The download-client update and Test then happen first. A later indexer save or Test failure leaves that client updated; there is no rollback. Check the reported step before retrying.
 
 To log in and paste the cookie manually, use `--print-cookie`. This deliberately exposes the session secret in terminal output; browser capture also writes progress lines, so stdout is not a cookie-only stream. Treat the cookie like a password and avoid sharing or logging that output. Paste the `identity=...` line into the appropriate Lidarr cookie field.
 
-To check client selection without writing settings, use `--dry-run`. It still opens the login browser unless you supply a cookie on stdin. Redirected stdin accepts a bare cookie value or `identity=...`; a nonempty value skips the browser. Never pass a cookie as a command-line argument. If using a file, protect and delete it yourself: the helper does not manage that file. Empty stdin falls back to browser capture.
+To check provider selection without writing settings, use `--dry-run` (add `--update-indexer` to check both providers). It still opens the login browser unless you supply a cookie on stdin. Redirected stdin accepts a bare cookie value or `identity=...`; a nonempty value skips the browser. Never pass a cookie as a command-line argument. If using a file, protect and delete it yourself: the helper does not manage that file. Empty stdin falls back to browser capture.
+
+Press Ctrl+C to cancel. The helper cancels pending HTTP requests, closes the capture browser and removes its temporary profile after pending browser operations settle, then exits with code 130 and a short message without secrets or a stack trace. Playwright browser launch has no cancellation-token API: cancellation during launch waits for launch to settle (30-second launch timeout) before closing any resulting context and deleting the profile. Cancellation does not undo completed Lidarr writes; check settings before retrying. Normal updates also resolve both requested providers before the first write, but a later Test failure or cancellation can leave an earlier update saved.
 
 If Lidarr cannot be reached, check the URL, URL base and network connection. A rejected API key needs correcting in `LIDARR_API_KEY`. If no client is found, add a Bandcamp download client; if selection is ambiguous, use an id or unique name. If the login window closes early, rerun and finish login before closing it.
 

@@ -11,6 +11,21 @@ public sealed class BrowserCaptureCommandFixture
     private const string ApiKey = "api-key-that-must-stay-secret";
 
     [Fact]
+    public async Task Cancellation_returns_130_without_secrets_or_stack_trace()
+    {
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var output = new StringWriter();
+        var error = new StringWriter();
+        var result = await CookiePushCommand.RunAsync(["--print-cookie"], new StringReader(Cookie),
+            output, error, _ => null, new MockLidarrApi(), cancellationToken: cancellation.Token);
+        Assert.Equal(130, result);
+        Assert.Contains("Cancelled", error.ToString());
+        Assert.DoesNotContain(" at ", error.ToString());
+        AssertSecretSafe(output, error);
+    }
+
+    [Fact]
     public async Task No_cookie_input_captures_in_browser_then_uses_existing_push_and_test_path()
     {
         var lidarr = new MockLidarrApi();

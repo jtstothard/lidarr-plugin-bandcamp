@@ -21,7 +21,7 @@ public static class CookiePushCommand
           --client-id <id>     Bandcamp download client id
           --client-name <name> Bandcamp download client name
           --print-cookie       Print identity=<cookie> instead of connecting to Lidarr
-          --dry-run            Report the selected client without updating or testing it
+          --dry-run            Report selected providers without updating or testing them
           --update-indexer     Also update and test a Bandcamp indexer
           --indexer-id <id>    Bandcamp indexer id
           --indexer-name <name> Bandcamp indexer name
@@ -50,6 +50,11 @@ public static class CookiePushCommand
         try
         {
             return await RunCoreAsync(args, input, output, getEnvironmentVariable, httpHandler, browserCookieCapture, cancellationToken);
+        }
+        catch (Exception ex) when (cancellationToken.IsCancellationRequested && ex is OperationCanceledException or Microsoft.Playwright.PlaywrightException)
+        {
+            error.WriteLine("Cancelled. Completed Lidarr writes are not rolled back; check settings before retrying.");
+            return 130;
         }
         catch (UsageException ex)
         {
@@ -114,78 +119,60 @@ public static class CookiePushCommand
         http.DefaultRequestHeaders.Add("X-Api-Key", options.ApiKey);
         http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-        var clients = await SendAsync<JsonArray>(http, HttpMethod.Get, "api/v1/downloadclient", null, cancellationToken);
-        var bandcampClients = clients.Where(node =>
-            string.Equals(node?["implementation"]?.GetValue<string>(), "BandcampDownloadClient", StringComparison.OrdinalIgnoreCase)).ToList();
-        if (bandcampClients.Count == 0)
+        var client = await SelectProviderAsync(http, "downloadclient", "download client", "client", "BandcampDownloadClient", options.ClientId, options.ClientName, cancellationToken);
+        var indexer = options.UpdateIndexer
+            ? await SelectProviderAsync(http, "indexer", "indexer", "indexer", "BandcampIndexer", options.IndexerId, options.IndexerName, cancellationToken)
+            : null;
+
+        await UpdateProviderAsync(http, client, "downloadclient", "download client", cookie, options.DryRun, output, cancellationToken);
+        if (indexer is not null)
         {
-            throw new LidarrException("No Bandcamp download client found in Lidarr.");
-        }
-
-        var selectedClients = options.ClientId.HasValue
-            ? bandcampClients.Where(node => node?["id"]?.GetValue<int>() == options.ClientId).ToList()
-            : options.ClientName is not null
-                ? bandcampClients.Where(node => string.Equals(node?["name"]?.GetValue<string>(), options.ClientName, StringComparison.OrdinalIgnoreCase)).ToList()
-                : bandcampClients;
-        if (selectedClients.Count != 1)
-        {
-            throw new UsageException("Choose one Bandcamp download client with --client-id <id> or --client-name <name>.");
-        }
-
-        var client = selectedClients[0]!.AsObject();
-        var id = client["id"]!.GetValue<int>();
-        if (options.DryRun)
-        {
-            output.WriteLine($"Dry run: would update Session Cookie for '{client["name"]?.GetValue<string>()}' (id {id}) and run Lidarr download client Test. No changes were made.");
-            return 0;
-        }
-
-        var cookieField = client["fields"]!.AsArray().Single(field =>
-            string.Equals(field?["name"]?.GetValue<string>(), "cookies", StringComparison.OrdinalIgnoreCase));
-        cookieField!["value"] = cookie.StartsWith("identity=", StringComparison.OrdinalIgnoreCase) ? cookie : "identity=" + cookie;
-
-        var body = new StringContent(client.ToJsonString(), Encoding.UTF8, "application/json");
-        await SendAsync<JsonObject>(http, HttpMethod.Put, $"api/v1/downloadclient/{id}", body, cancellationToken);
-        output.WriteLine($"Updated Session Cookie for '{client["name"]?.GetValue<string>()}' (id {id}).");
-
-        body = new StringContent(client.ToJsonString(), Encoding.UTF8, "application/json");
-        await SendAsync<JsonObject>(http, HttpMethod.Post, "api/v1/downloadclient/test", body, cancellationToken, isTest: true);
-        output.WriteLine("Lidarr download client Test passed.");
-
-        if (options.UpdateIndexer)
-        {
-            var indexers = await SendAsync<JsonArray>(http, HttpMethod.Get, "api/v1/indexer", null, cancellationToken);
-            var bandcampIndexers = indexers.Where(node =>
-                string.Equals(node?["implementation"]?.GetValue<string>(), "Bandcamp", StringComparison.OrdinalIgnoreCase)).ToList();
-            var selectedIndexers = options.IndexerId.HasValue
-                ? bandcampIndexers.Where(node => node?["id"]?.GetValue<int>() == options.IndexerId).ToList()
-                : options.IndexerName is not null
-                    ? bandcampIndexers.Where(node => string.Equals(node?["name"]?.GetValue<string>(), options.IndexerName, StringComparison.OrdinalIgnoreCase)).ToList()
-                    : bandcampIndexers;
-            if (selectedIndexers.Count != 1)
-            {
-                throw new UsageException("Choose one Bandcamp indexer with --indexer-id <id> or --indexer-name <name>.");
-            }
-
-            var indexer = selectedIndexers[0]!.AsObject();
-            var indexerId = indexer["id"]!.GetValue<int>();
-            var indexerCookieField = indexer["fields"]!.AsArray().Single(field =>
-                string.Equals(field?["name"]?.GetValue<string>(), "cookies", StringComparison.OrdinalIgnoreCase));
-            indexerCookieField!["value"] = cookie.StartsWith("identity=", StringComparison.OrdinalIgnoreCase) ? cookie : "identity=" + cookie;
-
-            body = new StringContent(indexer.ToJsonString(), Encoding.UTF8, "application/json");
-            await SendAsync<JsonObject>(http, HttpMethod.Put, $"api/v1/indexer/{indexerId}", body, cancellationToken);
-            output.WriteLine($"Updated Session Cookie for '{indexer["name"]?.GetValue<string>()}' (id {indexerId}).");
-
-            body = new StringContent(indexer.ToJsonString(), Encoding.UTF8, "application/json");
-            await SendAsync<JsonObject>(http, HttpMethod.Post, "api/v1/indexer/test", body, cancellationToken, isTest: true);
-            output.WriteLine("Lidarr indexer Test passed.");
+            await UpdateProviderAsync(http, indexer, "indexer", "indexer", cookie, options.DryRun, output, cancellationToken);
         }
 
         return 0;
     }
 
-    private static async Task<T> SendAsync<T>(HttpClient http, HttpMethod method, string path, HttpContent? content, CancellationToken cancellationToken, bool isTest = false)
+    private static async Task<JsonObject> SelectProviderAsync(HttpClient http, string endpoint, string label, string selector, string implementation, int? id, string? name, CancellationToken cancellationToken)
+    {
+        var providers = await SendAsync<JsonArray>(http, HttpMethod.Get, $"api/v1/{endpoint}", null, cancellationToken);
+        var matches = providers.Where(node => string.Equals(node?["implementation"]?.GetValue<string>(), implementation, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (matches.Count == 0)
+        {
+            throw new LidarrException($"No Bandcamp {label} found in Lidarr.");
+        }
+
+        var selected = matches.Where(node => id.HasValue
+            ? node?["id"]?.GetValue<int>() == id
+            : name is null || string.Equals(node?["name"]?.GetValue<string>(), name, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (selected.Count != 1)
+        {
+            throw new UsageException($"Choose one Bandcamp {label} with --{selector}-id <id> or --{selector}-name <name>.");
+        }
+
+        return selected[0]!.AsObject();
+    }
+
+    private static async Task UpdateProviderAsync(HttpClient http, JsonObject provider, string endpoint, string label, string cookie, bool dryRun, TextWriter output, CancellationToken cancellationToken)
+    {
+        var id = provider["id"]!.GetValue<int>();
+        var name = provider["name"]?.GetValue<string>();
+        if (dryRun)
+        {
+            output.WriteLine($"Dry run: would update Session Cookie for '{name}' (id {id}) and run Lidarr {label} Test. No changes were made.");
+            return;
+        }
+
+        var cookieField = provider["fields"]!.AsArray().Single(field =>
+            string.Equals(field?["name"]?.GetValue<string>(), "cookies", StringComparison.OrdinalIgnoreCase));
+        cookieField!["value"] = cookie.StartsWith("identity=", StringComparison.OrdinalIgnoreCase) ? cookie : "identity=" + cookie;
+        await SendAsync<JsonObject>(http, HttpMethod.Put, $"api/v1/{endpoint}/{id}", new StringContent(provider.ToJsonString(), Encoding.UTF8, "application/json"), cancellationToken);
+        output.WriteLine($"Updated Session Cookie for '{name}' (id {id}).");
+        await SendAsync<JsonObject>(http, HttpMethod.Post, $"api/v1/{endpoint}/test", new StringContent(provider.ToJsonString(), Encoding.UTF8, "application/json"), cancellationToken, testLabel: label);
+        output.WriteLine($"Lidarr {label} Test passed.");
+    }
+
+    private static async Task<T> SendAsync<T>(HttpClient http, HttpMethod method, string path, HttpContent? content, CancellationToken cancellationToken, string? testLabel = null)
         where T : JsonNode
     {
         using var request = new HttpRequestMessage(method, path) { Content = content };
@@ -197,8 +184,8 @@ public static class CookiePushCommand
 
         if (!response.IsSuccessStatusCode)
         {
-            throw new LidarrException(isTest
-                ? $"Lidarr download client Test failed with HTTP {(int)response.StatusCode}. Check the cookie and client settings."
+            throw new LidarrException(testLabel is not null
+                ? $"Lidarr {testLabel} Test failed with HTTP {(int)response.StatusCode}. Check the cookie and {testLabel} settings."
                 : $"Lidarr request failed with HTTP {(int)response.StatusCode}.");
         }
 

@@ -69,22 +69,38 @@ public sealed class PlaywrightCookieCapture : IBrowserCookieCapture
 
 public sealed class BrowserWindowClosedException(string message) : Exception(message);
 
-internal sealed class PlaywrightBrowserSessionFactory : IBrowserSessionFactory
+internal sealed class PlaywrightBrowserSessionFactory(Func<Task<IPlaywright>> createPlaywright) : IBrowserSessionFactory
 {
+    public PlaywrightBrowserSessionFactory() : this(Playwright.CreateAsync)
+    {
+    }
+
     public async Task<IBrowserSession> LaunchAsync(string profilePath, CancellationToken cancellationToken)
     {
-        var playwright = await Playwright.CreateAsync();
+        cancellationToken.ThrowIfCancellationRequested();
+        var playwright = await createPlaywright();
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            // Playwright launch has no token API. Await its bounded completion before
+            // closing the context so profile deletion never races a pending launch.
             var context = await playwright.Chromium.LaunchPersistentContextAsync(profilePath, new BrowserTypeLaunchPersistentContextOptions
             {
                 Headless = false,
+                Timeout = 30000,
             });
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await context.DisposeAsync();
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+
             return new PlaywrightBrowserSession(playwright, context);
         }
         catch
         {
             playwright.Dispose();
+            cancellationToken.ThrowIfCancellationRequested();
             throw;
         }
     }
@@ -96,14 +112,15 @@ internal sealed class PlaywrightBrowserSession(IPlaywright playwright, IBrowserC
 
     public async Task OpenLoginPageAsync(CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         context.Close += (_, _) => _closed = true;
         var page = context.Pages.FirstOrDefault() ?? throw Closed();
         try
         {
-            await page.GotoAsync("https://bandcamp.com/login", new PageGotoOptions
+            await WithCancellationAsync(page.GotoAsync("https://bandcamp.com/login", new PageGotoOptions
             {
                 WaitUntil = WaitUntilState.DOMContentLoaded,
-            });
+            }), cancellationToken);
         }
         catch (PlaywrightException) when (_closed)
         {
@@ -115,13 +132,43 @@ internal sealed class PlaywrightBrowserSession(IPlaywright playwright, IBrowserC
     {
         try
         {
-            var cookies = await context.CookiesAsync(["https://bandcamp.com"]);
+            cancellationToken.ThrowIfCancellationRequested();
+            var cookies = await WithCancellationAsync(context.CookiesAsync(["https://bandcamp.com"]), cancellationToken);
             return cookies.FirstOrDefault(cookie =>
                 string.Equals(cookie.Name, "identity", StringComparison.Ordinal) && !string.IsNullOrWhiteSpace(cookie.Value))?.Value;
         }
         catch (PlaywrightException) when (_closed)
         {
             throw Closed();
+        }
+    }
+
+    private async Task<T> WithCancellationAsync<T>(Task<T> operation, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await operation.WaitAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Stop navigation/cookie reads, then observe their completion before disposal.
+            try
+            {
+                await context.CloseAsync();
+            }
+            finally
+            {
+                try
+                {
+                    await operation;
+                }
+                catch (PlaywrightException)
+                {
+                    // Closing the context aborts the pending Playwright operation.
+                }
+            }
+
+            throw;
         }
     }
 
@@ -132,7 +179,13 @@ internal sealed class PlaywrightBrowserSession(IPlaywright playwright, IBrowserC
 
     public async ValueTask DisposeAsync()
     {
-        await context.DisposeAsync();
-        playwright.Dispose();
+        try
+        {
+            await context.DisposeAsync();
+        }
+        finally
+        {
+            playwright.Dispose();
+        }
     }
 }
