@@ -1,8 +1,11 @@
 using System;
+using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using NLog;
 using NzbDrone.Common.Http;
+using NzbDrone.Common.TPL;
 
 namespace NzbDrone.Core.Http.Bandcamp
 {
@@ -21,12 +24,23 @@ namespace NzbDrone.Core.Http.Bandcamp
         private static readonly TimeSpan RateLimitInterval = TimeSpan.FromSeconds(2);
 
         private readonly AsyncLocal<Func<string, string, Task>?> _identityObserver = new();
+        private readonly AsyncLocal<Action<string?>?> _rateLimitObserver = new();
+        private readonly AsyncLocal<Func<bool>?> _canRequest = new();
 
-        internal IDisposable ObserveIdentity(Func<string, string, Task> observer)
+        internal IDisposable ObserveSession(Func<string, string, Task> observer, Action<string?> rateLimitObserver, Func<bool> canRequest)
         {
             var previous = _identityObserver.Value;
+            var previousRateLimit = _rateLimitObserver.Value;
+            var previousCanRequest = _canRequest.Value;
             _identityObserver.Value = observer;
-            return new ObservationScope(() => _identityObserver.Value = previous);
+            _rateLimitObserver.Value = rateLimitObserver;
+            _canRequest.Value = canRequest;
+            return new ObservationScope(() =>
+            {
+                _identityObserver.Value = previous;
+                _rateLimitObserver.Value = previousRateLimit;
+                _canRequest.Value = previousCanRequest;
+            });
         }
 
         private sealed class ObservationScope : IDisposable
@@ -38,12 +52,30 @@ namespace NzbDrone.Core.Http.Bandcamp
             public void Dispose() => Interlocked.Exchange(ref _restore, null)?.Invoke();
         }
 
-        private readonly IHttpClient _httpClient;
+        private readonly Func<HttpRequest, Task<HttpResponse>> _execute;
         private readonly Logger _logger;
 
-        public BandcampHttpClient(IHttpClient httpClient, Logger logger)
+        // The only public constructor is the host composition path. Do not inject IHttpClient:
+        // its private ExecuteRequestAsync unconditionally traces signed URLs/error bodies.
+        public BandcampHttpClient(BandcampHttpDispatcher dispatcher, IRateLimitService rateLimitService, Logger logger)
         {
-            _httpClient = httpClient;
+            _execute = async request =>
+            {
+                if (request.RateLimit != TimeSpan.Zero)
+                    await rateLimitService.WaitAndPulseAsync(request.Url.Host, request.RateLimitKey, request.RateLimit).ConfigureAwait(false);
+                // Another consumer may have received 429 while this request waited for its slot.
+                if (_canRequest.Value?.Invoke() == false) throw new BandcampRateLimitedException();
+                // No host cookie jar, interceptors, redirects or request/response string logging.
+                // Managed dispatcher retains proxy, TLS validation, timeout and streaming behavior.
+                return await dispatcher.GetResponseAsync(request, new CookieContainer()).ConfigureAwait(false);
+            };
+            _logger = logger;
+        }
+
+        // Fixture transport seam; never selected by the host container.
+        internal BandcampHttpClient(IHttpClient httpClient, Logger logger)
+        {
+            _execute = httpClient.ExecuteAsync;
             _logger = logger;
         }
 
@@ -108,12 +140,24 @@ namespace NzbDrone.Core.Http.Bandcamp
         /// </summary>
         public async Task<HttpResponse> ExecuteAsync(HttpRequest request, bool observeIdentity = true)
         {
+            if (_canRequest.Value?.Invoke() == false) throw new BandcampRateLimitedException();
             // URLs may contain signed download credentials; log the method only.
             _logger.Debug("Bandcamp request: {0}", request.Method);
 
             try
             {
-                var response = await _httpClient.ExecuteAsync(request);
+                var response = await _execute(request);
+                if (response.HasHttpError && (int)response.StatusCode != 429 && !request.SuppressHttpError &&
+                    (request.SuppressHttpErrorStatusCodes == null || !request.SuppressHttpErrorStatusCodes.Contains(response.StatusCode)))
+                    throw new System.IO.IOException("Bandcamp HTTP request failed");
+                if (observeIdentity && (int)response.StatusCode == 429 &&
+                    (!request.SuppressHttpError || _rateLimitObserver.Value != null))
+                {
+                    var values = response.Headers.GetValues("Retry-After");
+                    _rateLimitObserver.Value?.Invoke(values?.Length == 1 ? values[0] : null);
+                    throw new BandcampRateLimitedException();
+                }
+
                 if (observeIdentity)
                 {
                     await ObserveIdentityAsync(request, response).ConfigureAwait(false);
@@ -125,6 +169,7 @@ namespace NzbDrone.Core.Http.Bandcamp
 
                 return response;
             }
+            catch (BandcampRateLimitedException) { throw; }
             catch (OperationCanceledException)
             {
                 throw new OperationCanceledException("Bandcamp request cancelled");
@@ -174,30 +219,11 @@ namespace NzbDrone.Core.Http.Bandcamp
         /// <summary>
         /// Executes an HTTP request and returns the raw response (for non-string content).
         /// </summary>
-        public async Task<HttpResponse> ExecuteRawAsync(HttpRequest request)
-        {
-            _logger.Debug("Bandcamp request: {0}", request.Method);
+        public Task<HttpResponse> ExecuteRawAsync(HttpRequest request) => ExecuteAsync(request);
+    }
 
-            try
-            {
-                var response = await _httpClient.ExecuteAsync(request);
-                await ObserveIdentityAsync(request, response).ConfigureAwait(false);
-
-                _logger.Debug("Bandcamp response: {0}",
-                    (int)response.StatusCode);
-
-                return response;
-            }
-            catch (OperationCanceledException)
-            {
-                throw new OperationCanceledException("Bandcamp request cancelled");
-            }
-            catch (Exception)
-            {
-                _logger.Debug("Bandcamp request failed; check network and service availability");
-                // Upstream exceptions can embed cookies, bodies and signed URLs. No inner exception.
-                throw new System.IO.IOException("Bandcamp request failed; check network and service availability");
-            }
-        }
+    internal sealed class BandcampRateLimitedException : System.IO.IOException
+    {
+        public BandcampRateLimitedException() : base("Bandcamp rate limited requests; wait before trying again; do not change credentials") { }
     }
 }

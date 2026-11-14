@@ -67,7 +67,8 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
         /// <summary>Confines passive response rotation to the explicitly selected session owner.</summary>
         public IDisposable ObserveSession(Session.BandcampSession session, CancellationToken cancellationToken = default) =>
-            _httpClient.ObserveIdentity((expected, candidate) => session.ObserveIdentityAsync(expected, candidate, cancellationToken));
+            _httpClient.ObserveSession((expected, candidate) => session.ObserveIdentityAsync(expected, candidate, cancellationToken),
+                session.ReportRateLimit, session.CanRequest);
 
         /// <summary>
         /// Resolves the fan_id for the authenticated user by fetching the Bandcamp

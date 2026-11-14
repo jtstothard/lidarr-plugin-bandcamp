@@ -3,6 +3,29 @@ using Xunit;
 namespace Lidarr.Plugin.Bandcamp.CookiePush.Test;
 public class RenewalWorkflowFixture
 {
+    [Theory]
+    [InlineData("Pending", 1, "uncertain")]
+    [InlineData("Validating", 1, "uncertain")]
+    [InlineData("Committing", 1, "uncertain")]
+    [InlineData("Committed", 0, "validated and saved")]
+    [InlineData("Cancelled", 1, "Cancellation acknowledged")]
+    [InlineData("Refused", 1, "Renewal refused")]
+    [InlineData("Unknown", 1, "uncertain")]
+    [InlineData("committed", 1, "uncertain")]
+    [InlineData("3", 1, "uncertain")]
+    [InlineData("FutureState", 1, "uncertain")]
+    public async Task Receipt_wire_states_preserve_existing_meanings_and_unknown_values_never_confirm_success(string state, int expectedExit, string message)
+    {
+        var output = new StringWriter(); var error = new StringWriter();
+        var receipt = System.Text.Json.JsonSerializer.Serialize(new { state, success = true, problem = "WrongAccount" });
+        var result = await CookiePushCommand.RunAsync(["--client-name", "Personal", "--fan-id", "12345678"],
+            new StringReader("identity=sentinel-candidate"), output, error,
+            key => key == "LIDARR_URL" ? "https://lidarr.example" : "sentinel-api-key", new Handoff(receipt));
+        Assert.Equal(expectedExit, result);
+        Assert.Contains(message, output.ToString() + error);
+        Assert.DoesNotContain("sentinel", output.ToString() + error);
+    }
+
     [Fact]
     public async Task Secret_print_option_is_rejected_without_output_or_requests()
     {

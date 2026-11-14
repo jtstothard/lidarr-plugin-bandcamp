@@ -34,14 +34,28 @@ Fixture tests capture actual plugin NLog output, exceptions, state diagnostics a
 stdout/stderr and reject sentinel secrets, stable prefixes, SHA-256 values and their prefixes.
 These are controlled-boundary tests, not proof that arbitrary host instrumentation is safe.
 
-Known host exposure: inspected Lidarr source e42a7ca4f logs HttpRequest/HttpResponse at
-Trace in HttpClient.ExecuteRequestAsync. Request strings include full signed URLs;
-HTTP error response strings can include response bodies even with LogResponseContent=false.
-LogHttpError=false disables the host warning, not these unconditional trace events.
-The plugin disables response-content/error-warning logging on its requests but cannot
-claim host trace safety. Avoid host HTTP trace collection around credentials; this remains
-a release secret-hygiene gap requiring host-level remediation and native verification.
-DB/API/backup protection and runtime container/HTTP behavior are likewise unqualified.
+The plugin's production HTTP constructor executes through its concrete
+`BandcampHttpDispatcher` and the host rate limiter, bypassing host `IHttpClient`.
+Inspected Lidarr source e42a7ca4f unconditionally traces request and response strings
+inside private `HttpClient.ExecuteRequestAsync`; request flags cannot prevent full signed
+URLs or non-HTML error bodies appearing there. Container-resolved regression tests retain
+that original-host exposure as a positive control, then capture Trace diagnostics from the
+plugin path through the actual managed dispatcher with sentinel signed URLs and error bodies.
+Both normal and raw execution exclude the values, tested stable prefixes, SHA-256 values and
+hash prefixes. Global host logging and other HTTP clients are unchanged.
+
+The boundary retains host proxy/TLS configuration, timeout, streaming and rate limiting,
+but deliberately does not run host request interceptors, cookie storage or redirect processing.
+Errors cross the plugin boundary with fixed messages and no upstream inner exceptions.
+Collection/file 429 responses update the observed owner's shared wait; both consumers and
+already-issued session scopes stop new requests until due. Valid date/delta Retry-After values
+are honored; malformed/missing values retain the five-minute fallback. Requests already on
+the wire cannot be recalled. The host rate-slot wait rechecks the shared gate before dispatch.
+
+This proves the controlled plugin/host seam against the inspected sources, not arbitrary host
+instrumentation, native container discovery or current live Bandcamp behavior. DB/API/backup
+protection and native runtime behavior remain unqualified. See
+[review-fix evidence](verification/review-fix-pass.md).
 
 Regression evidence covers public collection search (not catalogue search), real fixture
 archive/file output, pre-grab refusal, renewal failure, retry exhaustion, storage errors,
