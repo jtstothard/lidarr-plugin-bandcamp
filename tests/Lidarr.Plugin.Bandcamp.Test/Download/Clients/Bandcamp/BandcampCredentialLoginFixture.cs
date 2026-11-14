@@ -38,6 +38,12 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         private readonly Mock<IDownloadClientRepository> _repository = new();
         private readonly ConcurrentQueue<string> _homepageCookies = new();
         private int _loginPosts;
+        private string? _homepageOverride;
+        private bool _transportFailure;
+        private HttpStatusCode _homepageStatus = HttpStatusCode.OK;
+        private string? _retryAfter;
+        private HttpStatusCode _loginStatus = HttpStatusCode.OK;
+        private HttpStatusCode _loginPageStatus = HttpStatusCode.OK;
         private string _loginCbFixture = "login_cb_success.json";
         private Func<Task>? _homepageDelay;
         private Func<Task>? _loginDelay;
@@ -52,6 +58,10 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                     var url = request.Url.FullUri;
                     if (url == "https://bandcamp.com")
                     {
+                        if (_transportFailure)
+                        {
+                            throw new System.Net.Http.HttpRequestException("simulated transport failure");
+                        }
                         var cookie = request.Headers.GetSingleValue("Cookie") ?? string.Empty;
                         _homepageCookies.Enqueue(cookie);
                         if (_homepageDelay != null)
@@ -60,7 +70,12 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                         }
 
                         var page = cookie.Contains("fresh-identity") ? "homepage_logged_in.html" : "homepage_logged_out.html";
-                        return new HttpResponse(request, new HttpHeader(), LoginFixtures.Read(page), HttpStatusCode.OK);
+                        var headers = new HttpHeader();
+                        if (_retryAfter != null)
+                        {
+                            headers.Add("Retry-After", _retryAfter);
+                        }
+                        return new HttpResponse(request, headers, _homepageOverride ?? LoginFixtures.Read(page), _homepageStatus);
                     }
 
                     if (url == "https://bandcamp.com/login_cb")
@@ -81,17 +96,26 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                         }
 
                         var headers = new HttpHeader();
+                        if (_retryAfter != null)
+                        {
+                            headers.Add("Retry-After", _retryAfter);
+                        }
                         if (fixture == "login_cb_success.json")
                         {
                             headers.Add("Set-Cookie", $"identity={FreshIdentity}; domain=.bandcamp.com; path=/; secure; HttpOnly");
                         }
 
-                        return new HttpResponse(request, headers, LoginFixtures.Read(fixture), HttpStatusCode.OK);
+                        return new HttpResponse(request, headers, LoginFixtures.Read(fixture), _loginStatus);
                     }
 
                     if (url == "https://bandcamp.com/login")
                     {
-                        return new HttpResponse(request, new HttpHeader(), LoginFixtures.Read("login_page.html"), HttpStatusCode.OK);
+                        var headers = new HttpHeader();
+                        if (_retryAfter != null)
+                        {
+                            headers.Add("Retry-After", _retryAfter);
+                        }
+                        return new HttpResponse(request, headers, LoginFixtures.Read("login_page.html"), _loginPageStatus);
                     }
 
                     return new HttpResponse(request, new HttpHeader(), "{}", HttpStatusCode.OK);
@@ -143,6 +167,198 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                 VerificationCode = verificationCode,
                 DownloadPath = "/tmp/bandcamp"
             };
+        }
+
+        [Fact]
+        public async Task RateLimit_AfterWait_RevalidatesBeforeReusingAnEarlierCachedSession()
+        {
+            _homepageOverride = LoginFixtures.Read("homepage_logged_in.html");
+            var registry = CreateRegistry();
+            var client = CreateClient(Settings(cookies: "identity=prior"), registry);
+            Assert.True(client.Test().IsValid);
+            _homepageStatus = HttpStatusCode.TooManyRequests;
+            _retryAfter = "120";
+            Assert.False(client.Test().IsValid);
+            var provider = registry.Find(7)!;
+            Assert.Null(await provider.GetSessionAsync());
+            _now = _now.AddSeconds(120);
+            _homepageStatus = HttpStatusCode.OK;
+            Assert.NotNull(await provider.GetSessionAsync());
+            Assert.Equal(BandcampSessionStatus.Valid, provider.State.Status);
+            Assert.Equal(3, _homepageCookies.Count);
+        }
+
+        [Theory]
+        [InlineData("homepage_logged_in.html", 200, null, 0, true)]
+        [InlineData("homepage_logged_out.html", 200, null, 1, true)]
+        [InlineData("homepage_logged_out.html", 401, null, 1, true)]
+        [InlineData("homepage_logged_out.html", 403, null, 1, true)]
+        [InlineData("homepage_challenge.html", 200, "ChallengeOrUnrecognized", 0, false)]
+        [InlineData("homepage_challenge.html", 401, "ChallengeOrUnrecognized", 0, false)]
+        [InlineData("homepage_challenge.html", 403, "ChallengeOrUnrecognized", 0, false)]
+        [InlineData("homepage_redesigned.html", 200, "ChallengeOrUnrecognized", 0, false)]
+        [InlineData("homepage_empty.html", 200, "ChallengeOrUnrecognized", 0, false)]
+        [InlineData("homepage_malformed.html", 200, "ChallengeOrUnrecognized", 0, false)]
+        [InlineData("homepage_logged_in.html", 403, "ChallengeOrUnrecognized", 0, false)]
+        [InlineData("homepage_logged_out.html", 503, "Unavailable", 0, false)]
+        public void HomepageEvidence_DeterminesWhetherPasswordLoginIsAllowed(
+            string fixture, int status, string? problem, int expectedLogins, bool valid)
+        {
+            _homepageOverride = LoginFixtures.Read(fixture);
+            _homepageStatus = (HttpStatusCode)status;
+            // A successful password login is followed by a normal homepage validation.
+            _loginDelay = () =>
+            {
+                _homepageOverride = LoginFixtures.Read("homepage_logged_in.html");
+                _homepageStatus = HttpStatusCode.OK;
+                return Task.CompletedTask;
+            };
+            var registry = CreateRegistry();
+            var settings = Settings(cookies: "identity=prior");
+            var result = CreateClient(settings, registry).Test();
+            Assert.Equal(valid, result.IsValid);
+            Assert.Equal(expectedLogins, _loginPosts);
+            Assert.Equal(problem, registry.Find(7)!.State.Problem?.Code);
+            if (expectedLogins == 0)
+            {
+                Assert.Equal("identity=prior", settings.Cookies);
+            }
+        }
+
+        [Theory]
+        [InlineData(200, "ChallengeOrUnrecognized")]
+        [InlineData(429, "RateLimited")]
+        [InlineData(503, "Unavailable")]
+        public async Task Download_PreGrabRefusalNamesValidationCauseWithoutLogin(int status, string problem)
+        {
+            _homepageOverride = LoginFixtures.Read("homepage_challenge.html");
+            _homepageStatus = (HttpStatusCode)status;
+            var registry = CreateRegistry();
+            var client = CreateClient(Settings(cookies: "identity=prior"), registry);
+            var ex = await Assert.ThrowsAsync<DownloadClientAuthenticationException>(() => client.Download(
+                new RemoteAlbum { Release = new ReleaseInfo { Title = "Album [FLAC]", DownloadUrl = "https://bandcamp.com/download?type=album&id=1#format=flac" } },
+                Mock.Of<IIndexer>()));
+            Assert.Equal(problem, registry.Find(7)!.State.Problem?.Code);
+            Assert.Contains(registry.Find(7)!.State.Problem!.Description, ex.Message);
+            Assert.Equal(0, _loginPosts);
+        }
+
+        [Fact]
+        public void TransportFailure_PreservesIdentityAndShowsAvailabilityAction()
+        {
+            _transportFailure = true;
+            var registry = CreateRegistry();
+            var settings = Settings(cookies: "identity=prior");
+            var result = CreateClient(settings, registry).Test();
+            Assert.False(result.IsValid);
+            Assert.Equal(0, _loginPosts);
+            Assert.Equal("identity=prior", settings.Cookies);
+            Assert.Equal("Unavailable", registry.Find(7)!.State.Problem?.Code);
+            Assert.Contains(result.Errors, e => e.ErrorMessage.Contains("availability"));
+        }
+
+        [Fact]
+        public void MissingSession_HasVisibleActionableHealth()
+        {
+            var registry = CreateRegistry();
+            var result = CreateClient(Settings(email: "", password: ""), registry).Test();
+            Assert.False(result.IsValid);
+            Assert.Contains("no session configured", HealthMessage(registry));
+            Assert.Contains("Last successful validation: never", HealthMessage(registry));
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void LoginRateLimit_ExposesWaitAndSuppressesFurtherLoginAttempts(bool onLoginPage)
+        {
+            if (onLoginPage) _loginPageStatus = HttpStatusCode.TooManyRequests;
+            else _loginStatus = HttpStatusCode.TooManyRequests;
+            _retryAfter = "120";
+            var registry = CreateRegistry();
+            var client = CreateClient(Settings(), registry);
+            Assert.False(client.Test().IsValid);
+            Assert.Equal("RateLimited", registry.Find(7)!.State.Problem?.Code);
+            Assert.Contains("12:02:00", HealthMessage(registry));
+            Assert.False(client.Test().IsValid);
+            Assert.Equal(onLoginPage ? 0 : 1, _loginPosts);
+            _now = _now.AddMinutes(2);
+            _loginStatus = _loginPageStatus = HttpStatusCode.OK;
+            Assert.True(client.Test().IsValid);
+            Assert.Equal(onLoginPage ? 1 : 2, _loginPosts);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task AvailabilityHealth_ReportsModeAndLastProvenValidationWithoutDiscardingCache(bool challenge)
+        {
+            var registry = CreateRegistry();
+            var settings = Settings(cookies: "identity=prior");
+            _homepageOverride = LoginFixtures.Read("homepage_logged_in.html");
+            var client = CreateClient(settings, registry);
+            Assert.True(client.Test().IsValid);
+            _now = _now.AddMinutes(1);
+            _homepageStatus = challenge ? HttpStatusCode.OK : HttpStatusCode.ServiceUnavailable;
+            _homepageOverride = LoginFixtures.Read("homepage_challenge.html");
+            Assert.False(client.Test().IsValid);
+            var health = HealthMessage(registry);
+            Assert.Contains("Web identity", health);
+            Assert.Contains("2026-01-01 12:00:00 UTC", health);
+            Assert.Contains(challenge ? "browser" : "availability", health);
+            Assert.Equal(0, _loginPosts);
+            // A failed forced check must not shorten the previous successful cache.
+            Assert.NotNull(await registry.Find(7)!.GetSessionAsync());
+            Assert.Equal(2, _homepageCookies.Count);
+        }
+
+        [Theory]
+        [InlineData("120", 120)]
+        [InlineData("Thu, 01 Jan 2026 12:02:00 GMT", 120)]
+        [InlineData("Thursday, 01-Jan-26 12:02:00 GMT", 120)]
+        [InlineData("Thu Jan  1 12:02:00 2026", 120)]
+        [InlineData("garbage", 300)]
+        [InlineData(null, 300)]
+        [InlineData("-1", 300)]
+        [InlineData("1.5", 300)]
+        [InlineData("0", 1)]
+        [InlineData("Thu, 01 Jan 2026 11:00:00 GMT", 1)]
+        public void RateLimit_WaitsUntilAdvertisedTimeWithoutLoginOrValidationLoop(string? retryAfter, int waitSeconds)
+        {
+            _homepageStatus = HttpStatusCode.TooManyRequests;
+            _retryAfter = retryAfter;
+            var registry = CreateRegistry();
+            var settings = Settings(cookies: "identity=prior");
+            var client = CreateClient(settings, registry);
+            var first = client.Test();
+            Assert.False(first.IsValid);
+            Assert.Equal("RateLimited", registry.Find(7)!.State.Problem?.Code);
+            Assert.Contains("wait until", HealthMessage(registry));
+            _homepageStatus = HttpStatusCode.OK;
+            _homepageOverride = LoginFixtures.Read("homepage_logged_in.html");
+            _now = _now.AddSeconds(waitSeconds - 1);
+            Assert.False(client.Test().IsValid);
+            Assert.Single(_homepageCookies);
+            Assert.Equal(0, _loginPosts);
+            Assert.Equal("identity=prior", settings.Cookies);
+            _now = _now.AddSeconds(1);
+            Assert.True(client.Test().IsValid);
+            Assert.Equal(2, _homepageCookies.Count);
+        }
+
+        [Fact]
+        public void Test_UnrecognizedHomepage_RetainsIdentityWithoutPasswordLogin()
+        {
+            _homepageOverride = "<html><title>New Bandcamp</title></html>";
+            var settings = Settings(cookies: "identity=prior");
+            var registry = CreateRegistry();
+            var result = CreateClient(settings, registry).Test();
+
+            Assert.False(result.IsValid);
+            Assert.Equal(0, _loginPosts);
+            Assert.Equal("identity=prior", settings.Cookies);
+            Assert.Equal("ChallengeOrUnrecognized", registry.Find(7)!.State.Problem?.Code);
+            Assert.Contains("browser", HealthMessage(registry), StringComparison.OrdinalIgnoreCase);
         }
 
         [Fact]

@@ -1,0 +1,115 @@
+#48 actual red/green excerpts, 2026-11-14
+Base: 5692f3c24cbd6b4541941a421268ace957616e37
+SDK: 10.0.103; isolated Lidarr reference: e42a7ca
+
+Seams: existing download-client/session-provider, health/monitor and HTTP/API fixtures, as authorized by #46 Testing Decisions.
+
+Command shape:
+dotnet test tests/Lidarr.Plugin.Bandcamp.Test -c Release --no-restore --filter <filter> -p:TreatWarningsAsErrors=false
+
+1. Unrecognized homepage login suppression
+Filter: FullyQualifiedName~Test_UnrecognizedHomepage
+RED:
+[xUnit.net 00:00:00.24]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_UnrecognizedHomepage_RetainsIdentityWithoutPasswordLogin [FAIL]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: 0
+Actual:   1
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 129 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+GREEN:
+Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 117 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+2. Homepage Retry-After wait
+Filter: FullyQualifiedName~RateLimit_Waits
+RED:
+[xUnit.net 00:00:00.22]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.RateLimit_WaitsUntilAdvertisedTimeWithoutLoginOrValidationLoop [FAIL]
+  Error Message:
+   Assert.Equal() Failure: Strings differ
+Expected: "RateLimited"
+Actual:   "ChallengeOrUnrecognized"
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 111 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+GREEN:
+Passed!  - Failed:     0, Passed:     2, Skipped:     0, Total:     2, Duration: 145 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+3. Health mode and last successful validation
+Filter: FullyQualifiedName~AvailabilityHealth
+RED:
+[xUnit.net 00:00:00.23]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.AvailabilityHealth_ReportsModeAndLastProvenValidationWithoutDiscardingCache [FAIL]
+  Error Message:
+   Assert.Contains() Failure: Sub-string not found
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 115 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+GREEN:
+Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 127 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+4. Login Retry-After wait
+Filter: FullyQualifiedName~LoginRateLimit
+RED:
+[xUnit.net 00:00:00.24]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.LoginRateLimit_ExposesWaitAndSuppressesFurtherLoginAttempts [FAIL]
+  Error Message:
+   Assert.Equal() Failure: Strings differ
+Expected: "RateLimited"
+Actual:   "Missing"
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 127 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+GREEN:
+Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 142 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+5. One hourly monitor validation
+Filter: FullyQualifiedName~Monitor_UnrecognizedPage
+RED:
+[xUnit.net 00:00:00.20]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampSessionHealthCheckFixture.Monitor_UnrecognizedPage_ReportsHealthWithoutImmediateSecondValidation [FAIL]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: 1
+Actual:   2
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 87 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+GREEN:
+Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 98 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+6. Obsolete HTTP-date forms
+Filter: FullyQualifiedName~RateLimit_Waits|FullyQualifiedName~Download_PreGrabRefusal
+RED:
+[xUnit.net 00:00:00.21]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.RateLimit_WaitsUntilAdvertisedTimeWithoutLoginOrValidationLoop(retryAfter: "Thu Jan  1 12:02:00 2026", waitSeconds: 120) [FAIL]
+[xUnit.net 00:00:00.24]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.RateLimit_WaitsUntilAdvertisedTimeWithoutLoginOrValidationLoop(retryAfter: "Thursday, 01-Jan-26 12:02:00 GMT", waitSeconds: 120) [FAIL]
+  Error Message:
+   Assert.True() Failure
+Expected: True
+Actual:   False
+  Error Message:
+   Assert.True() Failure
+Expected: True
+Actual:   False
+Failed!  - Failed:     2, Passed:    11, Skipped:     0, Total:    13, Duration: 159 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+GREEN:
+Passed!  - Failed:     0, Passed:    13, Skipped:     0, Total:    13, Duration: 263 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+7. Legacy resolver availability contract
+Filter: FullyQualifiedName~TransportFailure_DoesNotReport
+RED:
+[xUnit.net 00:00:00.19]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.ResolveFanIdAsync_TransportFailure_DoesNotReportSignedOutToLegacyCallers [FAIL]
+  Error Message:
+   Assert.Throws() Failure: No exception was thrown
+Expected: typeof(NzbDrone.Core.Download.Clients.Bandcamp.DownloadException)
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 75 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+GREEN:
+Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 72 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+8. Post-wait cache recovery
+Filter: FullyQualifiedName~RateLimit_AfterWait
+RED:
+[xUnit.net 00:00:00.21]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.RateLimit_AfterWait_RevalidatesBeforeReusingAnEarlierCachedSession [FAIL]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: Valid
+Actual:   RateLimited
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 111 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+GREEN:
+Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 117 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+Pre-merge broad verification
+Command: dotnet build Lidarr.Plugin.Bandcamp.slnx -c Release --no-restore -p:TreatWarningsAsErrors=false
+Build succeeded.
+    17 Warning(s)
+    0 Error(s)
+Command: dotnet test Lidarr.Plugin.Bandcamp.slnx -c Release --no-restore --filter FullyQualifiedName~Bandcamp -p:TreatWarningsAsErrors=false
+Passed!  - Failed:     0, Passed:   178, Skipped:     0, Total:   178, Duration: 579 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+Warnings are from existing Lidarr reference dependencies/analyzers; no live Bandcamp requests were made.

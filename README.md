@@ -50,11 +50,11 @@ You need to enable the Bandcamp protocol or Lidarr won't use it for searches:
 
 The download client has two ways to sign in.
 
-**Email and password.** The plugin logs in itself, saves the session cookie it gets into **Session Cookie**, and logs in again when that session expires. It checks the session before each grab and once an hour.
+**Email and password.** The plugin can attempt Bandcamp web login when a session is missing or positively signed out, and saves a successful session into **Session Cookie**. CAPTCHA or verification can require your help. It checks the session before each grab and once an hour.
 
 **Cookie only.** Leave Email and Password empty and paste your `identity` cookie (see below). This is how earlier versions worked, and existing setups keep working with no changes. You'll need to paste a fresh cookie when it expires.
 
-If both are set, the saved cookie is used while it's valid, and the plugin logs in when it isn't.
+If both are set, the saved cookie is preferred. A challenge, unrecognized response, rate limit or outage keeps that identity and does not trigger password login.
 
 When there's no valid session, the plugin refuses new grabs instead of failing them. Lidarr shows a download-client error and backs off, so releases aren't blocklisted or searched again. A health warning on **System → Status** names the cause, and it clears itself once the session works again:
 
@@ -62,10 +62,16 @@ When there's no valid session, the plugin refuses new grabs instead of failing t
 |---|---|
 | Bad credentials | Fix the Email or Password and save. The plugin won't retry a rejected login until you change them. |
 | Verification needed | Bandcamp emailed you a code for a new device. Enter it in **Verification Code** and save. It's used once, then cleared. |
-| Captcha required | Bandcamp wants a captcha (as of November 2026 it asks for one on every login, so expect this if you use email and password), which the plugin can't solve. Log into bandcamp.com in a browser and paste the `identity` cookie into **Session Cookie**. |
-| Cookie expired | Paste a fresh cookie, or add your Email and Password so the plugin renews it for you. |
+| Captcha required | Bandcamp wants a captcha, which the plugin can't solve. A recorded November 2026 login required one; unattended password recovery cannot be promised. Log into bandcamp.com in a browser and paste the `identity` cookie into **Session Cookie**. |
+| Signed out | Paste a fresh cookie, or configure complete Email and Password credentials for a login attempt. |
+| No session configured | Enter complete Email and Password credentials or paste a browser identity cookie. |
+| Challenge or unrecognized response | Check Bandcamp in your browser; renew manually if needed. The saved identity is retained. |
+| Rate limited | Wait until the displayed UTC retry time. Do not change credentials. |
+| Temporary network/server failure | Check network and Bandcamp availability and try later. The saved identity is retained. |
 
-After a verification or captcha challenge, the plugin waits 6 hours between login attempts so it doesn't hammer Bandcamp or get your account locked. Entering a verification code skips that wait.
+Warnings also show the effective web auth mode and the last successful validation time. [Validation and retry policy](docs/session-validation-status.md) describes the response evidence and fallback wait.
+
+After a verification or captcha challenge, the plugin waits 6 hours between login attempts so it doesn't hammer Bandcamp or get your account locked. Entering a verification code skips a verification wait, but cannot bypass a CAPTCHA wait.
 
 Email, password, verification code and cookie are stored in Lidarr's settings as masked fields and never logged. Anyone with access to Lidarr's database or API key can read them.
 
@@ -85,7 +91,7 @@ The plugin authenticates using the `identity` cookie from your browser.
 3. Find `identity`, copy its value
 4. Paste that into the indexer's **Session Cookies** field, or the download client's **Session Cookie (optional)** field
 
-The cookie expires eventually. With Email and Password set, the plugin renews it for you. Otherwise, grab a fresh one when the health warning says it has expired.
+No fixed cookie lifetime is assumed. If Bandcamp positively signs the session out, the plugin can attempt credential login; CAPTCHA or verification may require browser/manual recovery. The indexer and downloader still have independent cookie settings, so update both when renewing manually.
 
 ## Supported formats
 

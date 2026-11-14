@@ -80,6 +80,17 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             Assert.Equal(BandcampSessionProblem.CookieExpired, registry.Find(_definition.Id)!.State.Problem);
         }
 
+        [Fact]
+        public async Task Monitor_UnrecognizedPage_ReportsHealthWithoutImmediateSecondValidation()
+        {
+            _homepage = "<html>Verify you are human</html>";
+            var registry = CreateRegistry();
+            var monitor = new BandcampSessionMonitor(CreateFactory(), registry, Mock.Of<IEventAggregator>(), _logger, () => _now);
+            await monitor.RunDueChecksAsync();
+            Assert.Equal(1, _homepageCalls);
+            Assert.Equal("ChallengeOrUnrecognized", registry.Find(_definition.Id)!.State.Problem?.Code);
+        }
+
         private IDownloadClientFactory CreateFactory()
         {
             var factory = new Mock<IDownloadClientFactory>();
