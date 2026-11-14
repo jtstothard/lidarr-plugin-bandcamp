@@ -41,6 +41,55 @@ public sealed class CookiePushCommandFixture
     }
 
     [Fact]
+    public async Task Update_indexer_option_updates_and_tests_the_only_bandcamp_indexer()
+    {
+        var lidarr = new MockLidarrApi();
+        lidarr.Enqueue(HttpMethod.Get, "/api/v1/downloadclient", HttpStatusCode.OK, Clients());
+        lidarr.Enqueue(HttpMethod.Put, "/api/v1/downloadclient/7", HttpStatusCode.Accepted, Client());
+        lidarr.Enqueue(HttpMethod.Post, "/api/v1/downloadclient/test", HttpStatusCode.OK, "{}");
+        lidarr.Enqueue(HttpMethod.Get, "/api/v1/indexer", HttpStatusCode.OK, "[" + Indexer() + "]");
+        lidarr.Enqueue(HttpMethod.Put, "/api/v1/indexer/11", HttpStatusCode.Accepted, Indexer());
+        lidarr.Enqueue(HttpMethod.Post, "/api/v1/indexer/test", HttpStatusCode.OK, "{}");
+        var output = new StringWriter();
+        var error = new StringWriter();
+
+        var exitCode = await Run(lidarr, Cookie, output, error,
+            "--url", "http://lidarr.test", "--api-key", ApiKey, "--update-indexer");
+
+        Assert.Equal(0, exitCode);
+        Assert.Equal(6, lidarr.Requests.Count);
+        Assert.Equal("identity=" + Cookie, lidarr.Requests[4].Body?["fields"]?.AsArray()
+            .Single(field => field?["name"]?.GetValue<string>() == "cookies")?["value"]?.GetValue<string>());
+        Assert.Equal(lidarr.Requests[4].Body?.ToJsonString(), lidarr.Requests[5].Body?.ToJsonString());
+        Assert.Contains("indexer Test passed", output.ToString());
+        AssertSecretSafe(output, error);
+    }
+
+    [Theory]
+    [InlineData("--indexer-id", "12")]
+    [InlineData("--indexer-name", "Downstairs Search")]
+    public async Task Indexer_can_be_chosen_by_id_or_name(string flag, string value)
+    {
+        var lidarr = new MockLidarrApi();
+        lidarr.Enqueue(HttpMethod.Get, "/api/v1/downloadclient", HttpStatusCode.OK, Clients());
+        lidarr.Enqueue(HttpMethod.Put, "/api/v1/downloadclient/7", HttpStatusCode.Accepted, Client());
+        lidarr.Enqueue(HttpMethod.Post, "/api/v1/downloadclient/test", HttpStatusCode.OK, "{}");
+        lidarr.Enqueue(HttpMethod.Get, "/api/v1/indexer", HttpStatusCode.OK,
+            "[" + Indexer(11, "Upstairs Search") + "," + Indexer(12, "Downstairs Search") + "]");
+        lidarr.Enqueue(HttpMethod.Put, "/api/v1/indexer/12", HttpStatusCode.Accepted, Indexer(12, "Downstairs Search"));
+        lidarr.Enqueue(HttpMethod.Post, "/api/v1/indexer/test", HttpStatusCode.OK, "{}");
+        var output = new StringWriter();
+        var error = new StringWriter();
+
+        var exitCode = await Run(lidarr, Cookie, output, error,
+            "--url", "http://lidarr.test", "--api-key", ApiKey, "--update-indexer", flag, value);
+
+        Assert.Equal(0, exitCode);
+        Assert.Equal("Downstairs Search", lidarr.Requests[4].Body?["name"]?.GetValue<string>());
+        AssertSecretSafe(output, error);
+    }
+
+    [Fact]
     public async Task Several_bandcamp_clients_require_an_id_or_name()
     {
         var lidarr = new MockLidarrApi();
@@ -248,6 +297,18 @@ public sealed class CookiePushCommandFixture
           "fields": [
             { "name": "cookies", "label": "Session Cookie (optional)", "value": "identity=old" },
             { "name": "downloadPath", "value": "/downloads" }
+          ]
+        }
+        """;
+
+    private static string Indexer(int id = 11, string name = "Bandcamp Search") => $$"""
+        {
+          "id": {{id}},
+          "name": {{System.Text.Json.JsonSerializer.Serialize(name)}},
+          "implementation": "Bandcamp",
+          "fields": [
+            { "name": "cookies", "label": "Session Cookies", "value": "identity=old" },
+            { "name": "minimumPopularity", "value": 0 }
           ]
         }
         """;
