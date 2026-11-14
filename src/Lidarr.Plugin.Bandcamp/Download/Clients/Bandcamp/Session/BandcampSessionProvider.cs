@@ -69,7 +69,10 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         /// </summary>
         public virtual void UpdateSettings(BandcampDownloadSettings settings)
         {
-            _settings = settings;
+            lock (_loginLock)
+            {
+                _settings = settings;
+            }
         }
 
         /// <summary>
@@ -173,6 +176,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
         private async Task<BandcampSession?> LoginAsync(BandcampDownloadSettings settings, string credentials, CancellationToken cancellationToken)
         {
+            var expectedCookies = settings.Cookies;
             if (credentials == _rejectedCredentials)
             {
                 _logger.Debug("Bandcamp session [{0}]: credentials were rejected before; not retrying until they change", DefinitionId);
@@ -185,6 +189,12 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             var code = settings.VerificationCode?.Trim();
             var hasCode = !string.IsNullOrEmpty(code);
             var challenge = _challenge;
+            if (settings.ChallengeUntilUtc is DateTime until && until > Clock())
+            {
+                var persistedProblem = settings.ChallengeProblem == BandcampSessionProblem.VerificationNeeded.Code
+                    ? BandcampSessionProblem.VerificationNeeded : BandcampSessionProblem.CaptchaRequired;
+                challenge = new ChallengeRecord(persistedProblem, until - ChallengeCooldown);
+            }
             var codeAnswersChallenge = hasCode && challenge?.Problem == BandcampSessionProblem.VerificationNeeded;
             if (!codeAnswersChallenge && challenge != null && Clock() - challenge.AtUtc < ChallengeCooldown)
             {
@@ -198,9 +208,10 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             var result = await _loginClient!.LoginAsync(settings.Email, settings.Password, hasCode ? code : null, cancellationToken).ConfigureAwait(false);
             _lastLogin = new LoginRecord(result.Outcome, result.Message);
 
+            // Consume the submitted code even if durable storage is unavailable.
             if (hasCode)
             {
-                ClearVerificationCode(settings);
+                settings.VerificationCode = string.Empty;
             }
 
             var problem = result.Outcome switch
@@ -217,10 +228,31 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             else if (problem != null)
             {
                 _challenge = new ChallengeRecord(problem, Clock());
+                settings.ChallengeUntilUtc = Clock() + ChallengeCooldown;
+                settings.ChallengeProblem = problem.Code;
+                try
+                {
+                    if (_sessionStore == null)
+                    {
+                        throw new InvalidOperationException("Session storage is unavailable");
+                    }
+
+                    _sessionStore.SaveChallenge(DefinitionId, settings.ChallengeUntilUtc.Value, problem.Code, hasCode);
+                }
+                catch (Exception)
+                {
+                    SetState(BandcampSessionStatus.Error, BandcampSessionProblem.StorageFailure);
+                    return null;
+                }
             }
             else if (result.Outcome == BandcampLoginOutcome.Success)
             {
                 _challenge = null;
+            }
+
+            if (hasCode && problem == null && !ClearVerificationCode(settings))
+            {
+                return null;
             }
 
             if (problem != null)
@@ -234,27 +266,70 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 return null;
             }
 
-            // Write back: the in-memory settings first (every holder of this definition's
-            // settings object sees it at once), then the persisted definition.
+            return await ReplaceIdentityAsync(result.Cookies, settings, expectedCookies, credentials, cancellationToken).ConfigureAwait(false);
+        }
+
+        public virtual Task<BandcampSession?> ReplaceIdentityAsync(string cookies, CancellationToken cancellationToken = default)
+        {
             lock (_loginLock)
             {
-                settings.Cookies = result.Cookies;
+                var settings = _settings;
+                return ReplaceIdentityAsync(cookies, settings, settings.Cookies, settings.CredentialKey(), cancellationToken);
+            }
+        }
+
+        private async Task<BandcampSession?> ReplaceIdentityAsync(
+            string cookies, BandcampDownloadSettings settings, string expectedCookies, string credentials, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var fanId = await _apiClient.ResolveFanIdAsync(cookies).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (fanId == null)
+            {
+                SetState(BandcampSessionStatus.Invalid, BandcampSessionProblem.CookieExpired);
+                return null;
             }
 
-            try
+            lock (_loginLock)
             {
-                _sessionStore?.SaveCookies(DefinitionId, result.Cookies);
-            }
-            catch (Exception ex)
-            {
-                _logger.Warn(ex, "Bandcamp session [{0}]: logged in but could not save the new session to settings", DefinitionId);
-            }
+                cancellationToken.ThrowIfCancellationRequested();
+                if (_settings.Cookies != expectedCookies || _settings.CredentialKey() != credentials)
+                {
+                    SetState(BandcampSessionStatus.Error, BandcampSessionProblem.ReplacementConflict);
+                    return null;
+                }
 
-            return await ValidateAsync(settings, cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    if (_sessionStore == null)
+                    {
+                        throw new InvalidOperationException("Session storage is unavailable");
+                    }
+
+                    if (!_sessionStore.TryReplaceCookies(DefinitionId, expectedCookies, credentials, cookies))
+                    {
+                        SetState(BandcampSessionStatus.Error, BandcampSessionProblem.ReplacementConflict);
+                        return null;
+                    }
+                }
+                catch (Exception)
+                {
+                    SetState(BandcampSessionStatus.Error, BandcampSessionProblem.StorageFailure);
+                    return null;
+                }
+
+                // Persistence is the commit point. Only now publish the validated identity.
+                _settings.Cookies = cookies;
+                settings.Cookies = cookies;
+                var session = new BandcampSession(cookies, fanId.Value);
+                _cached = new CachedSession(session, Clock());
+                SetState(BandcampSessionStatus.Valid);
+                return session;
+            }
         }
 
         /// <summary>The code is single-use: clear it in memory and in the saved definition.</summary>
-        private void ClearVerificationCode(BandcampDownloadSettings settings)
+        private bool ClearVerificationCode(BandcampDownloadSettings settings)
         {
             lock (_loginLock)
             {
@@ -263,11 +338,18 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
             try
             {
-                _sessionStore?.ClearVerificationCode(DefinitionId);
+                if (_sessionStore == null)
+                {
+                    throw new InvalidOperationException("Session storage is unavailable");
+                }
+
+                _sessionStore.ClearVerificationCode(DefinitionId);
+                return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.Warn(ex, "Bandcamp session [{0}]: could not clear the verification code from settings", DefinitionId);
+                SetState(BandcampSessionStatus.Error, BandcampSessionProblem.StorageFailure);
+                return false;
             }
         }
 

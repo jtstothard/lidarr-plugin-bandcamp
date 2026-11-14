@@ -37,6 +37,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         private readonly Mock<IHttpClient> _http = new();
         private readonly Mock<IDownloadClientRepository> _repository = new();
         private readonly ConcurrentQueue<string> _homepageCookies = new();
+        private bool _candidateValid = true;
         private int _loginPosts;
         private string _loginCbFixture = "login_cb_success.json";
         private Func<Task>? _homepageDelay;
@@ -59,7 +60,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                             await _homepageDelay();
                         }
 
-                        var page = cookie.Contains("fresh-identity") ? "homepage_logged_in.html" : "homepage_logged_out.html";
+                        var page = cookie.Contains("fresh-identity") && _candidateValid ? "homepage_logged_in.html" : "homepage_logged_out.html";
                         return new HttpResponse(request, new HttpHeader(), LoginFixtures.Read(page), HttpStatusCode.OK);
                     }
 
@@ -143,6 +144,233 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                 VerificationCode = verificationCode,
                 DownloadPath = "/tmp/bandcamp"
             };
+        }
+
+        [Fact]
+        public async Task ImportedCandidateIsValidatedAndPersistedWithoutPasswordLogin()
+        {
+            var settings = Settings(cookies: "identity=prior", email: "", password: "");
+            var registry = CreateRegistry();
+            CreateClient(settings, registry);
+            var session = await registry.Get(7, settings).ReplaceIdentityAsync("identity=" + FreshIdentity);
+            Assert.NotNull(session);
+            Assert.Equal("identity=" + FreshIdentity, session.Cookies);
+            Assert.Equal(session.Cookies, settings.Cookies);
+            Assert.Equal(0, _loginPosts);
+            _repository.Verify(r => r.SetFields(It.IsAny<DownloadClientDefinition>(),
+                It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()), Times.Once);
+        }
+
+        [Fact]
+        public void CaptchaStillSuppressesRetryWhenCodePersistenceFails()
+        {
+            _loginCbFixture = "login_cb_captcha_required.json";
+            var settings = Settings(verificationCode: "wrong-code");
+            var registry = CreateRegistry();
+            var client = CreateClient(settings, registry);
+            _repository.Setup(r => r.SetFields(It.IsAny<DownloadClientDefinition>(),
+                It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()))
+                .Throws(new InvalidOperationException("storage unavailable"));
+            Assert.False(client.Test().IsValid);
+            Assert.False(client.Test().IsValid);
+            Assert.Equal(1, _loginPosts);
+            Assert.Equal("", settings.VerificationCode);
+        }
+
+        [Fact]
+        public async Task IndependentRecoveryProvidersCannotOverwriteAnAlreadyCommittedIdentity()
+        {
+            var arrived = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _loginDelay = () =>
+            {
+                if (Volatile.Read(ref _loginPosts) == 2) arrived.TrySetResult(true);
+                return release.Task;
+            };
+            var firstSettings = Settings(cookies: "identity=prior");
+            var secondSettings = Settings(cookies: "identity=prior");
+            var first = CreateClient(firstSettings, CreateRegistry());
+            var second = CreateClient(secondSettings, CreateRegistry());
+            var persisted = Settings(cookies: "identity=prior");
+            _repository.Setup(r => r.Find(7)).Returns(() => new DownloadClientDefinition { Id = 7, Settings = persisted });
+            _repository.Setup(r => r.SetFields(It.IsAny<DownloadClientDefinition>(),
+                It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()))
+                .Callback<DownloadClientDefinition, Expression<Func<DownloadClientDefinition, object>>[]>((definition, _) =>
+                    persisted = Newtonsoft.Json.JsonConvert.DeserializeObject<BandcampDownloadSettings>(
+                        Newtonsoft.Json.JsonConvert.SerializeObject(definition.Settings))!);
+            var pending = new[] { Task.Run(() => first.Test()), Task.Run(() => second.Test()) };
+            await arrived.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            release.SetResult(true);
+            var results = await Task.WhenAll(pending);
+            Assert.Single(results, result => result.IsValid);
+            Assert.Equal("identity=" + FreshIdentity, persisted.Cookies);
+            _repository.Verify(r => r.SetFields(It.IsAny<DownloadClientDefinition>(),
+                It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task DownloadRefusalReportsStorageFailureAndRetainsIdentity()
+        {
+            var settings = Settings(cookies: "identity=prior");
+            var client = CreateClient(settings);
+            _repository.Setup(r => r.SetFields(It.IsAny<DownloadClientDefinition>(),
+                It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()))
+                .Throws(new InvalidOperationException("storage unavailable"));
+            var exception = await Assert.ThrowsAsync<DownloadClientAuthenticationException>(() => client.Download(
+                new RemoteAlbum { Release = new ReleaseInfo { Title = "Album [FLAC]",
+                    DownloadUrl = "https://bandcamp.com/download?type=album&id=1#format=flac" } }, Mock.Of<IIndexer>()));
+            Assert.Contains(BandcampSessionProblem.StorageFailure.Description, exception.Message);
+            Assert.Equal("identity=prior", settings.Cookies);
+        }
+
+        [Fact]
+        public async Task CancellationDuringCandidateValidationRetainsPriorIdentity()
+        {
+            var arrived = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _homepageDelay = () =>
+            {
+                if (_homepageCookies.Last().Contains("fresh-identity"))
+                {
+                    arrived.TrySetResult(true);
+                    return release.Task;
+                }
+
+                return Task.CompletedTask;
+            };
+            var settings = Settings(cookies: "identity=prior");
+            var registry = CreateRegistry();
+            CreateClient(settings, registry);
+            var provider = registry.Get(7, settings);
+            using var cancellation = new CancellationTokenSource();
+            var pending = provider.RenewAsync(cancellation.Token);
+            await arrived.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            cancellation.Cancel();
+            release.SetResult(true);
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending);
+            Assert.Equal("identity=prior", settings.Cookies);
+            _repository.Verify(r => r.SetFields(It.IsAny<DownloadClientDefinition>(),
+                It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()), Times.Never);
+        }
+
+        [Fact]
+        public void CandidateBecomesActiveOnlyAfterPersistenceAndSurvivesReRead()
+        {
+            var settings = Settings(cookies: "identity=prior");
+            var client = CreateClient(settings);
+            BandcampDownloadSettings? saved = null;
+            _repository.Setup(r => r.SetFields(It.IsAny<DownloadClientDefinition>(),
+                It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()))
+                .Callback<DownloadClientDefinition, Expression<Func<DownloadClientDefinition, object>>[]>((definition, _) =>
+                {
+                    Assert.Equal("identity=prior", settings.Cookies);
+                    saved = Newtonsoft.Json.JsonConvert.DeserializeObject<BandcampDownloadSettings>(
+                        Newtonsoft.Json.JsonConvert.SerializeObject(definition.Settings));
+                });
+            Assert.True(client.Test().IsValid);
+            Assert.Equal("identity=" + FreshIdentity, saved!.Cookies);
+            Assert.True(CreateClient(saved, CreateRegistry()).Test().IsValid);
+            Assert.Equal(1, _loginPosts);
+        }
+
+        [Fact]
+        public void FailureToPersistConsumedCodeDoesNotPublishCandidate()
+        {
+            var settings = Settings(cookies: "identity=prior", verificationCode: EmailedCode);
+            var registry = CreateRegistry();
+            var client = CreateClient(settings, registry);
+            _repository.SetupSequence(r => r.SetFields(It.IsAny<DownloadClientDefinition>(),
+                It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()))
+                .Throws(new InvalidOperationException("storage unavailable"));
+            Assert.False(client.Test().IsValid);
+            Assert.Equal("identity=prior", settings.Cookies);
+            Assert.Equal(BandcampSessionProblem.StorageFailure, registry.Find(7)!.State.Problem);
+        }
+
+        [Fact]
+        public async Task SettingsChangedDuringLoginDoesNotGetOverwrittenByOldCandidate()
+        {
+            var arrived = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _loginDelay = () => { arrived.TrySetResult(true); return release.Task; };
+            var settings = Settings(cookies: "identity=prior");
+            var registry = CreateRegistry();
+            var client = CreateClient(settings, registry);
+            var pending = Task.Run(() => client.Test());
+            await arrived.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            var replacement = Settings(cookies: "identity=manual", password: "new-password");
+            registry.Get(7, replacement);
+            _repository.Setup(r => r.Find(7)).Returns(new DownloadClientDefinition { Id = 7, Settings = replacement });
+            release.SetResult(true);
+            Assert.False((await pending).IsValid);
+            Assert.Equal("identity=manual", replacement.Cookies);
+            Assert.Equal("identity=prior", settings.Cookies);
+            _repository.Verify(r => r.SetFields(It.IsAny<DownloadClientDefinition>(),
+                It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()), Times.Never);
+        }
+
+        [Fact]
+        public void StorageFailureLeavesPriorIdentityAndReportsStorageProblem()
+        {
+            var settings = Settings(cookies: "identity=prior");
+            var registry = CreateRegistry();
+            var client = CreateClient(settings, registry);
+            _repository.Setup(r => r.SetFields(It.IsAny<DownloadClientDefinition>(),
+                It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()))
+                .Throws(new InvalidOperationException("storage unavailable"));
+            Assert.False(client.Test().IsValid);
+            Assert.Equal("identity=prior", settings.Cookies);
+            Assert.Equal(BandcampSessionProblem.StorageFailure, registry.Find(7)!.State.Problem);
+            Assert.Contains("storage", HealthMessage(registry));
+        }
+
+        [Fact]
+        public void InvalidLoginCandidateLeavesPriorIdentityUntouched()
+        {
+            _candidateValid = false;
+            var settings = Settings(cookies: "identity=prior");
+            var result = CreateClient(settings).Test();
+            Assert.False(result.IsValid);
+            Assert.Equal("identity=prior", settings.Cookies);
+            _repository.Verify(r => r.SetFields(It.IsAny<DownloadClientDefinition>(),
+                It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task RestartedMonitorRetainsCaptchaCooldownEvenWithVerificationCode()
+        {
+            _loginCbFixture = "login_cb_captcha_required.json";
+            var settings = Settings();
+            var client = CreateClient(settings, CreateRegistry());
+            BandcampDownloadSettings? saved = null;
+            _repository.Setup(r => r.SetFields(It.IsAny<DownloadClientDefinition>(),
+                It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()))
+                .Callback<DownloadClientDefinition, Expression<Func<DownloadClientDefinition, object>>[]>((definition, _) =>
+                    saved = Newtonsoft.Json.JsonConvert.DeserializeObject<BandcampDownloadSettings>(
+                        Newtonsoft.Json.JsonConvert.SerializeObject(definition.Settings)));
+            client.Test();
+            var restored = saved!;
+            restored.VerificationCode = EmailedCode;
+            _now = _now.AddHours(5).AddMinutes(59);
+            var registry = CreateRegistry();
+            var factory = new Mock<IDownloadClientFactory>();
+            var definition = new DownloadClientDefinition
+            {
+                Id = 7, Name = "Bandcamp", Enable = true,
+                Implementation = nameof(BandcampDownloadClient), Settings = restored
+            };
+            _repository.Setup(r => r.Find(7)).Returns(definition);
+            factory.Setup(f => f.All()).Returns(new System.Collections.Generic.List<DownloadClientDefinition> { definition });
+            var monitor = new BandcampSessionMonitor(factory.Object, registry,
+                Mock.Of<NzbDrone.Core.Messaging.Events.IEventAggregator>(), _logger, () => _now);
+            await monitor.RunDueChecksAsync();
+            Assert.Equal(1, _loginPosts);
+            Assert.Equal(BandcampSessionProblem.CaptchaRequired, registry.Find(7)!.State.Problem);
+            _now = _now.AddHours(1);
+            await monitor.RunDueChecksAsync();
+            Assert.Equal(2, _loginPosts);
+            Assert.Equal(BandcampSessionStatus.Valid, registry.Find(7)!.State.Status);
+            Assert.Equal("", restored.VerificationCode);
         }
 
         [Fact]
@@ -391,7 +619,9 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             await Task.Delay(100);
             release.TrySetResult(true);
 
-            Assert.True((await good).IsValid);
+            // The current settings now select the other credentials: the old candidate
+            // must not win even though Bandcamp accepted that older login.
+            Assert.False((await good).IsValid);
             Assert.Contains((await bad).Errors, e => e.PropertyName == "Password");
         }
 

@@ -267,6 +267,12 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
         private static ValidationFailure LoginFailure(IBandcampSessionProvider provider)
         {
+            if (provider.State.Problem == BandcampSessionProblem.StorageFailure ||
+                provider.State.Problem == BandcampSessionProblem.ReplacementConflict)
+            {
+                return new ValidationFailure("Cookies", provider.State.Problem.Description);
+            }
+
             return provider.LastLoginOutcome switch
             {
                 BandcampLoginOutcome.BadCredentials => new ValidationFailure("Password",

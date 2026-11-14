@@ -24,6 +24,14 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             "CaptchaRequired",
             "Bandcamp asked for a captcha, which can't be solved here; paste a session cookie from your browser into the client settings (login is retried at most every " + CooldownText + ")");
 
+        public static readonly BandcampSessionProblem ReplacementConflict = new(
+            "ReplacementConflict",
+            "Bandcamp settings changed during recovery; the saved identity was retained; retry using the current settings");
+
+        public static readonly BandcampSessionProblem StorageFailure = new(
+            "StorageFailure",
+            "could not save Bandcamp session settings; check Lidarr database storage and permissions, then retry recovery");
+
         private BandcampSessionProblem(string code, string description)
         {
             Code = code;

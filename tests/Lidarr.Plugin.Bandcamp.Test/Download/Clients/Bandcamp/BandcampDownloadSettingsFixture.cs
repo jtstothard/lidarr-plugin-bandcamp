@@ -6,6 +6,18 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
 {
     public class BandcampDownloadSettingsFixture
     {
+        [Theory]
+        [InlineData("fan@example.com", "", "Password")]
+        [InlineData("", "password", "Email")]
+        public void PartialCredentialsAreRejectedEvenWithCookie(string email, string password, string field)
+        {
+            var settings = new BandcampDownloadSettings
+            {
+                Email = email, Password = password, Cookies = "identity=usable", DownloadPath = "/downloads"
+            };
+            Assert.Contains(settings.Validate().Errors, e => e.PropertyName == field);
+        }
+
         [Fact]
         public void Validate_AllFieldsSet_ReturnsNoErrors()
         {

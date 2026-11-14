@@ -37,6 +37,12 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         Task<BandcampSession?> ValidateAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Validates an externally obtained identity read-only, then saves it before activation.
+        /// A cancelled, invalid, unsaved or superseded candidate leaves the old identity intact.
+        /// </summary>
+        Task<BandcampSession?> ReplaceIdentityAsync(string cookies, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Called when a session that was handed out has stopped working. Returns a session
         /// usable right now (the same one if it still validates), or null when none can be
         /// obtained. Cookie mode re-validates the current settings; login mode obtains a
