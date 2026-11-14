@@ -36,3 +36,21 @@ dotnet test tests/Lidarr.Plugin.Bandcamp.Test -c Release -m:1 -p:TreatWarningsAs
 Passed!  - Failed:     0, Passed:   257, Skipped:     0, Total:   257, Duration: 721 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
 
 Fixtures prove regression behavior only. No live Bandcamp account actions or lifetime qualification.
+
+Merged integration verification:
+Merged integration/46-bandcamp-auth at 45b9633c5926cb3c9102a01b7ff49241e7d7ec5a (#51).
+Merge commit: 115431f. No conflicts.
+dotnet build Lidarr.Plugin.Bandcamp.slnx -c Release -m:1 -p:TreatWarningsAsErrors=false
+Build: 0 errors; existing host dependency/analyzer warnings remain.
+dotnet test Lidarr.Plugin.Bandcamp.slnx -c Release -m:1 --no-build --no-restore
+Passed!  - Failed:     0, Passed:    18, Skipped:     0, Total:    18, Duration: 266 ms - Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (net10.0)
+Passed!  - Failed:     0, Passed:   261, Skipped:     0, Total:   261, Duration: 654 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+After adding the host-folded-header rejection fixture:
+dotnet test tests/Lidarr.Plugin.Bandcamp.Test -c Release -m:1 -p:TreatWarningsAsErrors=false --no-restore
+Passed!  - Failed:     0, Passed:   262, Skipped:     0, Total:   262, Duration: 592 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+Final aggregate: 262 plugin + 18 helper = 280 passing tests, zero skipped.
+Build/test commands were run serially. Shared dependency output was reused; no dependency source changes.
+
+Limit: the host may flatten multiple Set-Cookie headers into an ambiguous semicolon-joined
+value. The native HttpHeader conversion is replayed and this case is rejected without a write.
+No safe cookie-boundary reconstruction or live rotation guarantee is claimed.

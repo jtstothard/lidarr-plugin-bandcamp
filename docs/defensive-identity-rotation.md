@@ -25,7 +25,11 @@ Domain must be `bandcamp.com` or `.bandcamp.com`. Duplicate identity cookies, du
 malformed or unknown attributes, invalid scopes, and deletion cookies are ignored. Recognized
 optional attributes are HttpOnly, SameSite, Expires and Max-Age. Expiry attributes only reject
 malformed/deletion candidates; they never determine session liveness or schedule renewal.
-Unchanged identities and unrelated cookies cause no validation or persistence. A replacement
+Unchanged identities and unrelated cookies cause no validation or persistence. Separately
+preserved unrelated Set-Cookie headers do not prevent an acceptable identity candidate. The host
+HTTP layer can flatten multiple Set-Cookie headers into one semicolon-joined value, losing cookie
+boundaries. Such ambiguous folded headers fail closed; rotation from that response is not saved.
+This implementation does not guess boundaries or claim to repair host header preservation. A replacement
 saves only `identity=<value>`; no response attributes or unrelated cookies enter saved Cookies.
 
 The candidate must pass the normal homepage fan-ID check before persistence. Candidate

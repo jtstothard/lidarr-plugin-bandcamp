@@ -26,6 +26,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Http
         private readonly Logger _logger = LogManager.GetCurrentClassLogger();
         private BandcampDownloadSettings _saved = new() { Cookies = "identity=prior" };
         private string? _rotation = "identity=rotated; Domain=.bandcamp.com; Path=/; Secure; HttpOnly";
+        private bool _foldResponseHeaders;
         private bool _homepageRotation;
         private string? _extraCookie;
         private HttpStatusCode _responseStatus = HttpStatusCode.OK;
@@ -62,6 +63,12 @@ namespace Lidarr.Plugin.Bandcamp.Test.Http
                 }
                 if (_rotation != null) headers.Add("Set-Cookie", _rotation);
                 if (_extraCookie != null) headers.Add("Set-Cookie", _extraCookie);
+                if (_foldResponseHeaders)
+                {
+                    using var native = new System.Net.Http.HttpResponseMessage();
+                    native.Headers.TryAddWithoutValidation("Set-Cookie", headers.GetValues("Set-Cookie"));
+                    headers = new HttpHeader(native.Headers);
+                }
                 return new HttpResponse(_responseUrl == null ? request : new HttpRequest(_responseUrl), headers, "{\"items\":[]}", _responseStatus);
             });
             _client = new BandcampHttpClient(_http.Object, _logger);
@@ -311,6 +318,18 @@ namespace Lidarr.Plugin.Bandcamp.Test.Http
             _rotation = "identity=rotated; Path=/; Secure";
             await _api.GetCollectionAsync(session!.Cookies, session.FanId);
             Assert.Equal("identity=prior", (await provider.GetSessionAsync())!.Cookies);
+            Assert.Equal(0, _writes);
+        }
+
+        [Fact]
+        public async Task AmbiguousHostFoldedCookieHeadersAreRejectedWithoutGuessingCookieBoundaries()
+        {
+            _foldResponseHeaders = true;
+            _extraCookie = "tracking=unrelated; Domain=.bandcamp.com; Path=/; Secure";
+            var provider = Registry().GetNamed("Fan");
+            using var observation = _api.ObserveSession((await provider.GetSessionAsync())!);
+            await _api.GetCollectionAsync("identity=prior", 12345678);
+            Assert.Equal("identity=prior", (await Registry().GetNamed("Fan").GetSessionAsync())!.Cookies);
             Assert.Equal(0, _writes);
         }
     }
