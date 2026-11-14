@@ -28,6 +28,16 @@ env:
   LIDARR_ASSEMBLY_VERSION: 2.0.0.0
 
 jobs:
+  known-bad-compatibility-control:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Reproduce released-plugin ABI failure (expected diagnostic)
+        run: python3 tests/PackagedCompatibility/run.py
+
   build:
     runs-on: ubuntu-latest
     steps:
