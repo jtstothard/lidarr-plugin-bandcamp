@@ -20,11 +20,11 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 .WithMessage("Enter your Bandcamp email and password, or a session cookie");
 
             RuleFor(c => c.Password).NotEmpty()
-                .When(c => !c.Email.IsNullOrWhiteSpace() && c.Cookies.IsNullOrWhiteSpace())
+                .When(c => !c.Email.IsNullOrWhiteSpace())
                 .WithMessage("Password is required when an email is set");
 
             RuleFor(c => c.Email).NotEmpty()
-                .When(c => !c.Password.IsNullOrWhiteSpace() && c.Cookies.IsNullOrWhiteSpace())
+                .When(c => !c.Password.IsNullOrWhiteSpace())
                 .WithMessage("Email is required when a password is set");
 
             RuleFor(c => c.DownloadPath).NotEmpty()
@@ -64,6 +64,13 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
         [FieldDefinition(4, Label = "Download Path", Type = FieldType.Path, HelpText = "Directory where Bandcamp downloads will be saved before import")]
         public string DownloadPath { get; set; }
+
+        // Persisted lifecycle metadata, deliberately not editable provider fields.
+        public DateTime? ChallengeUntilUtc { get; set; }
+
+        public string? ChallengeProblem { get; set; }
+
+        internal BandcampDownloadSettings Copy() => (BandcampDownloadSettings)MemberwiseClone();
 
         /// <summary>Whether both an email and a password are set (credential login is possible).</summary>
         public bool HasCredentials()
