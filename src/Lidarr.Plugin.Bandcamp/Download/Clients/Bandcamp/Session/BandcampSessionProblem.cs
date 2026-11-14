@@ -11,6 +11,10 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             "CookieExpired",
             "session cookie expired or invalid; paste a fresh identity cookie into the client settings");
 
+        public static readonly BandcampSessionProblem BadCredentials = new(
+            "BadCredentials",
+            "Bandcamp rejected the email or password; login won't be retried until you change them in the client settings");
+
         private BandcampSessionProblem(string code, string description)
         {
             Code = code;

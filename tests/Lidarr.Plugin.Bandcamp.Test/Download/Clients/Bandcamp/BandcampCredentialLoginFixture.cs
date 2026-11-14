@@ -183,6 +183,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             CreateClient(Settings(), registry).Test();
             CreateClient(Settings(), registry).Test();
             Assert.Equal(1, _loginPosts);
+            Assert.Equal(BandcampSessionProblem.BadCredentials, registry.Find(7)!.State.Problem);
 
             // The user fixes the password: Lidarr hands over a new settings object.
             _loginCbFixture = "login_cb_success.json";

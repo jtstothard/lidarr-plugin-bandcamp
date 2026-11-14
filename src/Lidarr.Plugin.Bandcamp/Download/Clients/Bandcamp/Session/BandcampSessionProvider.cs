@@ -158,6 +158,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             if (credentials == _rejectedCredentials)
             {
                 _logger.Debug("Bandcamp session [{0}]: credentials were rejected before; not retrying until they change", DefinitionId);
+                SetState(BandcampSessionStatus.Invalid, BandcampSessionProblem.BadCredentials);
                 return null;
             }
 
@@ -168,6 +169,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             if (result.Outcome == BandcampLoginOutcome.BadCredentials)
             {
                 _rejectedCredentials = credentials;
+                SetState(BandcampSessionStatus.Invalid, BandcampSessionProblem.BadCredentials);
             }
 
             if (result.Outcome != BandcampLoginOutcome.Success || result.Cookies == null)
