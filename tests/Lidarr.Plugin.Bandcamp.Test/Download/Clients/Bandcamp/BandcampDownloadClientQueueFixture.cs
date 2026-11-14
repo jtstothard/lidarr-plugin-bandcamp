@@ -114,7 +114,8 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
 
             await WaitUntil(() => client.GetItems().Count(i => i.Status == DownloadItemStatus.Failed) == 2);
 
-            Assert.Equal(new[] { "identity=old-cookie", "identity=new-cookie" }, downloadPageCookies.ToArray());
+            // Item 1 starts on the old cookie, then renews once (#28) and retries on the new one; item 2 runs on the new one.
+            Assert.Equal(new[] { "identity=old-cookie", "identity=new-cookie", "identity=new-cookie" }, downloadPageCookies.ToArray());
         }
 
         private static RemoteAlbum CreateRemoteAlbum(string id)
