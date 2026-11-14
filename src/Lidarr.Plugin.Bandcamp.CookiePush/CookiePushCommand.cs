@@ -8,22 +8,27 @@ namespace Lidarr.Plugin.Bandcamp.CookiePush;
 public static class CookiePushCommand
 {
     private const string Help = """
-        Usage: bandcamp-cookie-push [options] < identity-cookie.txt
+        Usage: bandcamp-cookie-push [options] [ < identity-cookie.txt ]
 
-        Reads an identity cookie from stdin, updates a Bandcamp download client through
-        Lidarr's API, and runs Lidarr's download client Test.
+        With no cookie on stdin, opens a visible browser on Bandcamp's login page in a
+        fresh temporary profile. Log in and complete any captcha or verification yourself.
+        The captured identity cookie updates a Bandcamp download client through Lidarr's
+        API, then runs Lidarr's download client Test.
 
         Options:
           --url <url>          Lidarr base URL (or LIDARR_URL)
           --api-key <key>      Lidarr API key (or LIDARR_API_KEY)
           --client-id <id>     Bandcamp download client id
           --client-name <name> Bandcamp download client name
+          --print-cookie       Print identity=<cookie> instead of connecting to Lidarr
+          --dry-run            Report the selected client without updating or testing it
           --update-indexer     Also update and test a Bandcamp indexer
           --indexer-id <id>    Bandcamp indexer id
           --indexer-name <name> Bandcamp indexer name
           -h, --help           Show this help
 
-        The cookie is needed on stdin, not as a command-line argument. Secrets are never printed.
+        Pass the cookie on stdin, never as a command-line argument. The cookie is only
+        printed with --print-cookie; the API key is never printed.
         """;
 
     public static async Task<int> RunAsync(
@@ -33,6 +38,7 @@ public static class CookiePushCommand
         TextWriter error,
         Func<string, string?> getEnvironmentVariable,
         HttpMessageHandler httpHandler,
+        IBrowserCookieCapture? browserCookieCapture = null,
         CancellationToken cancellationToken = default)
     {
         if (args.Count == 1 && args[0] is "-h" or "--help")
@@ -43,12 +49,17 @@ public static class CookiePushCommand
 
         try
         {
-            return await RunCoreAsync(args, input, output, getEnvironmentVariable, httpHandler, cancellationToken);
+            return await RunCoreAsync(args, input, output, getEnvironmentVariable, httpHandler, browserCookieCapture, cancellationToken);
         }
         catch (UsageException ex)
         {
             error.WriteLine("Error: " + ex.Message);
             return 2;
+        }
+        catch (BrowserWindowClosedException ex)
+        {
+            error.WriteLine("Error: " + ex.Message);
+            return 1;
         }
         catch (LidarrException ex)
         {
@@ -73,18 +84,32 @@ public static class CookiePushCommand
         TextWriter output,
         Func<string, string?> getEnvironmentVariable,
         HttpMessageHandler httpHandler,
+        IBrowserCookieCapture? browserCookieCapture,
         CancellationToken cancellationToken)
     {
         var options = Options.Parse(args, getEnvironmentVariable);
         var cookie = (await input.ReadToEndAsync(cancellationToken)).Trim();
         if (cookie.Length == 0)
         {
-            throw new UsageException("Paste an identity cookie on stdin.");
+            if (browserCookieCapture is null)
+            {
+                throw new UsageException("Paste an identity cookie on stdin.");
+            }
+
+            output.WriteLine("Opening a browser. Log in to Bandcamp and complete any verification yourself.");
+            cookie = await browserCookieCapture.CaptureAsync(cancellationToken);
+            output.WriteLine("Bandcamp identity cookie captured.");
+        }
+
+        if (options.PrintCookie)
+        {
+            output.WriteLine(cookie.StartsWith("identity=", StringComparison.OrdinalIgnoreCase) ? cookie : "identity=" + cookie);
+            return 0;
         }
 
         using var http = new HttpClient(httpHandler)
         {
-            BaseAddress = new Uri(options.Url.TrimEnd('/') + "/"),
+            BaseAddress = new Uri(options.Url!.TrimEnd('/') + "/"),
         };
         http.DefaultRequestHeaders.Add("X-Api-Key", options.ApiKey);
         http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -109,6 +134,12 @@ public static class CookiePushCommand
 
         var client = selectedClients[0]!.AsObject();
         var id = client["id"]!.GetValue<int>();
+        if (options.DryRun)
+        {
+            output.WriteLine($"Dry run: would update Session Cookie for '{client["name"]?.GetValue<string>()}' (id {id}) and run Lidarr download client Test. No changes were made.");
+            return 0;
+        }
+
         var cookieField = client["fields"]!.AsArray().Single(field =>
             string.Equals(field?["name"]?.GetValue<string>(), "cookies", StringComparison.OrdinalIgnoreCase));
         cookieField!["value"] = cookie.StartsWith("identity=", StringComparison.OrdinalIgnoreCase) ? cookie : "identity=" + cookie;
@@ -179,7 +210,7 @@ public static class CookiePushCommand
 
     private sealed class LidarrException(string message) : Exception(message);
 
-    private sealed record Options(string Url, string ApiKey, int? ClientId, string? ClientName, bool UpdateIndexer, int? IndexerId, string? IndexerName)
+    private sealed record Options(string? Url, string? ApiKey, int? ClientId, string? ClientName, bool PrintCookie, bool DryRun, bool UpdateIndexer, int? IndexerId, string? IndexerName)
     {
         public static Options Parse(IReadOnlyList<string> args, Func<string, string?> environment)
         {
@@ -187,6 +218,8 @@ public static class CookiePushCommand
             string? apiKey = null;
             int? clientId = null;
             string? clientName = null;
+            var printCookie = false;
+            var dryRun = false;
             var updateIndexer = false;
             int? indexerId = null;
             string? indexerName = null;
@@ -211,6 +244,12 @@ public static class CookiePushCommand
                         break;
                     case "--client-name":
                         clientName = ReadValue(args, ref i);
+                        break;
+                    case "--print-cookie":
+                        printCookie = true;
+                        break;
+                    case "--dry-run":
+                        dryRun = true;
                         break;
                     case "--update-indexer":
                         updateIndexer = true;
@@ -244,22 +283,22 @@ public static class CookiePushCommand
 
             url ??= environment("LIDARR_URL");
             apiKey ??= environment("LIDARR_API_KEY");
-            if (string.IsNullOrWhiteSpace(url))
+            if (!printCookie && string.IsNullOrWhiteSpace(url))
             {
                 throw new UsageException("Lidarr URL is required. Use --url or LIDARR_URL.");
             }
 
-            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https"))
+            if (!printCookie && (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https")))
             {
                 throw new UsageException("Lidarr URL must be an absolute HTTP or HTTPS URL.");
             }
 
-            if (string.IsNullOrWhiteSpace(apiKey))
+            if (!printCookie && string.IsNullOrWhiteSpace(apiKey))
             {
                 throw new UsageException("Lidarr API key is required. Use --api-key or LIDARR_API_KEY.");
             }
 
-            return new Options(url, apiKey, clientId, clientName, updateIndexer, indexerId, indexerName);
+            return new Options(url, apiKey, clientId, clientName, printCookie, dryRun, updateIndexer, indexerId, indexerName);
         }
 
         private static string ReadValue(IReadOnlyList<string> args, ref int index)

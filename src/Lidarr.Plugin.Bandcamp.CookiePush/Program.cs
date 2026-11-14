@@ -2,8 +2,9 @@ using Lidarr.Plugin.Bandcamp.CookiePush;
 
 return await CookiePushCommand.RunAsync(
     args,
-    Console.In,
+    Console.IsInputRedirected ? Console.In : TextReader.Null,
     Console.Out,
     Console.Error,
     Environment.GetEnvironmentVariable,
-    new HttpClientHandler());
+    new HttpClientHandler(),
+    new PlaywrightCookieCapture());
