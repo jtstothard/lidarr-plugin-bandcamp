@@ -16,23 +16,28 @@ public static class CookiePushCommand
         {
             if (args.Count == 1 && args[0] is "--help" or "-h")
             {
-                output.WriteLine("bandcamp-cookie-push --client-name <exact owner name> --fan-id <expected fan id> [--url <HTTPS Lidarr URL>]\nSet LIDARR_API_KEY privately. Redirect minimal identity on stdin for manual import; otherwise a visible isolated browser opens. Complete login/CAPTCHA/2FA yourself. Ctrl-C cancels before handoff; once submitted, reconcile status in Lidarr.");
+                output.WriteLine("bandcamp-cookie-push --client-name <exact owner name> --fan-id <expected fan id> [--url <HTTPS Lidarr URL>]\nSet LIDARR_API_KEY privately. Redirect minimal identity on stdin for manual import; otherwise a visible isolated browser opens. Complete login/CAPTCHA/2FA yourself. Ctrl-C requests cancellation before the server commit boundary. Keep the operation ID for reconciliation. Use --renewal-status <id> or --cancel-renewal <id> with --client-name and the same server.");
                 return 0;
             }
 
-            string? owner = null; var url = environment("LIDARR_URL"); long fanId = 0;
+            string? owner = null; var url = environment("LIDARR_URL"); long fanId = 0; string? operationId = null; var cancelOperation = false;
             for (var i = 0; i < args.Count; i++)
             {
-                if (args[i] is not ("--url" or "--client-name" or "--fan-id") || i + 1 >= args.Count)
+                if (args[i] is not ("--url" or "--client-name" or "--fan-id" or "--renewal-status" or "--cancel-renewal") || i + 1 >= args.Count)
                     return Usage(error);
                 var option = args[i]; var value = args[++i];
+                if (option is "--renewal-status" or "--cancel-renewal")
+                {
+                    if (operationId != null || !Guid.TryParseExact(value, "D", out _)) return Usage(error);
+                    operationId = value; cancelOperation = option == "--cancel-renewal";
+                }
                 if (option == "--url") url = value;
                 if (option == "--client-name") owner = value;
                 if (option == "--fan-id" && (!long.TryParse(value, out fanId) || fanId <= 0)) return Usage(error);
             }
 
             var key = environment("LIDARR_API_KEY");
-            if (string.IsNullOrWhiteSpace(owner) || fanId <= 0 || string.IsNullOrWhiteSpace(key) ||
+            if (string.IsNullOrWhiteSpace(owner) || (fanId <= 0 && operationId == null) || string.IsNullOrWhiteSpace(key) ||
                 !Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme != "https" ||
                 uri.UserInfo.Length != 0 || uri.Query.Length != 0 || uri.Fragment.Length != 0)
                 return Usage(error);
@@ -42,7 +47,7 @@ public static class CookiePushCommand
                 transport.AllowAutoRedirect = false;
                 transport.UseCookies = false;
             }
-            using var http = new HttpClient(httpHandler) { BaseAddress = new Uri(uri.AbsoluteUri.TrimEnd('/') + "/") };
+            using var http = new HttpClient(httpHandler) { BaseAddress = new Uri(uri.AbsoluteUri.TrimEnd('/') + "/"), Timeout = Timeout.InfiniteTimeSpan };
             http.DefaultRequestHeaders.Add("X-Api-Key", key);
             http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             var clients = (await Send(http, HttpMethod.Get, "api/v1/downloadclient", null, cancellationToken))!.AsArray();
@@ -52,6 +57,20 @@ public static class CookiePushCommand
             var selected = owners[0]!;
             if (selected["fields"]!.AsArray().Any(f => f?["name"]?.GetValue<string>() == "authConfiguration" &&
                 !string.IsNullOrWhiteSpace(f["value"]?.GetValue<string>()))) throw new InvalidOperationException();
+
+            var metadata = new JsonObject
+            {
+                ["id"] = selected["id"]!.DeepClone(), ["name"] = owner,
+                ["implementation"] = "BandcampDownloadClient", ["configContract"] = "BandcampDownloadSettings",
+                ["fields"] = new JsonArray()
+            };
+            if (operationId != null)
+            {
+                var action = cancelOperation ? "cancelIdentityRenewal" : "identityRenewalStatus";
+                var receipt = await Send(http, HttpMethod.Post,
+                    $"api/v1/downloadclient/action/{action}?operationId={operationId}", metadata, cancellationToken);
+                return Report(receipt, output, error);
+            }
 
             var cookie = (await input.ReadToEndAsync(cancellationToken)).Trim();
             if (cookie.Length == 0)
@@ -71,21 +90,35 @@ public static class CookiePushCommand
                 ["implementation"] = "BandcampDownloadClient", ["configContract"] = "BandcampDownloadSettings",
                 ["fields"] = new JsonArray(new JsonObject { ["name"] = "cookies", ["value"] = "identity=" + cookie })
             };
-            var result = await Send(http, HttpMethod.Post,
-                $"api/v1/downloadclient/action/renewIdentity?fanId={fanId}", body, cancellationToken);
-            if (result?["success"]?.GetValue<bool>() != true)
-            {
-                var problem = result?["problem"]?.GetValue<string>();
-                if (problem is "StorageFailure" or "WrongAccount" or "ReplacementConflict" or "ConfigurationMissing" or
-                    "ChallengeOrUnrecognized" or "CookieExpired" or "RateLimited" or "Unavailable" or "InvalidRequest")
-                {
-                    error.WriteLine($"Renewal refused ({problem}). The prior identity was retained. Check Lidarr status and the recovery guide.");
-                    return 1;
-                }
+            var begun = await Send(http, HttpMethod.Post,
+                "api/v1/downloadclient/action/beginIdentityRenewal", metadata, cancellationToken);
+            operationId = begun?["operationId"]?.GetValue<string>();
+            if (begun?["state"]?.GetValue<string>() != "Pending" || !Guid.TryParseExact(operationId, "D", out _))
                 throw new InvalidOperationException();
+            output.WriteLine($"Renewal operation: {operationId}");
+            JsonNode? result;
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                result = await Send(http, HttpMethod.Post,
+                    $"api/v1/downloadclient/action/renewIdentity?fanId={fanId}&operationId={operationId}", body, cancellationToken);
             }
-            output.WriteLine("Shared identity validated and saved. Search and downloads use the selected owner.");
-            return 0;
+            catch (Exception)
+            {
+                // Cancelling a local HTTP wait never proves remote cancellation. Use a fresh bounded
+                // channel, without resubmitting the candidate, to arbitrate cancel versus commit.
+                using var reconciliation = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+                try
+                {
+                    result = await Send(http, HttpMethod.Post,
+                        $"api/v1/downloadclient/action/cancelIdentityRenewal?operationId={operationId}", metadata, reconciliation.Token);
+                    if (result?["state"]?.GetValue<string>() is "Committing" or "Validating" or "Pending")
+                        result = await Send(http, HttpMethod.Post,
+                            $"api/v1/downloadclient/action/identityRenewalStatus?operationId={operationId}", metadata, reconciliation.Token);
+                }
+                catch (Exception) { result = null; }
+            }
+            return Report(result, output, error);
         }
         catch (Exception)
         {
@@ -95,9 +128,34 @@ public static class CookiePushCommand
         }
     }
 
+    private static int Report(JsonNode? receipt, TextWriter output, TextWriter error)
+    {
+        var state = receipt?["state"]?.GetValue<string>();
+        if (state == "Committed" && receipt?["success"]?.GetValue<bool>() == true)
+        {
+            output.WriteLine("Shared identity validated and saved. The commit boundary was crossed; cancellation cannot undo it. Search and downloads use the selected owner.");
+            return 0;
+        }
+        if (state == "Cancelled")
+        {
+            error.WriteLine("Cancellation acknowledged before commit. This operation did not replace the prior identity.");
+            return 1;
+        }
+        var problem = receipt?["problem"]?.GetValue<string>();
+        if (state == "Refused" && problem is "WrongAccount" or "ReplacementConflict" or "ConfigurationMissing" or
+            "ChallengeOrUnrecognized" or "CookieExpired" or "RateLimited" or "Unavailable" or "InvalidRequest")
+            error.WriteLine($"Renewal refused ({problem}). This operation did not replace the prior identity. Check Lidarr status and the recovery guide.");
+        else
+        {
+            if (problem == "StorageFailure") error.WriteLine("StorageFailure: persistence acknowledgement failed; the saved outcome may be unknown.");
+            error.WriteLine("Renewal outcome is uncertain or still pending. Cancellation is not acknowledged. Use --renewal-status with the operation ID on the same server. Do not retry the identity or roll back a newer session; check the recovery guide.");
+        }
+        return 1;
+    }
+
     private static int Usage(TextWriter error)
     {
-        error.WriteLine("Use --help. An exact owner name, positive expected fan ID, HTTPS URL and LIDARR_API_KEY are required. Secret command arguments/output and separate consumer updates are unsupported.");
+        error.WriteLine("Use --help. An exact owner name, HTTPS URL and LIDARR_API_KEY are required, plus a positive fan ID for renewal or an operation ID for status/cancel. Secret command arguments/output and separate consumer updates are unsupported.");
         return 2;
     }
 

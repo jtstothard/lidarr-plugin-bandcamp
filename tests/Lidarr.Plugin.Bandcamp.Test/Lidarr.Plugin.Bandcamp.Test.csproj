@@ -22,6 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Lidarr.Plugin.Bandcamp.CookiePush\Lidarr.Plugin.Bandcamp.CookiePush.csproj" />
     <ProjectReference Include="..\..\src\Lidarr.Plugin.Bandcamp\Lidarr.Plugin.Bandcamp.csproj" />
     <ProjectReference Include="..\..\ext\Lidarr\src\NzbDrone.Core\Lidarr.Core.csproj" />
     <ProjectReference Include="..\..\ext\Lidarr\src\NzbDrone.Common\Lidarr.Common.csproj" />

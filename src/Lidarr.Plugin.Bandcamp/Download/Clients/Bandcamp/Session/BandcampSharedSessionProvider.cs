@@ -59,11 +59,11 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         public Task<BandcampSession?> ValidateAsync(CancellationToken cancellationToken = default) =>
             Current?.ValidateAsync(cancellationToken) ?? Task.FromResult<BandcampSession?>(null);
 
-        public Task<BandcampSession?> ReplaceIdentityForFanAsync(string cookies, long expectedFanId, int expectedDefinitionId, CancellationToken cancellationToken = default)
+        public Task<BandcampSession?> ReplaceIdentityForFanAsync(string cookies, long expectedFanId, int expectedDefinitionId, CancellationToken cancellationToken = default, Func<bool>? tryBeginCommit = null)
         {
             var owner = Current;
             return owner?.DefinitionId == expectedDefinitionId
-                ? owner.ReplaceIdentityForFanAsync(cookies, expectedFanId, expectedDefinitionId, cancellationToken)
+                ? owner.ReplaceIdentityForFanAsync(cookies, expectedFanId, expectedDefinitionId, cancellationToken, tryBeginCommit)
                 : Task.FromResult<BandcampSession?>(null);
         }
 
