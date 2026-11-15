@@ -6,8 +6,10 @@ solve CAPTCHA, collect passwords, disable 2FA, or revive expired cookies by savi
 
 ## Desktop installation and selection
 
-Run on your own graphical desktop, even when Lidarr runs on a headless server. Install .NET 8
-(or newer) and PowerShell 7, clone this repository, then build the standalone helper:
+Run on your own graphical desktop, even when Lidarr runs on a headless server. Install the .NET 8
+runtime and an SDK capable of building net8.0, plus PowerShell 7; clone this repository, then build the standalone helper.
+A newer major runtime alone does not satisfy the helper's default net8.0 runtime selection.
+Use .NET 8 for the normal invocation below; explicit major-version roll-forward requires separate runtime qualification.
 
 ```sh
 dotnet build src/Lidarr.Plugin.Bandcamp.CookiePush -c Release
@@ -52,6 +54,39 @@ URL credentials, query/fragment URLs, and redirect handoffs are refused. The API
 Lidarr access: keep it only on your trusted desktop, avoid verbose HTTP/Playwright debugging and
 screen/transcript recording, and clear the environment variable afterward. Environment variables
 and process memory are not encrypted secret storage. The helper does not save the key.
+
+### Authelia-protected Lidarr
+
+If the HTTPS endpoint requires Authelia as well as the Lidarr API key, sign into your
+trusted Authelia portal first. Supply **only** its session cookie value privately as
+`LIDARR_AUTHELIA_SESSION`, set `LIDARR_AUTHELIA_ORIGIN` to the exact Lidarr HTTPS origin
+(for example `https://lidarr.example`, without a URL base), and add `--authelia` to the
+helper command. The origin is the protected Lidarr origin, not the Authelia portal's
+origin. Nondefault ports must match. `LIDARR_AUTHELIA_COOKIE_NAME` optionally selects a
+custom cookie name; the default is `authelia_session`.
+
+Obtain only that secure session cookie from your own authenticated browser or trusted
+private tooling. Do not export the profile or a complete cookie header, and do not put
+the value in arguments, history, source files or logs. Clear the Authelia environment
+variables alongside the API key when finished. This session may authorize other apps
+behind your proxy: treat it as a credential. The helper restricts its use to the chosen
+Lidarr origin, but does not reduce the credential's authority at the proxy itself.
+
+Proxy authentication is opt-in. Without `--authelia` these variables are ignored; with
+it, missing, malformed or mismatched configuration refuses before any HTTP request.
+Exactly one cookie is sent to Lidarr, separate from the Bandcamp identity request body.
+The Authelia cookie never enters the isolated Bandcamp browser or saved provider settings.
+TLS verification remains enabled; redirects remain refused; response cookies are ignored.
+Status and cancellation use the same authentication. The helper does not log into
+Authelia automatically, refresh its session or bypass its access policy. An expired
+proxy session can prevent cancellation acknowledgement: retain the operation ID, sign
+in again and reconcile status rather than resubmitting the Bandcamp identity.
+
+On the tested Mac, only .NET 10 was installed. Explicit `DOTNET_ROLL_FORWARD=Major`
+allowed the net8.0 helper to authenticate through Authelia, open the real isolated
+Bandcamp browser and cancel before submission with profile cleanup. This is bounded
+pre-login runtime evidence, not completed renewal qualification or a platform support
+guarantee. The normal invocation still expects the .NET 8 runtime.
 
 ## Login and transaction
 

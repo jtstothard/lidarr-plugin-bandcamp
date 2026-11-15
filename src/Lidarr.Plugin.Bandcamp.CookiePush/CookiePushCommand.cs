@@ -17,13 +17,14 @@ public static class CookiePushCommand
         {
             if (args.Count == 1 && args[0] is "--help" or "-h")
             {
-                output.WriteLine("bandcamp-cookie-push --client-name <exact owner name> --fan-id <expected fan id> [--url <HTTPS Lidarr URL>]\nSet LIDARR_API_KEY privately. Redirect minimal identity on stdin for manual import; otherwise a visible isolated browser opens. Complete login/CAPTCHA/2FA yourself. Ctrl-C requests cancellation before the server commit boundary. Keep the operation ID for reconciliation. Use --renewal-status <id> or --cancel-renewal <id> with --client-name and the same server.");
+                output.WriteLine("bandcamp-cookie-push --client-name <exact owner name> --fan-id <expected fan id> [--url <HTTPS Lidarr URL>] [--authelia]\nSet LIDARR_API_KEY privately. --authelia requires LIDARR_AUTHELIA_ORIGIN (exact Lidarr HTTPS origin) and LIDARR_AUTHELIA_SESSION (only the session value); LIDARR_AUTHELIA_COOKIE_NAME defaults to authelia_session. Proxy sessions stay in memory and are never sent to Bandcamp. Redirect minimal identity on stdin for manual import; otherwise a visible isolated browser opens. Complete login/CAPTCHA/2FA yourself. Ctrl-C requests cancellation before the server commit boundary. Keep the operation ID for reconciliation. Use --renewal-status <id> or --cancel-renewal <id> with --client-name and the same server.");
                 return 0;
             }
 
-            string? owner = null; var url = environment("LIDARR_URL"); long fanId = 0; string? operationId = null; var cancelOperation = false;
+            string? owner = null; var url = environment("LIDARR_URL"); long fanId = 0; string? operationId = null; var cancelOperation = false; var authelia = false;
             for (var i = 0; i < args.Count; i++)
             {
+                if (args[i] == "--authelia") { if (authelia) return Usage(error); authelia = true; continue; }
                 if (args[i] is not ("--url" or "--client-name" or "--fan-id" or "--renewal-status" or "--cancel-renewal") || i + 1 >= args.Count)
                     return Usage(error);
                 var option = args[i]; var value = args[++i];
@@ -43,6 +44,24 @@ public static class CookiePushCommand
                 uri.UserInfo.Length != 0 || uri.Query.Length != 0 || uri.Fragment.Length != 0)
                 return Usage(error);
 
+            string? proxyCookie = null;
+            if (authelia)
+            {
+                var origin = environment("LIDARR_AUTHELIA_ORIGIN");
+                var session = environment("LIDARR_AUTHELIA_SESSION");
+                var name = environment("LIDARR_AUTHELIA_COOKIE_NAME") ?? "authelia_session";
+                // Explicit origin binding prevents accidentally reusing an inherited session on another server.
+                if (!Uri.TryCreate(origin, UriKind.Absolute, out var proxyOrigin) ||
+                    proxyOrigin.Scheme != "https" || proxyOrigin.UserInfo.Length != 0 ||
+                    proxyOrigin.AbsolutePath != "/" || proxyOrigin.Query.Length != 0 || proxyOrigin.Fragment.Length != 0 ||
+                    proxyOrigin.GetLeftPart(UriPartial.Authority) != uri.GetLeftPart(UriPartial.Authority) ||
+                    name.Length is 0 or > 128 || name.Any(c => !char.IsAsciiLetterOrDigit(c) && c is not ('_' or '-')) ||
+                    string.IsNullOrEmpty(session) || session.Length > 16384 ||
+                    session.Any(c => c < 0x21 || c > 0x7e || c is '"' or ',' or ';' or '\\'))
+                    return Usage(error);
+                proxyCookie = name + "=" + session;
+            }
+
             if (httpHandler is HttpClientHandler transport)
             {
                 transport.AllowAutoRedirect = false;
@@ -51,6 +70,7 @@ public static class CookiePushCommand
             using var http = new HttpClient(httpHandler) { BaseAddress = new Uri(uri.AbsoluteUri.TrimEnd('/') + "/"), Timeout = Timeout.InfiniteTimeSpan };
             http.DefaultRequestHeaders.Add("X-Api-Key", key);
             http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            if (proxyCookie != null) http.DefaultRequestHeaders.Add("Cookie", proxyCookie);
             var clients = (await Send(http, HttpMethod.Get, "api/v1/downloadclient", null, cancellationToken))!.AsArray();
             var owners = clients.Where(c => c?["implementation"]?.GetValue<string>() == "BandcampDownloadClient" &&
                 c["name"]?.GetValue<string>() == owner).ToList();
