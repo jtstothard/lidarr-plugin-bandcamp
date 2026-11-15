@@ -18,6 +18,7 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   PLUGIN_NAME: Lidarr.Plugin.Bandcamp
   DOTNET_VERSION: '10.0.103'
+  LIDARR_SOURCE_COMMIT: e42a7ca4fd633e021d69da7daa0368b870b0282e
   # AssemblyVersion pinned to a LOW major version for cross-version compatibility.
   # Lidarr uses non-deterministic 10.0.0.* which changes every build. .NET's assembly
   # binding requires an EXACT version match when the major version component is the same
@@ -28,6 +29,16 @@ env:
   LIDARR_ASSEMBLY_VERSION: 2.0.0.0
 
 jobs:
+  known-bad-compatibility-control:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Reproduce released-plugin ABI failure (expected diagnostic)
+        run: python3 tests/PackagedCompatibility/run.py
+
   build:
     runs-on: ubuntu-latest
     steps:
@@ -43,7 +54,10 @@ jobs:
 
       - name: Clone Lidarr source
         run: |
-          git clone --depth 1 --branch plugins https://github.com/Lidarr/Lidarr.git ext/Lidarr
+          git init ext/Lidarr
+          git -C ext/Lidarr remote add origin https://github.com/Lidarr/Lidarr.git
+          git -C ext/Lidarr fetch --depth 1 origin "$LIDARR_SOURCE_COMMIT"
+          git -C ext/Lidarr checkout --detach FETCH_HEAD
 
       - name: Pin Lidarr assembly versions
         run: |
@@ -54,6 +68,7 @@ jobs:
           # (Lidarr.Core) without strict version matching because the major versions differ.
           # When we referenced 10.0.0.4200, .NET required an exact match and silently failed.
           sed -i'' -e "s/<AssemblyVersion>10\.0\.0\.\*<\/AssemblyVersion>/<AssemblyVersion>${{ env.LIDARR_ASSEMBLY_VERSION }}<\/AssemblyVersion>/g" ext/Lidarr/src/Directory.Build.props
+          test "$(grep -Fc '<AssemblyVersion>2.0.0.0</AssemblyVersion>' ext/Lidarr/src/Directory.Build.props)" -eq 1
           echo "Pinned Lidarr AssemblyVersion to ${{ env.LIDARR_ASSEMBLY_VERSION }}"
           grep AssemblyVersion ext/Lidarr/src/Directory.Build.props
 
@@ -94,11 +109,37 @@ jobs:
           echo "Created ${{ env.PLUGIN_NAME }}.net8.0.zip"
           ls -la "${{ github.workspace }}/${{ env.PLUGIN_NAME }}.net8.0.zip"
 
-      - name: Upload build artifact
+      - name: Check compatibility gate and scanner controls
+        run: |
+          python3 tests/PackagedCompatibility/test_fetch.py
+          ruby tests/PackagedCompatibility/verify_workflow.rb
+          python3 tests/PackagedCompatibility/test_scanner.py
+          python3 tests/PackagedCompatibility/test_gate.py
+          python3 tests/PackagedCompatibility/gate.py "${PLUGIN_NAME}.net8.0.zip" --receipt compatibility.json
+          python3 tests/PackagedCompatibility/test_distribution.py "${PLUGIN_NAME}.net8.0.zip" compatibility.json
+
+      - name: Upload checked distribution
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ env.PLUGIN_NAME }}.net8.0
-          path: src/Lidarr.Plugin.Bandcamp/bin/Release/net8.0/${{ env.PLUGIN_NAME }}.dll
+          name: checked-distribution
+          if-no-files-found: error
+          path: |
+            ${{ env.PLUGIN_NAME }}.net8.0.zip
+            compatibility.json
+
+  publish:
+    needs: [build, known-bad-compatibility-control]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: checked-distribution
+      - name: Verify checked bytes before publication
+        run: python3 tests/PackagedCompatibility/verify_distribution.py "${PLUGIN_NAME}.net8.0.zip" compatibility.json
 
       - name: Generate changelog
         if: startsWith(github.ref, 'refs/tags/v')
@@ -112,6 +153,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v3
         with:
+          fail_on_unmatched_files: true
           generate_release_notes: true
           body_path: changelog.txt
           draft: false
