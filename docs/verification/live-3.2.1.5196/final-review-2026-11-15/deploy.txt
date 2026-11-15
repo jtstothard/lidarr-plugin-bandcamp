@@ -1,0 +1,6 @@
+phase=dispatched
+phase=staged
+phase=stop
+phase=replace
+phase=start
+phase=verified

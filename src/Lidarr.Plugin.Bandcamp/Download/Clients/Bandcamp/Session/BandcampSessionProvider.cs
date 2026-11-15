@@ -57,7 +57,15 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
         public int DefinitionId { get; }
 
-        public BandcampSessionState State => _state;
+        public BandcampSessionState State
+        {
+            get
+            {
+                var state = _state;
+                return new BandcampSessionState(state.Status, state.CheckedAtUtc, state.Problem,
+                    state.LastSuccessfulValidationUtc, EffectiveAuthMode());
+            }
+        }
 
         public BandcampLoginOutcome? LastLoginOutcome => _lastLogin?.Outcome;
 
@@ -365,13 +373,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             string cookies, BandcampDownloadSettings settings, string expectedCookies, string credentials, CancellationToken cancellationToken, long? expectedFanId = null, Func<bool>? tryBeginCommit = null)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (_rateLimit is { } limit && Clock() < limit.UntilUtc)
-            {
-                SetState(BandcampSessionStatus.RateLimited, limit.Problem);
-                return null;
-            }
-
-            _rateLimit = null;
+            if (HasActiveRateLimit()) return null;
             if (string.IsNullOrWhiteSpace(cookies))
             {
                 SetState(BandcampSessionStatus.Missing, BandcampSessionProblem.Missing);
@@ -476,13 +478,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         {
             cancellationToken.ThrowIfCancellationRequested();
             var cookies = settings.Cookies;
-            if (_rateLimit is { } limit && Clock() < limit.UntilUtc)
-            {
-                SetState(BandcampSessionStatus.RateLimited, limit.Problem);
-                return (null, false);
-            }
-
-            _rateLimit = null;
+            if (HasActiveRateLimit()) return (null, false);
 
             if (string.IsNullOrWhiteSpace(cookies))
             {
@@ -556,14 +552,36 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             }
         }
 
+        private bool HasActiveRateLimit()
+        {
+            // Clock may be supplied externally; do not hold the expiry lock while invoking it.
+            var now = Clock();
+            lock (_rateLimitLock)
+            {
+                if (_rateLimit is not { } limit) return false;
+                if (now >= limit.UntilUtc)
+                {
+                    _rateLimit = null;
+                    return false;
+                }
+                SetState(BandcampSessionStatus.RateLimited, limit.Problem);
+                return true;
+            }
+        }
+
+        private string EffectiveAuthMode()
+        {
+            var settings = _settings;
+            return !string.IsNullOrWhiteSpace(settings.Cookies)
+                ? "Web identity" + (settings.HasCredentials() ? " (password fallback configured)" : " (manual cookie)")
+                : settings.HasCredentials() ? "Web password fallback (no identity)" : "Not configured";
+        }
+
         protected void SetState(BandcampSessionStatus status, BandcampSessionProblem? problem = null)
         {
             var now = Clock();
-            var mode = !string.IsNullOrWhiteSpace(_settings.Cookies)
-                ? "Web identity" + (_settings.HasCredentials() ? " (password fallback configured)" : " (manual cookie)")
-                : _settings.HasCredentials() ? "Web password fallback (no identity)" : "Not configured";
             _state = new BandcampSessionState(status, now, problem,
-                status == BandcampSessionStatus.Valid ? now : _state.LastSuccessfulValidationUtc, mode);
+                status == BandcampSessionStatus.Valid ? now : _state.LastSuccessfulValidationUtc, EffectiveAuthMode());
         }
 
         private sealed record RateLimitRecord(DateTime UntilUtc, BandcampSessionProblem Problem);

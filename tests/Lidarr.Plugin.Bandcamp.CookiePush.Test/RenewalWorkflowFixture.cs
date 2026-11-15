@@ -4,6 +4,40 @@ namespace Lidarr.Plugin.Bandcamp.CookiePush.Test;
 public class RenewalWorkflowFixture
 {
     [Theory]
+    [InlineData("Valid", "2026-11-15T12:00:00Z", "2026-11-15")]
+    [InlineData("Unknown", null, "never")]
+    public async Task Session_status_reports_only_safe_metadata_without_reading_identity_or_opening_browser(string status, string? last, string expectedTime)
+    {
+        var response = System.Text.Json.JsonSerializer.Serialize(new { success = true, status,
+            effectiveAuthMode = "Shared named configuration; Web identity (manual cookie)", lastSuccessfulValidationUtc = last,
+            cookies = "sentinel-candidate", detail = "prior-secret" });
+        var handler = new Handoff(response, sessionStatus: true);var output = new StringWriter();var error = new StringWriter();
+        var result = await CookiePushCommand.RunAsync(["--client-name", "Personal", "--session-status"],
+            new RefusesRead(), output, error, key => key == "LIDARR_URL" ? "https://lidarr.example" : "sentinel-key", handler);
+        Assert.Equal(0, result);
+        Assert.Equal(2, handler.Requests.Count);
+        Assert.EndsWith("/api/v1/downloadclient/action/sessionStatus", handler.Requests[1].Url);
+        Assert.DoesNotContain("prior-secret", handler.Requests[1].Body);
+        Assert.Contains(status, output.ToString());Assert.Contains("Web identity", output.ToString());Assert.Contains(expectedTime, output.ToString());
+        Assert.DoesNotContain("sentinel", output.ToString() + error);Assert.DoesNotContain("prior-secret", output.ToString() + error);
+    }
+
+    [Fact]
+    public async Task Session_status_refuses_unknown_metadata_without_echoing_it()
+    {
+        var output = new StringWriter();var error = new StringWriter();
+        var result = await CookiePushCommand.RunAsync(["--client-name", "Personal", "--session-status"], TextReader.Null,
+            output, error, key => key == "LIDARR_URL" ? "https://lidarr.example" : "sentinel-key",
+            new Handoff("""{"success":true,"status":"Valid","effectiveAuthMode":"sentinel-private","lastSuccessfulValidationUtc":null}""", sessionStatus: true));
+        Assert.Equal(1, result);Assert.DoesNotContain("sentinel", output.ToString() + error);
+    }
+
+    private sealed class RefusesRead : TextReader
+    {
+        public override Task<string> ReadToEndAsync(CancellationToken cancellationToken) => throw new InvalidOperationException("Must not read candidate for status");
+    }
+
+    [Theory]
     [InlineData("Pending", 1, "uncertain")]
     [InlineData("Validating", 1, "uncertain")]
     [InlineData("Committing", 1, "uncertain")]
@@ -90,7 +124,7 @@ public class RenewalWorkflowFixture
             throw new BrowserWindowClosedException("sentinel-key sentinel-identity");
         }
     }
-    private sealed class Handoff(string result = "{\"success\":true,\"state\":\"Committed\"}") : HttpMessageHandler
+    private sealed class Handoff(string result = "{\"success\":true,\"state\":\"Committed\"}", bool sessionStatus = false) : HttpMessageHandler
     {
         public List<(string Method, string Url, string Body)> Requests { get; } = [];
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -98,7 +132,7 @@ public class RenewalWorkflowFixture
             Requests.Add((request.Method.Method, request.RequestUri!.ToString(), request.Content == null ? "" : await request.Content.ReadAsStringAsync(cancellationToken)));
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(Requests.Count == 1
                 ? """[{"id":7,"name":"Personal","implementation":"BandcampDownloadClient","configContract":"BandcampDownloadSettings","fields":[{"name":"cookies","value":"prior-secret"},{"name":"authConfiguration","value":""}]}]"""
-                : Requests.Count == 2 ? """{"success":false,"state":"Pending","operationId":"00000000-0000-0000-0000-000000000051"}""" : result) };
+                : Requests.Count == 2 && !sessionStatus ? """{"success":false,"state":"Pending","operationId":"00000000-0000-0000-0000-000000000051"}""" : result) };
         }
     }
     [Fact]

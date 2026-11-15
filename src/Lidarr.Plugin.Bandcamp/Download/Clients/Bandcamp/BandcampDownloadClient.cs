@@ -208,6 +208,25 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         // Resolve the saved named owner, never apply proposed settings or call password login.
         public override object RequestAction(string action, IDictionary<string, string> query)
         {
+            if (action == "sessionStatus")
+            {
+                var owner = _sessionProviders.GetNamed(Definition.Name);
+                if (Definition.Id <= 0 || owner.DefinitionId != Definition.Id)
+                    return new { Success = false, Problem = "ConfigurationMissing" };
+                // Return only non-secret metadata. This never validates, logs in or writes settings.
+                var state = owner.State;
+                return new
+                {
+                    Success = true,
+                    OwnerDefinitionId = owner.DefinitionId,
+                    Status = state.Status.ToString(),
+                    state.EffectiveAuthMode,
+                    state.CheckedAtUtc,
+                    state.LastSuccessfulValidationUtc,
+                    Problem = state.Problem?.Code,
+                    state.Description
+                };
+            }
             if (action == "clearLocalCredentials")
             {
                 try

@@ -152,7 +152,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             return client;
         }
 
-        private BandcampSessionProviderRegistry CreateRegistry()
+        private BandcampSessionProviderRegistry CreateRegistry(bool savedRepository = false)
         {
             var bandcampHttp = new BandcampHttpClient(_http.Object, _logger);
             return new BandcampSessionProviderRegistry(
@@ -160,7 +160,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                 new BandcampLoginClient(bandcampHttp, _logger),
                 new BandcampSessionStore(_repository.Object),
                 _logger,
-                () => _now);
+                () => _now, savedRepository ? _repository.Object : null);
         }
 
         private static BandcampDownloadSettings Settings(string cookies = "", string email = "fan@example.com", string password = "hunter2", string verificationCode = "")
@@ -517,6 +517,30 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         {
             var receipt = client.RequestAction("beginIdentityRenewal", new Dictionary<string, string>());
             return (string)receipt.GetType().GetProperty("OperationId")!.GetValue(receipt)!;
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task SessionStatusExposesHealthyAndUncheckedStateWithoutRequestsOrWrites(bool validate)
+        {
+            var saved = Settings(cookies: "identity=" + FreshIdentity, email: "", password: "");
+            var registry = CreateRegistry(savedRepository: true);
+            var client = CreateClient(saved, registry);
+            var definition = new DownloadClientDefinition { Id = 7, Name = "Bandcamp", Implementation = nameof(BandcampDownloadClient), Settings = saved };
+            _repository.Setup(r => r.All()).Returns(new List<DownloadClientDefinition> { definition });
+            _repository.Setup(r => r.Find(7)).Returns(definition);
+            if (validate) Assert.NotNull(await registry.GetNamed("Bandcamp").ValidateAsync());
+            var requests = _homepageCookies.Count;
+            var result = Newtonsoft.Json.Linq.JObject.Parse(Newtonsoft.Json.JsonConvert.SerializeObject(client.RequestAction("sessionStatus", new Dictionary<string, string>())));
+            Assert.True(result.Value<bool>("Success"));
+            Assert.Equal(validate ? "Valid" : "Unknown", result.Value<string>("Status"));
+            Assert.Contains("Web identity", result.Value<string>("EffectiveAuthMode"));
+            Assert.Equal(validate ? _now : (DateTime?)null, result.Value<DateTime?>("LastSuccessfulValidationUtc"));
+            Assert.Equal(requests, _homepageCookies.Count);
+            Assert.Equal(0, _loginPosts);
+            _repository.Verify(r => r.SetFields(It.IsAny<DownloadClientDefinition>(), It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()), Times.Never);
+            Assert.DoesNotContain(FreshIdentity, result.ToString());
         }
 
         private static string? ActionState(object? result) => result?.GetType().GetProperty("State")?.GetValue(result) as string;

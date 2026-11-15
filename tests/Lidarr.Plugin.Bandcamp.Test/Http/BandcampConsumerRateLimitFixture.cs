@@ -15,6 +15,47 @@ namespace Lidarr.Plugin.Bandcamp.Test.Http;
 public class BandcampConsumerRateLimitFixture
 {
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task New429DuringExpiredCooldownCheckRemainsActive(bool replacement)
+    {
+        var now = new DateTime(2026, 11, 15, 12, 0, 0, DateTimeKind.Utc);
+        Action? duringClock = null;
+        var requests = 0;
+        var transport = new Mock<IHttpClient>();
+        transport.Setup(h => h.ExecuteAsync(It.IsAny<HttpRequest>())).ReturnsAsync((HttpRequest request) =>
+        {
+            requests++;
+            return new HttpResponse(request, new HttpHeader(), "var pagedata = {\"fan_id\":123};", HttpStatusCode.OK);
+        });
+        var logger = LogManager.GetCurrentClassLogger();
+        var api = new BandcampApiClient(new BandcampHttpClient(transport.Object, logger), logger);
+        var settings = new BandcampDownloadSettings { Cookies = "identity=prior" };
+        var owner = new BandcampSessionProvider(7, settings, api, logger, () =>
+        {
+            var action = System.Threading.Interlocked.Exchange(ref duringClock, null);
+            action?.Invoke();
+            return now;
+        });
+        var session = (await owner.GetSessionAsync())!;
+        session.ReportRateLimit("1");
+        now = now.AddSeconds(2);
+        // A response on another thread extends the cooldown at the expiry-check seam.
+        duringClock = () => Task.Run(() => session.ReportRateLimit("120"))
+            .WaitAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+        var result = replacement ? await owner.ReplaceIdentityAsync("identity=candidate") : await owner.ValidateAsync();
+        Assert.Null(result);
+        Assert.Equal(1, requests);
+        Assert.False(session.CanRequest());
+        Assert.Equal(BandcampSessionStatus.RateLimited, owner.State.Status);
+        Assert.Contains(now.AddSeconds(120).ToString("yyyy-MM-dd HH:mm:ss"), owner.State.Problem!.Description);
+        Assert.Equal("identity=prior", settings.Cookies);
+        now = now.AddSeconds(121);
+        Assert.NotNull(await owner.GetSessionAsync());
+        Assert.Equal(2, requests);
+    }
+
+    [Theory]
     [InlineData(false, "120", 120)]
     [InlineData(false, "Sat, 14 Nov 2026 12:02:00 GMT", 120)]
     [InlineData(false, "invalid", 300)]

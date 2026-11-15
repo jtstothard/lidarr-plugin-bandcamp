@@ -169,6 +169,19 @@ profiles or raw browser errors to bug reports.
 
 ## Status and recovery
 
+Read the selected owner's last observed session state without opening a browser, reading
+identity input, validating with Bandcamp, or changing saved settings:
+
+```sh
+bandcamp-cookie-push --client-name 'Personal Bandcamp' --session-status
+```
+
+This requires the same trusted HTTPS URL/API key (and `--authelia` when required), but no
+fan ID. It reports status, effective authentication mode and the last successful validation
+in UTC, or `never`. It is a read-only snapshot, not a fresh connection test. A restart begins
+with `Unknown` until validation occurs. The backing `sessionStatus` download-client action
+returns safe metadata only; it does not return the saved identity.
+
 Keep the printed operation ID. With the same HTTPS server, API key and exact owner selection,
 reconcile without reading stdin, opening a browser or resending the candidate:
 

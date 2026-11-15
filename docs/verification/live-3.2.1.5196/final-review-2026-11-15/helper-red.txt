@@ -1,0 +1,39 @@
+  Determining projects to restore...
+  Restored /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-212bdad1-14c5abb378a0d146/src/Lidarr.Plugin.Bandcamp.CookiePush/Lidarr.Plugin.Bandcamp.CookiePush.csproj (in 2.47 sec).
+  Restored /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-212bdad1-14c5abb378a0d146/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/Lidarr.Plugin.Bandcamp.CookiePush.Test.csproj (in 2.47 sec).
+  Lidarr.Plugin.Bandcamp.CookiePush -> /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-212bdad1-14c5abb378a0d146/src/Lidarr.Plugin.Bandcamp.CookiePush/bin/Release/net8.0/bandcamp-cookie-push.dll
+  Lidarr.Plugin.Bandcamp.CookiePush.Test -> /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-212bdad1-14c5abb378a0d146/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.CookiePush.Test.dll
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-212bdad1-14c5abb378a0d146/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.1 (arm64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.10]     Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Session_status_refuses_unknown_metadata_without_echoing_it [FAIL]
+[xUnit.net 00:00:00.10]     Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Session_status_reports_only_safe_metadata_without_reading_identity_or_opening_browser(status: "Unknown", last: null, expectedTime: "never") [FAIL]
+[xUnit.net 00:00:00.10]     Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Session_status_reports_only_safe_metadata_without_reading_identity_or_opening_browser(status: "Valid", last: "2026-11-15T12:00:00Z", expectedTime: "2026-11-15") [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Session_status_refuses_unknown_metadata_without_echoing_it [8 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: 1
+Actual:   2
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Session_status_refuses_unknown_metadata_without_echoing_it() in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-212bdad1-14c5abb378a0d146/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/RenewalWorkflowFixture.cs:line 32
+--- End of stack trace from previous location ---
+  Failed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Session_status_reports_only_safe_metadata_without_reading_identity_or_opening_browser(status: "Unknown", last: null, expectedTime: "never") [9 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: 0
+Actual:   2
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Session_status_reports_only_safe_metadata_without_reading_identity_or_opening_browser(String status, String last, String expectedTime) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-212bdad1-14c5abb378a0d146/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/RenewalWorkflowFixture.cs:line 17
+--- End of stack trace from previous location ---
+  Failed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Session_status_reports_only_safe_metadata_without_reading_identity_or_opening_browser(status: "Valid", last: "2026-11-15T12:00:00Z", expectedTime: "2026-11-15") [< 1 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: 0
+Actual:   2
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Session_status_reports_only_safe_metadata_without_reading_identity_or_opening_browser(String status, String last, String expectedTime) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-212bdad1-14c5abb378a0d146/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/RenewalWorkflowFixture.cs:line 17
+--- End of stack trace from previous location ---
+
+Failed!  - Failed:     3, Passed:     0, Skipped:     0, Total:     3, Duration: 16 ms - Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (net10.0)

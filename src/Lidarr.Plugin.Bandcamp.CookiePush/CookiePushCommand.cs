@@ -13,17 +13,19 @@ public static class CookiePushCommand
         HttpMessageHandler httpHandler, IBrowserCookieCapture? browserCookieCapture = null,
         CancellationToken cancellationToken = default)
     {
+        var sessionStatus = false;
         try
         {
             if (args.Count == 1 && args[0] is "--help" or "-h")
             {
-                output.WriteLine("bandcamp-cookie-push --client-name <exact owner name> --fan-id <expected fan id> [--url <HTTPS Lidarr URL>] [--authelia]\nSet LIDARR_API_KEY privately. --authelia requires LIDARR_AUTHELIA_ORIGIN (exact Lidarr HTTPS origin) and LIDARR_AUTHELIA_SESSION (only the session value); LIDARR_AUTHELIA_COOKIE_NAME defaults to authelia_session. Proxy sessions stay in memory and are never sent to Bandcamp. Redirect minimal identity on stdin for manual import; otherwise a visible isolated browser opens. Complete login/CAPTCHA/2FA yourself. Ctrl-C requests cancellation before the server commit boundary. Keep the operation ID for reconciliation. Use --renewal-status <id> or --cancel-renewal <id> with --client-name and the same server.");
+                output.WriteLine("bandcamp-cookie-push --client-name <exact owner name> --fan-id <expected fan id> [--url <HTTPS Lidarr URL>] [--authelia]\nSet LIDARR_API_KEY privately. --authelia requires LIDARR_AUTHELIA_ORIGIN (exact Lidarr HTTPS origin) and LIDARR_AUTHELIA_SESSION (only the session value); LIDARR_AUTHELIA_COOKIE_NAME defaults to authelia_session. Proxy sessions stay in memory and are never sent to Bandcamp. Redirect minimal identity on stdin for manual import; otherwise a visible isolated browser opens. Complete login/CAPTCHA/2FA yourself. Ctrl-C requests cancellation before the server commit boundary. Keep the operation ID for reconciliation. Use --session-status with --client-name to read the last observed session state without login or validation. Use --renewal-status <id> or --cancel-renewal <id> with --client-name and the same server.");
                 return 0;
             }
 
             string? owner = null; var url = environment("LIDARR_URL"); long fanId = 0; string? operationId = null; var cancelOperation = false; var authelia = false;
             for (var i = 0; i < args.Count; i++)
             {
+                if (args[i] == "--session-status") { if (sessionStatus) return Usage(error); sessionStatus = true; continue; }
                 if (args[i] == "--authelia") { if (authelia) return Usage(error); authelia = true; continue; }
                 if (args[i] is not ("--url" or "--client-name" or "--fan-id" or "--renewal-status" or "--cancel-renewal") || i + 1 >= args.Count)
                     return Usage(error);
@@ -39,7 +41,8 @@ public static class CookiePushCommand
             }
 
             var key = environment("LIDARR_API_KEY");
-            if (string.IsNullOrWhiteSpace(owner) || (fanId <= 0 && operationId == null) || string.IsNullOrWhiteSpace(key) ||
+            if (sessionStatus && (operationId != null || fanId > 0)) return Usage(error);
+            if (string.IsNullOrWhiteSpace(owner) || (fanId <= 0 && operationId == null && !sessionStatus) || string.IsNullOrWhiteSpace(key) ||
                 !Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme != "https" ||
                 uri.UserInfo.Length != 0 || uri.Query.Length != 0 || uri.Fragment.Length != 0)
                 return Usage(error);
@@ -85,6 +88,11 @@ public static class CookiePushCommand
                 ["implementation"] = "BandcampDownloadClient", ["configContract"] = "BandcampDownloadSettings",
                 ["fields"] = new JsonArray()
             };
+            if (sessionStatus)
+            {
+                var status = await Send(http, HttpMethod.Post, "api/v1/downloadclient/action/sessionStatus", metadata, cancellationToken);
+                return ReportSessionStatus(status, output);
+            }
             if (operationId != null)
             {
                 var action = cancelOperation ? "cancelIdentityRenewal" : "identityRenewalStatus";
@@ -143,10 +151,39 @@ public static class CookiePushCommand
         }
         catch (Exception)
         {
+            if (sessionStatus)
+            {
+                error.WriteLine("Session status unavailable. Check owner selection and trusted HTTPS/API/proxy access. No identity was submitted.");
+                return 1;
+            }
             // Browser/HTTP/JSON errors may contain cookie values, request bodies or API keys.
             error.WriteLine("Renewal did not confirm success. Check owner selection, expected fan ID, HTTPS/API access and Lidarr status. If submitted, reconcile saved status before retrying.");
             return 1;
         }
+    }
+
+    private static int ReportSessionStatus(JsonNode? response, TextWriter output)
+    {
+        if (response?["success"]?.GetValue<bool>() != true) throw new InvalidOperationException();
+        var status = response["status"]?.GetValue<string>();
+        if (status is not ("Unknown" or "Valid" or "Missing" or "Invalid" or "Error" or "ChallengeOrUnrecognized" or "RateLimited"))
+            throw new InvalidOperationException();
+        var mode = response["effectiveAuthMode"]?.GetValue<string>() ?? "";
+        const string shared = "Shared named configuration; ";
+        var baseMode = mode.StartsWith(shared, StringComparison.Ordinal) ? mode[shared.Length..] : mode;
+        if (baseMode is not ("Web identity (manual cookie)" or "Web identity (password fallback configured)" or "Web password fallback (no identity)" or "Not configured"))
+            throw new InvalidOperationException();
+        var last = response["lastSuccessfulValidationUtc"]?.GetValue<string>();
+        var displayedTime = "never";
+        if (last != null)
+        {
+            if (!DateTimeOffset.TryParse(last, System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.AssumeUniversal, out var timestamp)) throw new InvalidOperationException();
+            displayedTime = timestamp.UtcDateTime.ToString("O");
+        }
+        // Never echo arbitrary server details or newly added fields into the terminal.
+        output.WriteLine($"Session status: {status}\nAuth mode: {mode}\nLast successful validation: {displayedTime}");
+        return 0;
     }
 
     private static int Report(JsonNode? receipt, TextWriter output, TextWriter error)
@@ -176,7 +213,7 @@ public static class CookiePushCommand
 
     private static int Usage(TextWriter error)
     {
-        error.WriteLine("Use --help. An exact owner name, HTTPS URL and LIDARR_API_KEY are required, plus a positive fan ID for renewal or an operation ID for status/cancel. Secret command arguments/output and separate consumer updates are unsupported.");
+        error.WriteLine("Use --help. An exact owner name, HTTPS URL and LIDARR_API_KEY are required, plus a positive fan ID for renewal, an operation ID for status/cancel, or --session-status. Secret command arguments/output and separate consumer updates are unsupported.");
         return 2;
     }
 
