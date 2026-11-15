@@ -1,0 +1,124 @@
+{
+  "missing-type": {
+    "coverage": "Direct Lidarr/NzbDrone assembly-scoped TypeRef and MemberRef metadata; includes Cecil base/member resolution. Excludes reflective calls, inherited interface contracts, native startup and behavior.",
+    "types": 1,
+    "members": 1,
+    "missingTypes": [
+      "NzbDrone.Core.HealthCheck.AbsentTypeControl"
+    ],
+    "missingMembers": [
+      "System.Void NzbDrone.Core.HealthCheck.AbsentTypeControl::.ctor(System.Type)"
+    ],
+    "errors": [],
+    "resolvedAssemblies": [
+      {
+        "name": "Lidarr.Core, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null",
+        "path": "<control-root>/runtime/Lidarr.Core.dll",
+        "sha256": "7ca8d80b4ea680546f81b4c48787ed5a44550654e97684e3fe2465b7e7862294"
+      }
+    ]
+  },
+  "missing-member": {
+    "coverage": "Direct Lidarr/NzbDrone assembly-scoped TypeRef and MemberRef metadata; includes Cecil base/member resolution. Excludes reflective calls, inherited interface contracts, native startup and behavior.",
+    "types": 1,
+    "members": 1,
+    "missingTypes": [],
+    "missingMembers": [
+      "System.Void NzbDrone.Core.HealthCheck.HealthCheck::AbsentMemberControl(System.Type)"
+    ],
+    "errors": [],
+    "resolvedAssemblies": [
+      {
+        "name": "Lidarr.Core, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null",
+        "path": "<control-root>/runtime/Lidarr.Core.dll",
+        "sha256": "7ca8d80b4ea680546f81b4c48787ed5a44550654e97684e3fe2465b7e7862294"
+      },
+      {
+        "name": "System.Runtime, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+        "path": "<control-root>/runtime/System.Runtime.dll",
+        "sha256": "f2eab1a6d2dc82c75572e89f2949b5403a5ab9a7855e79b08aafe0bf68245906"
+      },
+      {
+        "name": "System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+        "path": "<control-root>/runtime/System.Private.CoreLib.dll",
+        "sha256": "5e854d8377849a89af95fc25e064e38384caeffdb8dc454821b7eba12848fc9b"
+      }
+    ]
+  },
+  "valid": {
+    "coverage": "Direct Lidarr/NzbDrone assembly-scoped TypeRef and MemberRef metadata; includes Cecil base/member resolution. Excludes reflective calls, inherited interface contracts, native startup and behavior.",
+    "types": 1,
+    "members": 1,
+    "missingTypes": [],
+    "missingMembers": [],
+    "errors": [],
+    "resolvedAssemblies": [
+      {
+        "name": "Lidarr.Core, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null",
+        "path": "<control-root>/runtime/Lidarr.Core.dll",
+        "sha256": "7ca8d80b4ea680546f81b4c48787ed5a44550654e97684e3fe2465b7e7862294"
+      }
+    ]
+  },
+  "known-bad-release": {
+    "coverage": "Direct Lidarr/NzbDrone assembly-scoped TypeRef and MemberRef metadata; includes Cecil base/member resolution. Excludes reflective calls, inherited interface contracts, native startup and behavior.",
+    "types": 88,
+    "members": 205,
+    "missingTypes": [],
+    "missingMembers": [
+      "System.Void NzbDrone.Core.HealthCheck.HealthCheck::.ctor(System.Type,NzbDrone.Core.HealthCheck.HealthCheckResult,System.String,System.String)"
+    ],
+    "errors": [],
+    "resolvedAssemblies": [
+      {
+        "name": "Lidarr.Core, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null",
+        "path": "<control-root>/runtime/Lidarr.Core.dll",
+        "sha256": "7ca8d80b4ea680546f81b4c48787ed5a44550654e97684e3fe2465b7e7862294"
+      },
+      {
+        "name": "Lidarr.Common, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null",
+        "path": "<control-root>/runtime/Lidarr.Common.dll",
+        "sha256": "5e18c55b500b950828ed00000044082cc63967bd576b74e9c01a2a1970c54fbb"
+      },
+      {
+        "name": "System.Runtime, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+        "path": "<control-root>/runtime/System.Runtime.dll",
+        "sha256": "f2eab1a6d2dc82c75572e89f2949b5403a5ab9a7855e79b08aafe0bf68245906"
+      },
+      {
+        "name": "System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+        "path": "<control-root>/runtime/System.Private.CoreLib.dll",
+        "sha256": "5e854d8377849a89af95fc25e064e38384caeffdb8dc454821b7eba12848fc9b"
+      }
+    ]
+  },
+  "missing-transitive-dependency": {
+    "coverage": "Direct Lidarr/NzbDrone assembly-scoped TypeRef and MemberRef metadata; includes Cecil base/member resolution. Excludes reflective calls, inherited interface contracts, native startup and behavior.",
+    "types": 1,
+    "members": 1,
+    "missingTypes": [],
+    "missingMembers": [],
+    "errors": [
+      "member System.Void NzbDrone.Core.HealthCheck.HealthCheck::AbsentMemberControl(System.Type): AssemblyResolutionException: Failed to resolve assembly: 'System.Runtime, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a'"
+    ],
+    "resolvedAssemblies": [
+      {
+        "name": "Lidarr.Core, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null",
+        "path": "<control-root>/runtime/Lidarr.Core.dll",
+        "sha256": "7ca8d80b4ea680546f81b4c48787ed5a44550654e97684e3fe2465b7e7862294"
+      }
+    ]
+  },
+  "missing-dependency": {
+    "coverage": "Direct Lidarr/NzbDrone assembly-scoped TypeRef and MemberRef metadata; includes Cecil base/member resolution. Excludes reflective calls, inherited interface contracts, native startup and behavior.",
+    "types": 1,
+    "members": 1,
+    "missingTypes": [],
+    "missingMembers": [],
+    "errors": [
+      "type NzbDrone.Core.HealthCheck.HealthCheck: AssemblyResolutionException: Failed to resolve assembly: 'Lidarr.Core, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null'",
+      "member System.Void NzbDrone.Core.HealthCheck.HealthCheck::.ctor(System.Type): AssemblyResolutionException: Failed to resolve assembly: 'Lidarr.Core, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null'"
+    ],
+    "resolvedAssemblies": []
+  }
+}

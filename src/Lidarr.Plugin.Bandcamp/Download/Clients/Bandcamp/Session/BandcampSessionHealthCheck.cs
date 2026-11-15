@@ -42,13 +42,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 return new HealthCheck.HealthCheck(GetType());
             }
 
-            // The warning constructor changed between supported Lidarr hosts.
-            // The source constructor and these properties are shared by both APIs.
-            return new HealthCheck.HealthCheck(GetType())
-            {
-                Type = HealthCheckResult.Warning,
-                Message = "Bandcamp session needs attention. " + string.Join("; ", problems)
-            };
+            return BandcampHealthResult.Warning(
+                GetType(),
+                "Bandcamp session needs attention. " + string.Join("; ", problems));
         }
     }
 }

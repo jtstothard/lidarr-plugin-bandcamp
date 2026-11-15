@@ -161,3 +161,9 @@ For CAPTCHA, verification/2FA, and headless servers, use the [isolated desktop h
 Local credential clearing and known host DB/API/backup/Trace exposure are described in the
 [secret-hygiene guide](docs/secret-hygiene.md). The [bounded web-canary protocol](docs/web-canary.md)
 is opt-in only; its default tool invocation performs no account access.
+
+## Lidarr runtime compatibility
+
+The corrected session-health check supports the pinned Lidarr 3.1.4.5029 and
+3.2.1.5196 nightly builds. See the [support policy and packaged-runtime checks](tests/PackagedCompatibility/SUPPORT.md)
+for exact inputs, scope and reproduction commands. Other builds require qualification.
