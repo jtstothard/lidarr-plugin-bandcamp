@@ -1,0 +1,20 @@
+[
+  {
+    "role": "owner",
+    "kind": "downloadclient",
+    "id": 13,
+    "name": "Bandcamp changed-identity qualification 20261115"
+  },
+  {
+    "role": "consumer",
+    "kind": "downloadclient",
+    "id": 14,
+    "name": "Bandcamp changed-identity qualification 20261115 downloader"
+  },
+  {
+    "role": "indexer",
+    "kind": "indexer",
+    "id": 29,
+    "name": "Bandcamp changed-identity qualification 20261115 indexer"
+  }
+]

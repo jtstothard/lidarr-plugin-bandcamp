@@ -23,7 +23,7 @@ have now passed [native checks](verification/live-3.2.1.5196/helper-native-2026-
 The [later HTTPS checks](verification/live-3.2.1.5196/helper-https-2026-11-15/README.md)
 completed ordinary-package manual renewal/status and a fresh visible login-to-commit through the
 production helper components with an autofill harness. Windows/Linux native execution and
-changed-cookie rotation remain unqualified. No prebuilt helper release is claimed. The server must run this plugin version with the renewal begin/cancel/status protocol; older one-shot `renewIdentity` clients are refused.
+Bandcamp-issued token rotation remain unqualified. The [controlled invalid-to-valid recovery test](verification/live-3.2.1.5196/changed-identity-test-2026-11-15/README.md) also passed replacement, both shared consumers and restart persistence without changing the working owner. No prebuilt helper release is claimed. The server must run this plugin version with the renewal begin/cancel/status protocol; older one-shot `renewIdentity` clients are refused.
 
 ### Mac ARM64 without a global .NET 8 runtime
 

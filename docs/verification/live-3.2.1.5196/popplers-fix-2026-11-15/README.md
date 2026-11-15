@@ -1,5 +1,7 @@
 # Native authenticated FLAC download and import qualified
 
+**Later controlled recovery proof:** [invalid-to-valid identity replacement and restart passed](../changed-identity-test-2026-11-15/README.md). Bandcamp-issued token rotation remains a separate observation.
+
 Great Cynics — **POSI** completed through the actual Bandcamp downloader and Lidarr import on media-vm, Lidarr 3.2.1.5196 / .NET 8.0.27. All **11 tracks** are linked to the album, classified FLAC, and independently fully decoded without error as **16-bit / 44.1 kHz / stereo**. The files total 207629419 bytes. The qualification album is [owned public release](https://specialistsubject.bandcamp.com/album/posi), artist 269, album 235835, selected release 78879. Native download ID `605a3598205548cd90297cf514b02c7c` has a terminal `downloadImported` event and eleven `trackFileImported` events. See [terminal receipt](native-import-terminal.json), [file hashes/decoding](audio-verification.json) and [final state](final-state.json).
 
 ## Root cause and fix

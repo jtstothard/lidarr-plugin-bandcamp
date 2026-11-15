@@ -1,0 +1,29 @@
+{
+  "changed_value_survived_restart": true,
+  "test_owner_and_consumers_match_post_repair_snapshot": true,
+  "tests": [
+    {
+      "kind": "downloadclient",
+      "id": 13,
+      "passed": true
+    },
+    {
+      "kind": "downloadclient",
+      "id": 14,
+      "passed": true
+    },
+    {
+      "kind": "indexer",
+      "id": 29,
+      "passed": true
+    }
+  ],
+  "test_indexer_flac_results": 1,
+  "working_definitions_unchanged": true,
+  "linked_files": 11,
+  "retry_flag": true,
+  "no_grab": true,
+  "same_container": true,
+  "same_image": true,
+  "same_dll": true
+}

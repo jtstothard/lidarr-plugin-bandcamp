@@ -1,0 +1,26 @@
+{
+  "operation_id": "771a1739-660c-4cd8-94ff-4ac371740dba",
+  "committed": true,
+  "changed_value_persisted": true,
+  "test_owner_matches_valid_working_identity": true,
+  "consumer_settings_unchanged": true,
+  "working_definitions_unchanged": true,
+  "tests": [
+    {
+      "kind": "downloadclient",
+      "id": 13,
+      "passed": true
+    },
+    {
+      "kind": "downloadclient",
+      "id": 14,
+      "passed": true
+    },
+    {
+      "kind": "indexer",
+      "id": 29,
+      "passed": true
+    }
+  ],
+  "transport": "same native helper protocol over existing SSH/local-admin route; not a second desktop HTTPS run"
+}

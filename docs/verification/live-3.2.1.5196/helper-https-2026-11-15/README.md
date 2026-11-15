@@ -1,5 +1,7 @@
 # Ordinary Mac package HTTPS qualification
 
+**Later controlled recovery proof:** [invalid-to-valid identity replacement and restart passed](../changed-identity-test-2026-11-15/README.md). Bandcamp-issued token rotation remains a separate observation.
+
 The user unlocked 1Password and approved the item-access prompt. Authelia first-factor login then returned HTTP 200 and protected Lidarr navigation succeeded. The temporary native login harness obtained only the secure HttpOnly Authelia session cookie for the protected Lidarr origin, via private subprocess memory. No Authelia password/TOTP/session, Lidarr API key or Bandcamp identity was saved in these receipts. Normal certificate validation remained enabled. No proxy/server/provider configuration was changed to permit the test.
 
 The **unmodified ordinary apphost from the extracted self-contained Mac ARM64 archive** ran with global runtime lookup disabled, bundled .NET 8.0.24 and the fresh package-specific Chromium installation described in the [package receipt](../helper-native-2026-11-15/README.md).
