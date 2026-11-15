@@ -1,5 +1,7 @@
 # Format-link request-path correction
 
+**Subsequent result:** the approved deployment succeeded, but its single native grab failed with Invalid URI. See [actual run](approved-run.md). The preparation claims below describe the pre-deployment packet.
+
 ## Evidence and regression
 
 After the 2e1b47a8 attempt failed, no native grab or resolver/archive request was
