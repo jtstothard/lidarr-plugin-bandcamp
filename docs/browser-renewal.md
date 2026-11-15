@@ -1,7 +1,7 @@
 # User-assisted shared session renewal (#46 / #51)
 
-Web authentication remains primary. #47's offline decision is **INCONCLUSIVE**; neither live
-Subsonic parity nor a credential lifetime is qualified. This helper does not add a login engine,
+Web authentication remains primary. The [live Subsonic decision](verification/subsonic-2026-11-15.md)
+is NO-GO for lossless on the tested deployment; no credential lifetime is qualified. This helper does not add a login engine,
 solve CAPTCHA, collect passwords, disable 2FA, or revive expired cookies by saving them.
 
 ## Desktop installation and selection
@@ -17,9 +17,26 @@ pwsh src/Lidarr.Plugin.Bandcamp.CookiePush/bin/Release/net8.0/playwright.ps1 ins
 ```
 
 Linux also needs Playwright's documented Chromium OS dependencies. No desktop browser belongs
-on the headless Lidarr host. The source targets Windows, macOS and Linux; this change has fixture
-coverage only, **not native browser/packaging qualification on any platform**. No prebuilt helper
+on the headless Lidarr host. The source targets Windows, macOS and Linux. A local Mac ARM64 self-contained package,
+its bundled .NET 8 runtime, fresh Chromium installation and production browser capture cancellation
+have now passed [native checks](verification/live-3.2.1.5196/helper-native-2026-11-15/README.md).
+That does not qualify Windows/Linux or completed ordinary-package HTTPS renewal. No prebuilt helper
 release is claimed. The server must run this plugin version with the renewal begin/cancel/status protocol; older one-shot `renewIdentity` clients are refused.
+
+### Mac ARM64 without a global .NET 8 runtime
+
+An installed SDK can publish the helper with its own runtime. The bundled Playwright Node CLI
+also avoids a PowerShell dependency:
+
+```sh
+dotnet publish src/Lidarr.Plugin.Bandcamp.CookiePush -c Release -r osx-arm64 --self-contained true -o artifacts/bandcamp-cookie-push/osx-arm64
+artifacts/bandcamp-cookie-push/osx-arm64/.playwright/node/darwin-arm64/node artifacts/bandcamp-cookie-push/osx-arm64/.playwright/package/cli.js install chromium
+artifacts/bandcamp-cookie-push/osx-arm64/bandcamp-cookie-push --help
+```
+
+Use that executable in place of `dotnet .../bandcamp-cookie-push.dll` below. Keep the whole
+published directory together. The local qualification did not establish notarization, a public
+release, Windows/Linux native support or a changed-cookie renewal.
 
 Create/save a Bandcamp download client as the authentication owner, using a distinct, unique
 Lidarr Name and an empty Shared Authentication selector. It may be disabled. Explicitly select

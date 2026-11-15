@@ -1,0 +1,2 @@
+LOGIN_PAGE_OPENED
+{"runtime":".NET 8.0.24","architecture":"Arm64","cancelled":true,"login_page_opened":true,"temporary_profiles_remaining":0}

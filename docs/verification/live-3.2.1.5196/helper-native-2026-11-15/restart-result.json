@@ -1,0 +1,15 @@
+{
+  "restart_completed": true,
+  "same_container": true,
+  "same_image": true,
+  "same_dll": true,
+  "saved_provider_definitions_unchanged": true,
+  "downloader_test_pass": true,
+  "shared_indexer_test_pass": true,
+  "flac_search_results": 1,
+  "flac_search_approved": 0,
+  "linked_files_after_restart": 11,
+  "retry_flag": true,
+  "identity_changed": false,
+  "changed_cookie_restart_qualified": false
+}

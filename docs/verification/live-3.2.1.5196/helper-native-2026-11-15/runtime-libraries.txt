@@ -1,0 +1,3 @@
+dyld[97036]: <44FB7FF3-B900-3967-B5CE-85BF0D29D2F4> /private/tmp/bandcamp-helper-osx-arm64-20261115/libhostfxr.dylib
+dyld[97036]: <9749913A-55BA-3B06-8A8D-EE840BF0463F> /private/tmp/bandcamp-helper-osx-arm64-20261115/libhostpolicy.dylib
+dyld[97036]: <F0478AC3-D3B5-3FAE-B892-3AA3C7530106> /private/tmp/bandcamp-helper-osx-arm64-20261115/libcoreclr.dylib
