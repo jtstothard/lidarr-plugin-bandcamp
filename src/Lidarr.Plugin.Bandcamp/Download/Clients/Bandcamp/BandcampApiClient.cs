@@ -52,6 +52,10 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             @"var\s+TralbumData\s*=\s*(\{.*?\})\s*;",
             RegexOptions.Compiled | RegexOptions.Singleline);
 
+        private static readonly Regex StatdownloadCallbackRegex = new(
+            @"^\s*(?:if\s*\(\s*window\.Downloads\s*\)\s*\{\s*)?[A-Za-z_$][\w.$]*\s*\(\s*(?<json>\{.*\})\s*\)\s*;?\s*\}?\s*;?\s*$",
+            RegexOptions.Singleline, TimeSpan.FromSeconds(1));
+
         private readonly BandcampHttpClient _httpClient;
         private readonly Logger _logger;
 
@@ -396,9 +400,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             // Bandcamp statdownload URLs look like:
             // https://bandcamp.com/statdownload/{item_type}/{item_id}?{params}
             // They return JSON with a "url" field pointing to the actual file
-            var url = BuildStatdownloadUrl(downloadUrl, format);
+            var url = BuildStatdownloadUrl(downloadUrl);
 
-            var builder = _httpClient.CreateRequestBuilder(url, cookies);
+            var builder = _httpClient.CreateDownloadRequestBuilder(url, cookies);
             var request = builder.Build();
             var startPosition = archiveDestination?.Position ?? 0;
             request.ResponseStream = archiveDestination;
@@ -468,26 +472,44 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
                 content = string.Empty;
             }
 
-            return ParseStatdownloadPointer(content);
+            return ParseStatdownloadPointer(content, downloadUrl);
         }
 
-        private BandcampResolvedDownload? ParseStatdownloadPointer(string content)
+        private BandcampResolvedDownload? ParseStatdownloadPointer(string content, string originalFormatUrl)
         {
             var text = content.Trim();
             // Bandcamp may wrap the object in a JavaScript callback. Parse its
             // object as JSON; never execute the wrapper or regex-match nested URLs.
-            var firstBrace = text.IndexOf('{');
-            var lastBrace = text.LastIndexOf('}');
-            if (firstBrace >= 0 && lastBrace >= firstBrace)
+            var callback = StatdownloadCallbackRegex.Match(text);
+            var json = callback.Success ? callback.Groups["json"].Value : text;
+            if (json.StartsWith("{", StringComparison.Ordinal))
             {
                 try
                 {
-                    using var document = JsonDocument.Parse(text[firstBrace..(lastBrace + 1)]);
+                    using var document = JsonDocument.Parse(json);
                     var root = document.RootElement;
                     if (root.ValueKind == JsonValueKind.Object)
                     {
-                        // retry_url is the ready archive pointer. An explicitly
-                        // empty value must not fall back to the browser-flow URL.
+                        // In the current browser protocol, url is status metadata,
+                        // not an archive. Only an explicit successful result permits
+                        // download_url, or the original signed format link.
+                        if (root.TryGetProperty("result", out var result))
+                        {
+                            if (result.ValueKind != JsonValueKind.String || result.GetString() != "ok")
+                            {
+                                var expired = root.TryGetProperty("errortype", out var error) &&
+                                    error.ValueKind == JsonValueKind.String && error.GetString() == "ExpirationError";
+                                throw new DownloadException(expired
+                                    ? "Bandcamp download link has expired; no archive request or credential retry was made. Refresh the owned download page."
+                                    : "Bandcamp resolver did not report a ready download; no archive request or credential retry was made.");
+                            }
+                            if (root.TryGetProperty("download_url", out var archive) && archive.ValueKind == JsonValueKind.String &&
+                                !string.IsNullOrWhiteSpace(archive.GetString()))
+                                return ValidatedArchivePointer(archive.GetString());
+                            return ValidatedArchivePointer(originalFormatUrl);
+                        }
+
+                        // Preserve legacy pointer-only response compatibility.
                         if (root.TryGetProperty("retry_url", out var retry))
                             return ValidatedArchivePointer(retry.ValueKind == JsonValueKind.String ? retry.GetString() : null);
                         if (root.TryGetProperty("url", out var url))
@@ -557,13 +579,16 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         {
             _logger.Debug("Bandcamp API: Downloading file from resolved URL");
 
-            var current = new Uri(fileUrl, UriKind.Absolute);
+            if (!Uri.TryCreate(fileUrl, UriKind.Absolute, out var current) || current.Scheme != Uri.UriSchemeHttps ||
+                !current.IsDefaultPort || string.IsNullOrEmpty(current.Host) || !string.IsNullOrEmpty(current.UserInfo) ||
+                !string.IsNullOrEmpty(current.Fragment))
+                throw new DownloadException("Bandcamp archive URL refused before file request.");
             var sendCookies = true;
             var visited = new HashSet<string>(StringComparer.Ordinal) { current.AbsoluteUri };
             HttpResponse response;
             for (var redirects = 0; ; redirects++)
             {
-                var builder = _httpClient.CreateRequestBuilder(current.AbsoluteUri, sendCookies ? cookies : string.Empty);
+                var builder = _httpClient.CreateDownloadRequestBuilder(current.AbsoluteUri, sendCookies ? cookies : string.Empty);
                 var request = builder.Build();
                 // The managed dispatcher streams only HTTP 200 responses. Redirect
                 // bodies stay out of the destination; the final archive still streams.
@@ -615,7 +640,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             (url.Host == "bandcamp.com" || url.Host.EndsWith(".bandcamp.com", StringComparison.Ordinal) ||
              url.Host == "bcbits.com" || url.Host.EndsWith(".bcbits.com", StringComparison.Ordinal));
 
-        private static string BuildStatdownloadUrl(string downloadUrl, string format)
+        private static string BuildStatdownloadUrl(string downloadUrl)
         {
             if (!Uri.TryCreate(downloadUrl, UriKind.Absolute, out var parsed) || !IsArchiveRedirect(parsed))
                 throw new DownloadException("Bandcamp format URL refused before resolver request.");
@@ -631,7 +656,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             }
 
             return downloadUrl + (downloadUrl.Contains('?') ? "&" : "?") +
-                ".format=" + Uri.EscapeDataString(format) + "&.json=true";
+                ".rand=" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture) + "&.vrs=1";
         }
 
         private static double? ParseAlbumDurationSeconds(string content)

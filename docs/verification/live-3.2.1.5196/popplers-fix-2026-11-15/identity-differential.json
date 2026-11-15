@@ -1,0 +1,39 @@
+{
+  "requests": 3,
+  "variants": [
+    {
+      "variant": "without_identity",
+      "status": 200,
+      "syntax": "JsonObjectInCallback",
+      "result": "err",
+      "errortype": "ExpirationError",
+      "keys": [
+        "result",
+        "retry_url",
+        "errortype",
+        "date",
+        "url",
+        "host"
+      ],
+      "url_kind": "Refused",
+      "retry_url_kind": "Empty",
+      "download_url_kind": "Absent"
+    },
+    {
+      "variant": "with_identity",
+      "status": 200,
+      "syntax": "JsonObjectInCallback",
+      "result": "ok",
+      "errortype": "AbsentOrUnknown",
+      "keys": [
+        "result",
+        "url",
+        "host",
+        "download_url"
+      ],
+      "url_kind": "Refused",
+      "retry_url_kind": "Absent",
+      "download_url_kind": "BandcampCdnHttps"
+    }
+  ]
+}

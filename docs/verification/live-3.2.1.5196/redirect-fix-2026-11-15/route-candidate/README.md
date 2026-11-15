@@ -1,5 +1,7 @@
 # Format-link request-path correction
 
+**Superseding successful qualification:** [native authenticated FLAC fix and eleven-track import](../../popplers-fix-2026-11-15/README.md). The older results below are retained history.
+
 **Later diagnostic:** [two-request observation and local parser correction](approved-shape-diagnostic.md); neither a new deployment nor download qualification.
 
 **Subsequent result:** the approved deployment succeeded, but its single native grab failed with Invalid URI. See [actual run](approved-run.md). The preparation claims below describe the pre-deployment packet.

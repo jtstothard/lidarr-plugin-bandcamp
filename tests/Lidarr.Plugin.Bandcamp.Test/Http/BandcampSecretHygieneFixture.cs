@@ -93,14 +93,14 @@ public class BandcampSecretHygieneFixture
     }
 
     [Theory]
-    [InlineData("https://bandcamp.com/api/fancollection/1/collection_items", true)]
-    [InlineData("http://bandcamp.com", false)]
-    [InlineData("https://artist.bandcamp.com/album/title", false)]
-    [InlineData("https://bcbits.com/archive.zip", false)]
-    [InlineData("https://bandcamp.com.evil.test", false)]
-    [InlineData("https://unrelated.test", false)]
-    [InlineData("https://bandcamp.com:444", false)]
-    public async Task IdentityOnlyFlowsToAccountHttpsOrigin(string url, bool allowed)
+    [InlineData("https://bandcamp.com/api/fancollection/1/collection_items", true, false)]
+    [InlineData("http://bandcamp.com", false, true)]
+    [InlineData("https://artist.bandcamp.com/album/title", false, false)]
+    [InlineData("https://bcbits.com/archive.zip", false, false)]
+    [InlineData("https://bandcamp.com.evil.test", false, false)]
+    [InlineData("https://unrelated.test", false, false)]
+    [InlineData("https://bandcamp.com:444", false, true)]
+    public async Task IdentityOnlyFlowsToAccountHttpsOrigin(string url, bool allowed, bool refused)
     {
         var http = new Mock<IHttpClient>();
         HttpRequest? sent = null;
@@ -112,7 +112,16 @@ public class BandcampSecretHygieneFixture
         var logger = LogManager.GetCurrentClassLogger();
         var client = new BandcampHttpClient(http.Object, logger);
         using var destination = new System.IO.MemoryStream();
-        await new NzbDrone.Core.Download.Clients.Bandcamp.BandcampApiClient(client, logger).DownloadFileAsync(Secrets[3], url, destination);
+        var api = new NzbDrone.Core.Download.Clients.Bandcamp.BandcampApiClient(client, logger);
+        if (refused)
+        {
+            var error = await Assert.ThrowsAsync<NzbDrone.Core.Download.Clients.Bandcamp.DownloadException>(() => api.DownloadFileAsync(Secrets[3], url, destination));
+            AssertSafe(error.ToString());
+            Assert.Null(sent);
+            http.Verify(h => h.ExecuteAsync(It.IsAny<HttpRequest>()), Times.Never);
+            return;
+        }
+        await api.DownloadFileAsync(Secrets[3], url, destination);
         var request = Assert.IsType<HttpRequest>(sent);
         Assert.Equal(allowed, request.Headers.GetValues("Cookie")?.Any() == true);
         Assert.False(request.AllowAutoRedirect); Assert.False(request.StoreRequestCookie); Assert.False(request.StoreResponseCookie);

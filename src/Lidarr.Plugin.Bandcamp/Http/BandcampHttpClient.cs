@@ -122,6 +122,24 @@ namespace NzbDrone.Core.Http.Bandcamp
             return builder;
         }
 
+        // Account APIs remain apex-only. Bandcamp's browser also sends the
+        // domain identity to its numbered popplers download servers; without it,
+        // a valid owned format link is reported as ExpirationError.
+        internal HttpRequestBuilder CreateDownloadRequestBuilder(string url, string cookies)
+        {
+            var builder = CreateRequestBuilder(url, cookies);
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps &&
+                uri.IsDefaultPort && string.IsNullOrEmpty(uri.UserInfo) && string.IsNullOrEmpty(uri.Fragment) &&
+                System.Text.RegularExpressions.Regex.IsMatch(uri.Host, @"\Apopplers[0-9]+\.bandcamp\.com\z", System.Text.RegularExpressions.RegexOptions.CultureInvariant) &&
+                (uri.AbsolutePath.StartsWith("/download/", StringComparison.Ordinal) ||
+                 uri.AbsolutePath.StartsWith("/statdownload/", StringComparison.Ordinal)))
+            {
+                var identity = BandcampIdentityCookie.Identity(NormalizeCookieHeader(cookies));
+                if (identity != null) builder.Headers.Set("Cookie", identity);
+            }
+            return builder;
+        }
+
         public static string NormalizeCookieHeader(string cookies)
         {
             if (string.IsNullOrWhiteSpace(cookies))

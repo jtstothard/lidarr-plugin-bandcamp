@@ -172,13 +172,15 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                                     ""item_type"": ""album"",
                                     ""title"": ""Fresh"",
                                     ""downloads"": {
-                                        ""flac"": { ""url"": ""https://bandcamp.com/download/album/111?sig=flac"", ""size_mb"": 12 }
+                                        ""flac"": { ""url"": ""https://popplers5.bandcamp.com/download/album/111?sig=flac"", ""size_mb"": 12 }
                                     }
                                 }]
                             };</script></head><body></body></html>",
                             request),
-                        "https://bandcamp.com/statdownload/album/111?sig=flac&.format=flac&.json=true" => CreateStringResponse(
-                            @"{""url"":""https://files.example.com/fresh.flac""}",
+                        var statUrl when System.Text.RegularExpressions.Regex.IsMatch(statUrl, @"^https://popplers5\.bandcamp\.com/statdownload/album/111\?sig=flac&\.rand=\d+&\.vrs=1$") => CreateStringResponse(
+                            request.Headers.GetValues("Cookie")?.SingleOrDefault() == "identity=testcookie"
+                                ? @"if ( window.Downloads ) { Downloads.statResult( {""result"":""ok"",""url"":""/status"",""download_url"":""https://files.example.com/fresh.flac""} ) };"
+                                : @"{""result"":""err"",""errortype"":""ExpirationError"",""url"":""/status""}",
                             request),
                         "https://files.example.com/fresh.flac" => CreateBinaryResponse(
                             new byte[] { 0x66, 0x4C, 0x61, 0x43, 0x00, 0x00, 0x00, 0x22 },
@@ -354,7 +356,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                     var uri = request.Url.FullUri;
                     var body = uri switch
                     {
-                        "https://bandcamp.com/statdownload/album/111?sig=flac&.format=flac&.json=true" => statdownloadBody,
+                        var statUrl when System.Text.RegularExpressions.Regex.IsMatch(statUrl, @"^https://bandcamp\.com/statdownload/album/111\?sig=flac&\.rand=\d+&\.vrs=1$") => statdownloadBody,
                         "https://files.example.com/album.zip" => fileBody,
                         _ => null
                     };

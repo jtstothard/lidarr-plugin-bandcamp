@@ -1,0 +1,690 @@
+{
+  "package": "/private/tmp/bandcamp-popplers-source.zip",
+  "packageSha256": "6f367501f4dbf76542b5897d264bfef2f081bb3bae309c5464b055eaf8701672",
+  "inputs": {
+    "oldest": {
+      "version": "3.1.4.5029",
+      "releaseApi": "https://api.github.com/repos/Lidarr/Lidarr/releases/375193671",
+      "releaseCommit": "570f9a515ae7319d5df698cb4715cf718e7590d2",
+      "url": "https://github.com/Lidarr/Lidarr/releases/download/v3.1.4.5029/Lidarr.develop.3.1.4.5029.linux-core-x64.tar.gz",
+      "sha256": "39e011bb43ed612e3e009b9280836e47bc53f6ee1439192a9e89384fc38216b1",
+      "coreSha256": "4d1d09a507365e3dd79c1ac8734dfa2761f4610d40c359221c99734e6b53e735",
+      "releaseId": 375193671,
+      "assetId": 526152324,
+      "publishedAt": "2026-08-23T11:39:53Z"
+    },
+    "nightly": {
+      "version": "3.2.1.5196",
+      "releaseApi": "https://api.github.com/repos/Lidarr/Lidarr/releases/tags/v3.2.1.5196",
+      "releaseCommit": "6af1274a11957270a308fd0448ffe624a8e264d0",
+      "url": "https://github.com/Lidarr/Lidarr/releases/download/v3.2.1.5196/Lidarr.develop.3.2.1.5196.linux-core-x64.tar.gz",
+      "sha256": "009ce48af3faab34578dd1fcd3945cae7db42f5449c7999e2ffd20d60a22ec06",
+      "coreSha256": "7ca8d80b4ea680546f81b4c48787ed5a44550654e97684e3fe2465b7e7862294",
+      "releaseId": 438043540,
+      "assetId": 722940621,
+      "publishedAt": "2026-11-08T15:52:21Z"
+    }
+  },
+  "sdk": "10.0.103",
+  "scannerLockSha256": "a07b57e53b87e49d709ca5b3fce906c0d22d90e72ce6e034082c7c4b4762bd8e",
+  "results": [
+    {
+      "runtime": "3.1.4.5029",
+      "processId": 55469,
+      "hostRuntime": "10.0.3",
+      "scenario": "healthy",
+      "homepageCalls": 1,
+      "diagnosticPassed": false,
+      "behavioralPassed": true,
+      "warningBeforeRestore": null,
+      "severity": "Ok",
+      "healthMessage": null,
+      "reason": null,
+      "exception": null,
+      "message": null,
+      "assemblies": [
+        {
+          "name": "FluentValidation",
+          "identity": "FluentValidation, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7de548da2fbae0f0",
+          "path": "<isolated-root>/oldest/FluentValidation.dll",
+          "sha256": "2c435bfd490bdf31e4e4bcb5f3e0f4e953f7d9510c0129d829c4b73966bece34"
+        },
+        {
+          "name": "Lidarr.Common",
+          "identity": "Lidarr.Common, Version=3.1.4.5029, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/oldest/Lidarr.Common.dll",
+          "sha256": "c08860c5d48e982c04d6bc175bf3d3c2168025ff0642c3bacc6a90120edfa8c2"
+        },
+        {
+          "name": "Lidarr.Core",
+          "identity": "Lidarr.Core, Version=3.1.4.5029, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/oldest/Lidarr.Core.dll",
+          "sha256": "4d1d09a507365e3dd79c1ac8734dfa2761f4610d40c359221c99734e6b53e735"
+        },
+        {
+          "name": "Lidarr.Plugin.Bandcamp",
+          "identity": "Lidarr.Plugin.Bandcamp, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/Lidarr.Plugin.Bandcamp.dll",
+          "sha256": "1c2ca8b6bf75216ab7c9123b2e7be3564b85ab74781d59199b090d5d2724286c"
+        },
+        {
+          "name": "NLog",
+          "identity": "NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c",
+          "path": "<isolated-root>/oldest/NLog.dll",
+          "sha256": "0b96c27373786d9ae27e2a26e00d890adff5adfc4d3f0ee0bd1ae2a958292860"
+        }
+      ]
+    },
+    {
+      "runtime": "3.1.4.5029",
+      "processId": 55470,
+      "hostRuntime": "10.0.3",
+      "scenario": "warning",
+      "homepageCalls": 1,
+      "diagnosticPassed": false,
+      "behavioralPassed": true,
+      "warningBeforeRestore": null,
+      "severity": "Warning",
+      "healthMessage": "Bandcamp session needs attention. My Bandcamp: Bandcamp positively signed the session out; renew in your browser and paste a fresh identity cookie, or configure complete email and password credentials; the isolated desktop helper is documented in docs/browser-renewal.md. Auth mode: Web identity (manual cookie). Last successful validation: never",
+      "reason": null,
+      "exception": null,
+      "message": null,
+      "assemblies": [
+        {
+          "name": "FluentValidation",
+          "identity": "FluentValidation, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7de548da2fbae0f0",
+          "path": "<isolated-root>/oldest/FluentValidation.dll",
+          "sha256": "2c435bfd490bdf31e4e4bcb5f3e0f4e953f7d9510c0129d829c4b73966bece34"
+        },
+        {
+          "name": "Lidarr.Common",
+          "identity": "Lidarr.Common, Version=3.1.4.5029, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/oldest/Lidarr.Common.dll",
+          "sha256": "c08860c5d48e982c04d6bc175bf3d3c2168025ff0642c3bacc6a90120edfa8c2"
+        },
+        {
+          "name": "Lidarr.Core",
+          "identity": "Lidarr.Core, Version=3.1.4.5029, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/oldest/Lidarr.Core.dll",
+          "sha256": "4d1d09a507365e3dd79c1ac8734dfa2761f4610d40c359221c99734e6b53e735"
+        },
+        {
+          "name": "Lidarr.Plugin.Bandcamp",
+          "identity": "Lidarr.Plugin.Bandcamp, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/Lidarr.Plugin.Bandcamp.dll",
+          "sha256": "1c2ca8b6bf75216ab7c9123b2e7be3564b85ab74781d59199b090d5d2724286c"
+        },
+        {
+          "name": "NLog",
+          "identity": "NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c",
+          "path": "<isolated-root>/oldest/NLog.dll",
+          "sha256": "0b96c27373786d9ae27e2a26e00d890adff5adfc4d3f0ee0bd1ae2a958292860"
+        }
+      ]
+    },
+    {
+      "runtime": "3.1.4.5029",
+      "processId": 55471,
+      "hostRuntime": "10.0.3",
+      "scenario": "restored",
+      "homepageCalls": 2,
+      "diagnosticPassed": false,
+      "behavioralPassed": true,
+      "warningBeforeRestore": true,
+      "severity": "Ok",
+      "healthMessage": null,
+      "reason": null,
+      "exception": null,
+      "message": null,
+      "assemblies": [
+        {
+          "name": "FluentValidation",
+          "identity": "FluentValidation, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7de548da2fbae0f0",
+          "path": "<isolated-root>/oldest/FluentValidation.dll",
+          "sha256": "2c435bfd490bdf31e4e4bcb5f3e0f4e953f7d9510c0129d829c4b73966bece34"
+        },
+        {
+          "name": "Lidarr.Common",
+          "identity": "Lidarr.Common, Version=3.1.4.5029, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/oldest/Lidarr.Common.dll",
+          "sha256": "c08860c5d48e982c04d6bc175bf3d3c2168025ff0642c3bacc6a90120edfa8c2"
+        },
+        {
+          "name": "Lidarr.Core",
+          "identity": "Lidarr.Core, Version=3.1.4.5029, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/oldest/Lidarr.Core.dll",
+          "sha256": "4d1d09a507365e3dd79c1ac8734dfa2761f4610d40c359221c99734e6b53e735"
+        },
+        {
+          "name": "Lidarr.Plugin.Bandcamp",
+          "identity": "Lidarr.Plugin.Bandcamp, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/Lidarr.Plugin.Bandcamp.dll",
+          "sha256": "1c2ca8b6bf75216ab7c9123b2e7be3564b85ab74781d59199b090d5d2724286c"
+        },
+        {
+          "name": "NLog",
+          "identity": "NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c",
+          "path": "<isolated-root>/oldest/NLog.dll",
+          "sha256": "0b96c27373786d9ae27e2a26e00d890adff5adfc4d3f0ee0bd1ae2a958292860"
+        }
+      ]
+    },
+    {
+      "runtime": "3.1.4.5029",
+      "processId": 55472,
+      "hostRuntime": "10.0.3",
+      "scenario": "disabled",
+      "homepageCalls": 2,
+      "diagnosticPassed": false,
+      "behavioralPassed": true,
+      "warningBeforeRestore": null,
+      "severity": "Ok",
+      "healthMessage": null,
+      "reason": null,
+      "exception": null,
+      "message": null,
+      "assemblies": [
+        {
+          "name": "FluentValidation",
+          "identity": "FluentValidation, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7de548da2fbae0f0",
+          "path": "<isolated-root>/oldest/FluentValidation.dll",
+          "sha256": "2c435bfd490bdf31e4e4bcb5f3e0f4e953f7d9510c0129d829c4b73966bece34"
+        },
+        {
+          "name": "Lidarr.Common",
+          "identity": "Lidarr.Common, Version=3.1.4.5029, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/oldest/Lidarr.Common.dll",
+          "sha256": "c08860c5d48e982c04d6bc175bf3d3c2168025ff0642c3bacc6a90120edfa8c2"
+        },
+        {
+          "name": "Lidarr.Core",
+          "identity": "Lidarr.Core, Version=3.1.4.5029, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/oldest/Lidarr.Core.dll",
+          "sha256": "4d1d09a507365e3dd79c1ac8734dfa2761f4610d40c359221c99734e6b53e735"
+        },
+        {
+          "name": "Lidarr.Plugin.Bandcamp",
+          "identity": "Lidarr.Plugin.Bandcamp, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/Lidarr.Plugin.Bandcamp.dll",
+          "sha256": "1c2ca8b6bf75216ab7c9123b2e7be3564b85ab74781d59199b090d5d2724286c"
+        },
+        {
+          "name": "NLog",
+          "identity": "NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c",
+          "path": "<isolated-root>/oldest/NLog.dll",
+          "sha256": "0b96c27373786d9ae27e2a26e00d890adff5adfc4d3f0ee0bd1ae2a958292860"
+        }
+      ]
+    },
+    {
+      "runtime": "3.1.4.5029",
+      "processId": 55473,
+      "hostRuntime": "10.0.3",
+      "scenario": "multiple",
+      "homepageCalls": 2,
+      "diagnosticPassed": false,
+      "behavioralPassed": true,
+      "warningBeforeRestore": null,
+      "severity": "Warning",
+      "healthMessage": "Bandcamp session needs attention. My Bandcamp: Bandcamp positively signed the session out; renew in your browser and paste a fresh identity cookie, or configure complete email and password credentials; the isolated desktop helper is documented in docs/browser-renewal.md. Auth mode: Web identity (manual cookie). Last successful validation: never; Other Bandcamp: Bandcamp positively signed the session out; renew in your browser and paste a fresh identity cookie, or configure complete email and password credentials; the isolated desktop helper is documented in docs/browser-renewal.md. Auth mode: Web identity (manual cookie). Last successful validation: never",
+      "reason": null,
+      "exception": null,
+      "message": null,
+      "assemblies": [
+        {
+          "name": "FluentValidation",
+          "identity": "FluentValidation, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7de548da2fbae0f0",
+          "path": "<isolated-root>/oldest/FluentValidation.dll",
+          "sha256": "2c435bfd490bdf31e4e4bcb5f3e0f4e953f7d9510c0129d829c4b73966bece34"
+        },
+        {
+          "name": "Lidarr.Common",
+          "identity": "Lidarr.Common, Version=3.1.4.5029, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/oldest/Lidarr.Common.dll",
+          "sha256": "c08860c5d48e982c04d6bc175bf3d3c2168025ff0642c3bacc6a90120edfa8c2"
+        },
+        {
+          "name": "Lidarr.Core",
+          "identity": "Lidarr.Core, Version=3.1.4.5029, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/oldest/Lidarr.Core.dll",
+          "sha256": "4d1d09a507365e3dd79c1ac8734dfa2761f4610d40c359221c99734e6b53e735"
+        },
+        {
+          "name": "Lidarr.Plugin.Bandcamp",
+          "identity": "Lidarr.Plugin.Bandcamp, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/Lidarr.Plugin.Bandcamp.dll",
+          "sha256": "1c2ca8b6bf75216ab7c9123b2e7be3564b85ab74781d59199b090d5d2724286c"
+        },
+        {
+          "name": "NLog",
+          "identity": "NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c",
+          "path": "<isolated-root>/oldest/NLog.dll",
+          "sha256": "0b96c27373786d9ae27e2a26e00d890adff5adfc4d3f0ee0bd1ae2a958292860"
+        }
+      ]
+    },
+    {
+      "runtime": "3.2.1.5196",
+      "processId": 55477,
+      "hostRuntime": "10.0.3",
+      "scenario": "healthy",
+      "homepageCalls": 1,
+      "diagnosticPassed": false,
+      "behavioralPassed": true,
+      "warningBeforeRestore": null,
+      "severity": "Ok",
+      "healthMessage": null,
+      "reason": "AllowedHostsNotConfigured",
+      "exception": null,
+      "message": null,
+      "assemblies": [
+        {
+          "name": "FluentValidation",
+          "identity": "FluentValidation, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7de548da2fbae0f0",
+          "path": "<isolated-root>/nightly/FluentValidation.dll",
+          "sha256": "2c435bfd490bdf31e4e4bcb5f3e0f4e953f7d9510c0129d829c4b73966bece34"
+        },
+        {
+          "name": "Lidarr.Common",
+          "identity": "Lidarr.Common, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/nightly/Lidarr.Common.dll",
+          "sha256": "5e18c55b500b950828ed00000044082cc63967bd576b74e9c01a2a1970c54fbb"
+        },
+        {
+          "name": "Lidarr.Core",
+          "identity": "Lidarr.Core, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/nightly/Lidarr.Core.dll",
+          "sha256": "7ca8d80b4ea680546f81b4c48787ed5a44550654e97684e3fe2465b7e7862294"
+        },
+        {
+          "name": "Lidarr.Plugin.Bandcamp",
+          "identity": "Lidarr.Plugin.Bandcamp, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/Lidarr.Plugin.Bandcamp.dll",
+          "sha256": "1c2ca8b6bf75216ab7c9123b2e7be3564b85ab74781d59199b090d5d2724286c"
+        },
+        {
+          "name": "NLog",
+          "identity": "NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c",
+          "path": "<isolated-root>/nightly/NLog.dll",
+          "sha256": "0b96c27373786d9ae27e2a26e00d890adff5adfc4d3f0ee0bd1ae2a958292860"
+        }
+      ]
+    },
+    {
+      "runtime": "3.2.1.5196",
+      "processId": 55495,
+      "hostRuntime": "10.0.3",
+      "scenario": "warning",
+      "homepageCalls": 1,
+      "diagnosticPassed": false,
+      "behavioralPassed": true,
+      "warningBeforeRestore": null,
+      "severity": "Warning",
+      "healthMessage": "Bandcamp session needs attention. My Bandcamp: Bandcamp positively signed the session out; renew in your browser and paste a fresh identity cookie, or configure complete email and password credentials; the isolated desktop helper is documented in docs/browser-renewal.md. Auth mode: Web identity (manual cookie). Last successful validation: never",
+      "reason": "DownloadClientStatusSingleClient",
+      "exception": null,
+      "message": null,
+      "assemblies": [
+        {
+          "name": "FluentValidation",
+          "identity": "FluentValidation, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7de548da2fbae0f0",
+          "path": "<isolated-root>/nightly/FluentValidation.dll",
+          "sha256": "2c435bfd490bdf31e4e4bcb5f3e0f4e953f7d9510c0129d829c4b73966bece34"
+        },
+        {
+          "name": "Lidarr.Common",
+          "identity": "Lidarr.Common, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/nightly/Lidarr.Common.dll",
+          "sha256": "5e18c55b500b950828ed00000044082cc63967bd576b74e9c01a2a1970c54fbb"
+        },
+        {
+          "name": "Lidarr.Core",
+          "identity": "Lidarr.Core, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/nightly/Lidarr.Core.dll",
+          "sha256": "7ca8d80b4ea680546f81b4c48787ed5a44550654e97684e3fe2465b7e7862294"
+        },
+        {
+          "name": "Lidarr.Plugin.Bandcamp",
+          "identity": "Lidarr.Plugin.Bandcamp, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/Lidarr.Plugin.Bandcamp.dll",
+          "sha256": "1c2ca8b6bf75216ab7c9123b2e7be3564b85ab74781d59199b090d5d2724286c"
+        },
+        {
+          "name": "NLog",
+          "identity": "NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c",
+          "path": "<isolated-root>/nightly/NLog.dll",
+          "sha256": "0b96c27373786d9ae27e2a26e00d890adff5adfc4d3f0ee0bd1ae2a958292860"
+        }
+      ]
+    },
+    {
+      "runtime": "3.2.1.5196",
+      "processId": 55496,
+      "hostRuntime": "10.0.3",
+      "scenario": "restored",
+      "homepageCalls": 2,
+      "diagnosticPassed": false,
+      "behavioralPassed": true,
+      "warningBeforeRestore": true,
+      "severity": "Ok",
+      "healthMessage": null,
+      "reason": "AllowedHostsNotConfigured",
+      "exception": null,
+      "message": null,
+      "assemblies": [
+        {
+          "name": "FluentValidation",
+          "identity": "FluentValidation, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7de548da2fbae0f0",
+          "path": "<isolated-root>/nightly/FluentValidation.dll",
+          "sha256": "2c435bfd490bdf31e4e4bcb5f3e0f4e953f7d9510c0129d829c4b73966bece34"
+        },
+        {
+          "name": "Lidarr.Common",
+          "identity": "Lidarr.Common, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/nightly/Lidarr.Common.dll",
+          "sha256": "5e18c55b500b950828ed00000044082cc63967bd576b74e9c01a2a1970c54fbb"
+        },
+        {
+          "name": "Lidarr.Core",
+          "identity": "Lidarr.Core, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/nightly/Lidarr.Core.dll",
+          "sha256": "7ca8d80b4ea680546f81b4c48787ed5a44550654e97684e3fe2465b7e7862294"
+        },
+        {
+          "name": "Lidarr.Plugin.Bandcamp",
+          "identity": "Lidarr.Plugin.Bandcamp, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/Lidarr.Plugin.Bandcamp.dll",
+          "sha256": "1c2ca8b6bf75216ab7c9123b2e7be3564b85ab74781d59199b090d5d2724286c"
+        },
+        {
+          "name": "NLog",
+          "identity": "NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c",
+          "path": "<isolated-root>/nightly/NLog.dll",
+          "sha256": "0b96c27373786d9ae27e2a26e00d890adff5adfc4d3f0ee0bd1ae2a958292860"
+        }
+      ]
+    },
+    {
+      "runtime": "3.2.1.5196",
+      "processId": 55497,
+      "hostRuntime": "10.0.3",
+      "scenario": "disabled",
+      "homepageCalls": 2,
+      "diagnosticPassed": false,
+      "behavioralPassed": true,
+      "warningBeforeRestore": null,
+      "severity": "Ok",
+      "healthMessage": null,
+      "reason": "AllowedHostsNotConfigured",
+      "exception": null,
+      "message": null,
+      "assemblies": [
+        {
+          "name": "FluentValidation",
+          "identity": "FluentValidation, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7de548da2fbae0f0",
+          "path": "<isolated-root>/nightly/FluentValidation.dll",
+          "sha256": "2c435bfd490bdf31e4e4bcb5f3e0f4e953f7d9510c0129d829c4b73966bece34"
+        },
+        {
+          "name": "Lidarr.Common",
+          "identity": "Lidarr.Common, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/nightly/Lidarr.Common.dll",
+          "sha256": "5e18c55b500b950828ed00000044082cc63967bd576b74e9c01a2a1970c54fbb"
+        },
+        {
+          "name": "Lidarr.Core",
+          "identity": "Lidarr.Core, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/nightly/Lidarr.Core.dll",
+          "sha256": "7ca8d80b4ea680546f81b4c48787ed5a44550654e97684e3fe2465b7e7862294"
+        },
+        {
+          "name": "Lidarr.Plugin.Bandcamp",
+          "identity": "Lidarr.Plugin.Bandcamp, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/Lidarr.Plugin.Bandcamp.dll",
+          "sha256": "1c2ca8b6bf75216ab7c9123b2e7be3564b85ab74781d59199b090d5d2724286c"
+        },
+        {
+          "name": "NLog",
+          "identity": "NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c",
+          "path": "<isolated-root>/nightly/NLog.dll",
+          "sha256": "0b96c27373786d9ae27e2a26e00d890adff5adfc4d3f0ee0bd1ae2a958292860"
+        }
+      ]
+    },
+    {
+      "runtime": "3.2.1.5196",
+      "processId": 55498,
+      "hostRuntime": "10.0.3",
+      "scenario": "multiple",
+      "homepageCalls": 2,
+      "diagnosticPassed": false,
+      "behavioralPassed": true,
+      "warningBeforeRestore": null,
+      "severity": "Warning",
+      "healthMessage": "Bandcamp session needs attention. My Bandcamp: Bandcamp positively signed the session out; renew in your browser and paste a fresh identity cookie, or configure complete email and password credentials; the isolated desktop helper is documented in docs/browser-renewal.md. Auth mode: Web identity (manual cookie). Last successful validation: never; Other Bandcamp: Bandcamp positively signed the session out; renew in your browser and paste a fresh identity cookie, or configure complete email and password credentials; the isolated desktop helper is documented in docs/browser-renewal.md. Auth mode: Web identity (manual cookie). Last successful validation: never",
+      "reason": "DownloadClientStatusSingleClient",
+      "exception": null,
+      "message": null,
+      "assemblies": [
+        {
+          "name": "FluentValidation",
+          "identity": "FluentValidation, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7de548da2fbae0f0",
+          "path": "<isolated-root>/nightly/FluentValidation.dll",
+          "sha256": "2c435bfd490bdf31e4e4bcb5f3e0f4e953f7d9510c0129d829c4b73966bece34"
+        },
+        {
+          "name": "Lidarr.Common",
+          "identity": "Lidarr.Common, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/nightly/Lidarr.Common.dll",
+          "sha256": "5e18c55b500b950828ed00000044082cc63967bd576b74e9c01a2a1970c54fbb"
+        },
+        {
+          "name": "Lidarr.Core",
+          "identity": "Lidarr.Core, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/nightly/Lidarr.Core.dll",
+          "sha256": "7ca8d80b4ea680546f81b4c48787ed5a44550654e97684e3fe2465b7e7862294"
+        },
+        {
+          "name": "Lidarr.Plugin.Bandcamp",
+          "identity": "Lidarr.Plugin.Bandcamp, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/Lidarr.Plugin.Bandcamp.dll",
+          "sha256": "1c2ca8b6bf75216ab7c9123b2e7be3564b85ab74781d59199b090d5d2724286c"
+        },
+        {
+          "name": "NLog",
+          "identity": "NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c",
+          "path": "<isolated-root>/nightly/NLog.dll",
+          "sha256": "0b96c27373786d9ae27e2a26e00d890adff5adfc4d3f0ee0bd1ae2a958292860"
+        }
+      ]
+    }
+  ],
+  "pluginSha256": "1c2ca8b6bf75216ab7c9123b2e7be3564b85ab74781d59199b090d5d2724286c",
+  "invocations": [
+    {
+      "command": [
+        "dotnet",
+        "<isolated-root>/harness/PackagedCompatibility.dll",
+        "<isolated-root>/oldest",
+        "<isolated-root>/Lidarr.Plugin.Bandcamp.dll",
+        "behavior",
+        "healthy"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "dotnet",
+        "<isolated-root>/harness/PackagedCompatibility.dll",
+        "<isolated-root>/oldest",
+        "<isolated-root>/Lidarr.Plugin.Bandcamp.dll",
+        "behavior",
+        "warning"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "dotnet",
+        "<isolated-root>/harness/PackagedCompatibility.dll",
+        "<isolated-root>/oldest",
+        "<isolated-root>/Lidarr.Plugin.Bandcamp.dll",
+        "behavior",
+        "restored"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "dotnet",
+        "<isolated-root>/harness/PackagedCompatibility.dll",
+        "<isolated-root>/oldest",
+        "<isolated-root>/Lidarr.Plugin.Bandcamp.dll",
+        "behavior",
+        "disabled"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "dotnet",
+        "<isolated-root>/harness/PackagedCompatibility.dll",
+        "<isolated-root>/oldest",
+        "<isolated-root>/Lidarr.Plugin.Bandcamp.dll",
+        "behavior",
+        "multiple"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "dotnet",
+        "<isolated-root>/scanner/Scanner.dll",
+        "<isolated-root>/oldest",
+        "<isolated-root>/Lidarr.Plugin.Bandcamp.dll"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "dotnet",
+        "<isolated-root>/harness/PackagedCompatibility.dll",
+        "<isolated-root>/nightly",
+        "<isolated-root>/Lidarr.Plugin.Bandcamp.dll",
+        "behavior",
+        "healthy"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "dotnet",
+        "<isolated-root>/harness/PackagedCompatibility.dll",
+        "<isolated-root>/nightly",
+        "<isolated-root>/Lidarr.Plugin.Bandcamp.dll",
+        "behavior",
+        "warning"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "dotnet",
+        "<isolated-root>/harness/PackagedCompatibility.dll",
+        "<isolated-root>/nightly",
+        "<isolated-root>/Lidarr.Plugin.Bandcamp.dll",
+        "behavior",
+        "restored"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "dotnet",
+        "<isolated-root>/harness/PackagedCompatibility.dll",
+        "<isolated-root>/nightly",
+        "<isolated-root>/Lidarr.Plugin.Bandcamp.dll",
+        "behavior",
+        "disabled"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "dotnet",
+        "<isolated-root>/harness/PackagedCompatibility.dll",
+        "<isolated-root>/nightly",
+        "<isolated-root>/Lidarr.Plugin.Bandcamp.dll",
+        "behavior",
+        "multiple"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "dotnet",
+        "<isolated-root>/scanner/Scanner.dll",
+        "<isolated-root>/nightly",
+        "<isolated-root>/Lidarr.Plugin.Bandcamp.dll"
+      ],
+      "exit": 0,
+      "stderr": ""
+    }
+  ],
+  "scans": [
+    {
+      "runtime": "3.1.4.5029",
+      "coverage": "Direct Lidarr/NzbDrone assembly-scoped TypeRef and MemberRef metadata; includes Cecil base/member resolution. Excludes reflective calls, inherited interface contracts, native startup and behavior.",
+      "types": 91,
+      "members": 244,
+      "missingTypes": [],
+      "missingMembers": [],
+      "errors": [],
+      "resolvedAssemblies": [
+        {
+          "name": "Lidarr.Core, Version=3.1.4.5029, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/oldest/Lidarr.Core.dll",
+          "sha256": "4d1d09a507365e3dd79c1ac8734dfa2761f4610d40c359221c99734e6b53e735"
+        },
+        {
+          "name": "Lidarr.Common, Version=3.1.4.5029, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/oldest/Lidarr.Common.dll",
+          "sha256": "c08860c5d48e982c04d6bc175bf3d3c2168025ff0642c3bacc6a90120edfa8c2"
+        }
+      ]
+    },
+    {
+      "runtime": "3.2.1.5196",
+      "coverage": "Direct Lidarr/NzbDrone assembly-scoped TypeRef and MemberRef metadata; includes Cecil base/member resolution. Excludes reflective calls, inherited interface contracts, native startup and behavior.",
+      "types": 91,
+      "members": 244,
+      "missingTypes": [],
+      "missingMembers": [],
+      "errors": [],
+      "resolvedAssemblies": [
+        {
+          "name": "Lidarr.Core, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/nightly/Lidarr.Core.dll",
+          "sha256": "7ca8d80b4ea680546f81b4c48787ed5a44550654e97684e3fe2465b7e7862294"
+        },
+        {
+          "name": "Lidarr.Common, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null",
+          "path": "<isolated-root>/nightly/Lidarr.Common.dll",
+          "sha256": "5e18c55b500b950828ed00000044082cc63967bd576b74e9c01a2a1970c54fbb"
+        }
+      ]
+    }
+  ],
+  "passed": true
+}

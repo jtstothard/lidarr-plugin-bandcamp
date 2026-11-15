@@ -481,7 +481,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             Assert.False(request.StoreRequestCookie); Assert.False(request.StoreResponseCookie); Assert.False(request.AllowAutoRedirect);
             return request.Url.FullUri switch
             {
-                "https://bandcamp.com/statdownload/album/111?sig=flac&.format=flac&.json=true" =>
+                var statUrl when System.Text.RegularExpressions.Regex.IsMatch(statUrl, @"^https://bandcamp\.com/statdownload/album/111\?sig=flac&\.rand=\d+&\.vrs=1$") =>
                     Text(@"{""url"":""https://files.example.com/fresh.flac""}", request),
                 "https://files.example.com/fresh.flac" => new HttpResponse(
                     request,

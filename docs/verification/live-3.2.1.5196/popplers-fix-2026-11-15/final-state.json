@@ -1,0 +1,15 @@
+{
+  "installed_sha256": "674d2de854890f625e84d0d3702d0a9cbc3f0860c9479f5eee6f86aa93c26cc4",
+  "provider_settings_match_backup": true,
+  "indexer_auth_owner": "Bandcamp",
+  "retry_config_matches_prior": true,
+  "retry_flag": true,
+  "track_count": 11,
+  "linked_files": 11,
+  "artist_monitored": false,
+  "album_monitored": false,
+  "target_commands": 0,
+  "posi_grabs": 2,
+  "posi_failures": 1,
+  "posi_download_imported": 1
+}
