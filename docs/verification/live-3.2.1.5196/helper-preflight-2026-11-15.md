@@ -116,3 +116,106 @@ leaving the owner selector empty. The user must personally complete the visible
 Bandcamp login/challenge. Preserve the operation ID and reconcile uncertainty; no
 replay or deliberate credential invalidation. No live settings edit or deployment
 was performed during this implementation.
+
+## Approved live renewal checkpoint — 2026-11-15, 12:08 UTC
+
+The user explicitly approved one owner renewal and shared mapping/search/download,
+then instructed use of the saved Bandcamp login in 1Password. A new private snapshot
+of the exact owner/indexer database rows was saved under
+`/srv/docker-state/rollback-preparation/bandcamp-shared-renewal-20261115T115346Z`
+(directory 0700, settings file 0600). The deployed DLL hash was unchanged.
+
+The first ordinary CLI run was cooperatively cancelled while still waiting for
+login; exit 1, no renewal operation ID. Native desktop control could not select the
+helper process independently of another Chromium process with the same app identity.
+A temporary .NET 10 qualification runner was therefore built around the production
+CookiePushCommand, PlaywrightCookieCapture and PlaywrightBrowserSession. Its factory
+uses the production headed/download-disabled/service-worker-blocked launch options
+and the production session's network restrictions. Its only added behavior is
+filling the saved login from process memory; no credentials are in source or arguments.
+This is an instrumented native runner, not a claim that the ordinary CLI autofills.
+
+The first autofill attempt timed out before confirming the submit action. No server
+renewal operation was created. Credential-free probes reproduced an original submit
+selector with zero matches. The accessible Log in button had one match, but its trial
+click was blocked by the consent overlay. Accept necessary only followed by the
+accessible button passed the trial click without submitting any credentials. The
+original selector therefore could not click the submit button. No password retry
+was used to diagnose this failure.
+
+The corrected native runner accepted necessary cookies, filled the saved credentials
+from 1Password and emitted `LOGIN_SUBMITTED_ONCE`, followed by
+`VERIFICATION_FIELD_VISIBLE=False`. It is still waiting for a usable identity; no
+renewal operation ID or success receipt has been emitted. No CAPTCHA/verification
+was solved and no password submission was repeated after this corrected submission.
+At 12:08 UTC both complete saved database rows still matched the before snapshot.
+An exact identity-cookie metadata-only query of this run's own temporary profile
+found no persisted identity row. That does not prove absence from browser memory.
+The page's actual refusal/challenge state remains UNKNOWN; do not attribute it to
+CAPTCHA, a wrong password or expiry without observing the page.
+
+Temporary runner/probes and nonsecret sources are retained in
+`/var/folders/kc/hjd9zkys3ts402ygmnrh89j40000gn/T/bandcamp-native-autofill-kysnl545`.
+The corrected runner uses the existing ten-minute helper deadline. No indexer mapping,
+provider Test/search, archive grab, library import, deploy or restart has followed
+this pending login. Preserve the working session. Reconcile any subsequently emitted
+operation ID; do not launch another password attempt blindly.
+
+## Completed handoff, shared mapping and lossless archive
+
+The user observed CAPTCHA and completed it in the visible isolated browser. The
+instrumented native runner then emitted operation
+`7d085c34-22e1-4512-a12d-c1e6e8c4a309`, the production helper's validated-and-saved
+message and `NATIVE_HELPER_EXIT 0`. No CAPTCHA was automated or bypassed.
+An independent native host status action for that exact owner/operation returned
+`Committed`, `success: true`, no problem. No candidate was replayed.
+
+The approved one-field PUT of indexer 26 returned 202. Database readback proved the
+only changed setting was `authConfiguration: Bandcamp`, with every other column
+and retained legacy setting unchanged. Owner 12 retains its empty selector.
+Native owner and shared indexer Test actions both returned HTTP 200 with no failures.
+The native album search for Pocket (album 235472) returned eight Bandcamp format
+results, including a FLAC release of advertised size 211602636 bytes. This search
+uses the host's collective interactive route, so other enabled indexers also ran;
+the Bandcamp result was identified by indexer id 26. The FLAC release was rejected
+by host decisions; no rejected release was force-grabbed.
+
+Final database comparison found the entire owner row still equal to its before
+snapshot. The committed handoff therefore does **not** establish cookie rotation,
+a different persisted cookie or recovery from an expired session. It establishes
+the real browser capture, expected-account validation and successful server receipt
+for the instrumented workflow. No working identity was deliberately invalidated.
+Saved mapping persistence is proven by database readback, not by a host restart.
+
+To find a safe native import target, a bounded read of 95 collection entries was
+compared with existing album metadata and library directory names. No straightforward
+candidate both matched selected track counts and avoided existing files/directories.
+ME REX album 1724 had no linked track files, but existing physical Triceratops and
+Stegosaurus directories were present; its native Bandcamp search also returned no
+results. No album monitoring/release choice or existing library file was changed.
+A protected before manifest of 169 existing ME REX artist files was retained beside
+the settings snapshot; it is evidence preparation, not evidence of an import.
+
+One authorized owned FLAC archive was instead downloaded to a new isolated directory
+on media-vm, outside both the library and the configured native download-client root:
+`/srv/docker-state/bandcamp-lossless-qualification-20261115T122307Z/pocket-flac.zip`.
+The request used the current saved owner identity, held in process memory. The flow
+read the owned download page, selected only FLAC, followed bounded HTTPS Bandcamp/CDN
+handoffs, and sent the identity only to exact bandcamp.com. No signed URL or cookie
+was printed. The archive streamed to an exclusive new file; no native client grab,
+queue entry, extraction, library import or existing-file overwrite occurred.
+
+The archive is 211636371 bytes, SHA256
+`9b4a6b37b9ae3a01a041d1c8839f8e49ae036c70583c9fc15e9ee08400084641`.
+ZIP CRC validation passed. All eight FLAC members have native `fLaC` headers and
+STREAMINFO indicating 44100 Hz, stereo, 24 bits/sample. Full receipt:
+[pocket-flac-2026-11-15.json](pocket-flac-2026-11-15.json).
+This proves original lossless archive retrieval using the current saved owner,
+not execution of Lidarr's native download client or successful library import.
+The unchanged deployed plugin hash was independently rechecked after these steps.
+
+Remaining gates: ordinary CLI autofill is not implemented (1Password autofill used
+a temporary instrumented runner); supported-platform packaging, forced-expiry or
+real cookie rotation, native post-submit cancellation races, restart persistence,
+and actual plugin download/import remain unqualified. Integration with main/#59
+and pushing the unpublished integration commits remain outstanding; keep #55 draft.
