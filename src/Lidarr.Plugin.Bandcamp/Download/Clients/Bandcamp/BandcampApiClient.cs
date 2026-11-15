@@ -52,10 +52,6 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             @"var\s+TralbumData\s*=\s*(\{.*?\})\s*;",
             RegexOptions.Compiled | RegexOptions.Singleline);
 
-        private static readonly Regex StatdownloadUrlRegex = new(
-            @"""url""\s*:\s*""([^""]+)""",
-            RegexOptions.Compiled);
-
         private readonly BandcampHttpClient _httpClient;
         private readonly Logger _logger;
 
@@ -477,34 +473,50 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
         private BandcampResolvedDownload? ParseStatdownloadPointer(string content)
         {
-            // Parse the JSON response to extract the actual download URL
-            var urlMatch = StatdownloadUrlRegex.Match(content);
-            if (urlMatch.Success)
+            var text = content.Trim();
+            // Bandcamp may wrap the object in a JavaScript callback. Parse its
+            // object as JSON; never execute the wrapper or regex-match nested URLs.
+            var firstBrace = text.IndexOf('{');
+            var lastBrace = text.LastIndexOf('}');
+            if (firstBrace >= 0 && lastBrace >= firstBrace)
             {
-                var resolvedUrl = urlMatch.Groups[1].Value
-                    .Replace("\\/", "/")
-                    .Replace("\\u0026", "&");
-
-                _logger.Debug("Bandcamp API: Resolved statdownload URL successfully");
-                return new BandcampResolvedDownload
+                try
                 {
-                    DownloadUrl = resolvedUrl
-                };
+                    using var document = JsonDocument.Parse(text[firstBrace..(lastBrace + 1)]);
+                    var root = document.RootElement;
+                    if (root.ValueKind == JsonValueKind.Object)
+                    {
+                        // retry_url is the ready archive pointer. An explicitly
+                        // empty value must not fall back to the browser-flow URL.
+                        if (root.TryGetProperty("retry_url", out var retry))
+                            return ValidatedArchivePointer(retry.ValueKind == JsonValueKind.String ? retry.GetString() : null);
+                        if (root.TryGetProperty("url", out var url))
+                            return ValidatedArchivePointer(url.ValueKind == JsonValueKind.String ? url.GetString() : null);
+                    }
+                }
+                catch (JsonException)
+                {
+                    // Unknown/malformed responses retain the null API result;
+                    // the download caller refuses to fetch a fallback endpoint.
+                }
             }
 
-            // Some statdownload responses return the URL directly as plain text
-            // or redirect — check if the content looks like a URL
-            if (content.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-            {
-                _logger.Debug("Bandcamp API: Statdownload returned direct URL");
-                return new BandcampResolvedDownload
-                {
-                    DownloadUrl = content.Trim()
-                };
-            }
+            if (text.StartsWith("http", StringComparison.OrdinalIgnoreCase) || text.StartsWith("//", StringComparison.Ordinal))
+                return ValidatedArchivePointer(text);
 
-            _logger.Debug("Bandcamp API: Failed to parse statdownload response");
             return null;
+        }
+
+        private static BandcampResolvedDownload ValidatedArchivePointer(string? value)
+        {
+            var candidate = value?.StartsWith("//", StringComparison.Ordinal) == true ? "https:" + value : value;
+            if (string.IsNullOrWhiteSpace(candidate) || candidate.Any(char.IsWhiteSpace) ||
+                !Uri.TryCreate(candidate, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps ||
+                string.IsNullOrEmpty(uri.Host) || uri.Port != 443 || !string.IsNullOrEmpty(uri.UserInfo) ||
+                !string.IsNullOrEmpty(uri.Fragment))
+                throw new DownloadException("Bandcamp resolver returned no usable archive pointer; no file request was sent. Inspect resolver status without retrying credentials.");
+
+            return new BandcampResolvedDownload { DownloadUrl = candidate };
         }
 
         private static bool IsZipHeader(byte[] data)

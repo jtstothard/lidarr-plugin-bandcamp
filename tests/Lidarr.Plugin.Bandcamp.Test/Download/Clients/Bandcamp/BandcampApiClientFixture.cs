@@ -517,6 +517,36 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
 
         #endregion
 
+        [Theory]
+        [InlineData("callback({\"url\":\"not-a-uri\",\"retry_url\":\"\"});")]
+        [InlineData("{\"url\":\"not-a-uri\"}")]
+        [InlineData("{\"url\":\"http://bandcamp.com/file.zip\"}")]
+        [InlineData("{\"url\":\"https://user:secret@bandcamp.com/file.zip\"}")]
+        [InlineData("{\"url\":\"https://bandcamp.com/landing\",\"retry_url\":\"\"}")]
+        [InlineData("{\"retry_url\":null}")]
+        [InlineData("{\"url\":\"https://bandcamp.com:8443/archive.zip\"}")]
+        [InlineData("{\"url\":\"https://bandcamp.com/archive.zip#fragment\"}")]
+        public async Task ResolveStatdownloadUrlAsync_UnusablePointerFailsBeforeTransfer(string body)
+        {
+            SetupGetAsync(CreateStringResponse(body));
+            var error = await Assert.ThrowsAsync<DownloadException>(() => CreateClient().ResolveStatdownloadUrlAsync(
+                "identity=sentinel", "https://bandcamp.com/download/album/12345?sig=abc", "flac"));
+            Assert.Contains("no usable archive pointer", error.Message);
+            Assert.DoesNotContain("not-a-uri", error.Message);
+            Assert.DoesNotContain("secret", error.Message);
+        }
+
+        [Theory]
+        [InlineData("callback({\"url\":\"not-a-uri\",\"retry_url\":\"//bandcamp.com/archive.zip?sig=a%2Bb\"});")]
+        [InlineData("{\"retry_url\":\"https://bandcamp.com/archive.zip?sig=a%2Bb\"}")]
+        public async Task ResolveStatdownloadUrlAsync_UsesStructuredRetryPointer(string body)
+        {
+            SetupGetAsync(CreateStringResponse(body));
+            var result = await CreateClient().ResolveStatdownloadUrlAsync(
+                "identity=sentinel", "https://bandcamp.com/download/album/12345", "flac");
+            Assert.Equal("https://bandcamp.com/archive.zip?sig=a%2Bb", result?.DownloadUrl);
+        }
+
         #region DownloadFileAsync Tests
 
         [Fact]

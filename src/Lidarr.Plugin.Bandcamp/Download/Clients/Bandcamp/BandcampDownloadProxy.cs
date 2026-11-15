@@ -251,10 +251,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
                         if (string.IsNullOrWhiteSpace(resolvedUrl))
                         {
-                            // Fall back to using the download URL directly
-                            resolvedUrl = downloadUrl;
-                            _logger.Debug("Bandcamp download proxy [{0}]: Statdownload resolution empty, using direct URL",
-                                item.DownloadId);
+                            throw new DownloadException("Bandcamp resolver returned no usable archive pointer; no file request was sent. Inspect resolver status without retrying credentials.");
                         }
 
                         // Phase 5: Download the file to a temp location

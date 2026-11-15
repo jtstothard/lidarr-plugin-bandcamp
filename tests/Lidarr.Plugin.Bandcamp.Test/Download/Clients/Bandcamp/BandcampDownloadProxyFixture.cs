@@ -318,6 +318,33 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         /// Mimics Lidarr's ManagedHttpDispatcher: when the request carries a
         /// ResponseStream, a 200 body is copied into it and ResponseData stays null.
         /// </summary>
+        [Theory]
+        [InlineData("callback({\"url\":\"not-a-uri\",\"retry_url\":\"\"});")]
+        [InlineData("garbled resolver response")]
+        [InlineData("{\"nested\":{\"url\":\"https://bandcamp.com/archive.zip\"}}")]
+        public async Task ExecuteDownloadAsync_UnusableResolverPointerStopsBeforeArchiveRequest(string resolverBody)
+        {
+            SetupStreamingDownload(
+                System.Text.Encoding.UTF8.GetBytes(resolverBody),
+                "application/json", null);
+            var item = new BandcampDownloadItem
+            {
+                AlbumUrl = "https://bandcamp.com/download?type=album&id=111#format=flac",
+                Title = "Fresh - Fresh [FLAC]",
+                OutputPath = _tempRoot,
+                SessionProvider = new BandcampSessionProvider(1,
+                    new BandcampDownloadSettings { Cookies = "identity=testcookie" },
+                    _apiClient, LogManager.GetCurrentClassLogger())
+            };
+            var error = await Assert.ThrowsAsync<DownloadException>(() => _subject.ExecuteDownloadAsync(item, CancellationToken.None));
+            Assert.Contains("no usable archive pointer", error.Message);
+            _httpClientMock.Verify(c => c.ExecuteAsync(It.Is<HttpRequest>(r =>
+                r.Url.FullUri != "https://bandcamp.com" &&
+                !r.Url.FullUri.StartsWith("https://bandcamp.com/download?") &&
+                !r.Url.FullUri.StartsWith("https://bandcamp.com/statdownload/"))), Times.Never);
+            Assert.True(!Directory.Exists(_tempRoot) || Directory.GetFiles(_tempRoot).Length == 0);
+        }
+
         private void SetupStreamingDownload(byte[] statdownloadBody, string statdownloadContentType, byte[]? fileBody)
         {
             _httpClientMock

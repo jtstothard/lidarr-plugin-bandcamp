@@ -1,5 +1,7 @@
 # Format-link request-path correction
 
+**Later diagnostic:** [two-request observation and local parser correction](approved-shape-diagnostic.md); neither a new deployment nor download qualification.
+
 **Subsequent result:** the approved deployment succeeded, but its single native grab failed with Invalid URI. See [actual run](approved-run.md). The preparation claims below describe the pre-deployment packet.
 
 ## Evidence and regression

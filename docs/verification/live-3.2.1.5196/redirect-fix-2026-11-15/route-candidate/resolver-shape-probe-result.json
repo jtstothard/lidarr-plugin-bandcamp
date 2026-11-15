@@ -1,0 +1,14 @@
+{
+  "mode": "METADATA_PROBE",
+  "transport": "Python urllib, not native Lidarr",
+  "requests": 2,
+  "page_status": 200,
+  "resolver_status": 200,
+  "location_count": 0,
+  "location_kind": "AbsentOrAmbiguous",
+  "current_regex_match_kind": "Refused",
+  "body_kind": "WrappedJson",
+  "json_url_kind": "Refused",
+  "json_retry_url_kind": "Empty",
+  "result": "OBSERVED_NO_ARCHIVE_FOLLOW"
+}

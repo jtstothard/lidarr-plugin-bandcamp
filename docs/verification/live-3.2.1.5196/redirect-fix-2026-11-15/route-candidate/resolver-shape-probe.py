@@ -68,7 +68,9 @@ def main():
     report = {'mode': 'METADATA_PROBE', 'transport': 'Python urllib, not native Lidarr', 'requests': 0}
     output = None
     try:
-        selected = json.loads((ROOT / 'release-search.json').read_text())
+        selected = [item for item in json.loads((ROOT / 'release-search.json').read_text())
+                    if item.get('indexerId') == 26 and item.get('approved')
+                    and item.get('quality', {}).get('quality', {}).get('name') == 'FLAC']
         if len(selected) != 1:
             raise ValueError('ambiguous selected release')
         page_url = urllib.parse.urldefrag(selected[0]['downloadUrl']).url
