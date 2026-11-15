@@ -400,7 +400,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             // Bandcamp statdownload URLs look like:
             // https://bandcamp.com/statdownload/{item_type}/{item_id}?{params}
             // They return JSON with a "url" field pointing to the actual file
-            var url = $"{downloadUrl}&.format={format}&.json=true";
+            var url = BuildStatdownloadUrl(downloadUrl, format);
 
             var builder = _httpClient.CreateRequestBuilder(url, cookies);
             var request = builder.Build();
@@ -602,6 +602,25 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             url.UserInfo.Length == 0 && url.Fragment.Length == 0 &&
             (url.Host == "bandcamp.com" || url.Host.EndsWith(".bandcamp.com", StringComparison.Ordinal) ||
              url.Host == "bcbits.com" || url.Host.EndsWith(".bcbits.com", StringComparison.Ordinal));
+
+        private static string BuildStatdownloadUrl(string downloadUrl, string format)
+        {
+            if (!Uri.TryCreate(downloadUrl, UriKind.Absolute, out var parsed) || !IsArchiveRedirect(parsed))
+                throw new DownloadException("Bandcamp format URL refused before resolver request.");
+
+            // Pagedata supplies a browser download link. Query the statdownload
+            // endpoint for the file pointer instead of requesting that landing flow.
+            // Slice the original string so signed query bytes are not reserialized.
+            const string downloadPrefix = "/download/";
+            var pathStart = downloadUrl.IndexOf('/', downloadUrl.IndexOf("://", StringComparison.Ordinal) + 3);
+            if (pathStart >= 0 && downloadUrl.Substring(pathStart).StartsWith(downloadPrefix, StringComparison.Ordinal))
+            {
+                downloadUrl = downloadUrl[..pathStart] + "/statdownload/" + downloadUrl[(pathStart + downloadPrefix.Length)..];
+            }
+
+            return downloadUrl + (downloadUrl.Contains('?') ? "&" : "?") +
+                ".format=" + Uri.EscapeDataString(format) + "&.json=true";
+        }
 
         private static double? ParseAlbumDurationSeconds(string content)
         {

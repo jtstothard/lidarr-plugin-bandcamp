@@ -1,5 +1,9 @@
 # Approved resolver observation and prepared pointer candidate
 
+This is the preparation record. The pointer candidate was subsequently deployed;
+its single guarded grab still failed with HTML. See [approved-run.md](approved-run.md)
+and the [request-route correction](../route-candidate/README.md) for the later state.
+
 The user approved the two-request diagnostic. The exact compiled resolver-probe.py
 was dispatched once with `--live`, after confirming no prior dispatch/result marker
 and the installed e91694e0 DLL hash. It made **exactly two requests**:

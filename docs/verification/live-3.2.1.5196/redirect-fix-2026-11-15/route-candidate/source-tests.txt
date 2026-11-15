@@ -1,0 +1,7 @@
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-212bdad1-14c5abb378a0d146/tests/Lidarr.Plugin.Bandcamp.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.Test.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.1 (arm64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:   330, Skipped:     0, Total:   330, Duration: 724 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)

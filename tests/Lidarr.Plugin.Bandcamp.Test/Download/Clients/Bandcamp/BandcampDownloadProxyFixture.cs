@@ -154,7 +154,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         }
 
         [Fact]
-        public async Task ExecuteDownloadAsync_DownloadPageUrlWithFormatFragment_DoesNotQueryCollection()
+        public async Task ExecuteDownloadAsync_ConvertsFormatDownloadLinkToResolverBeforeFileTransfer()
         {
             _httpClientMock
                 .Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
@@ -172,7 +172,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                                     ""item_type"": ""album"",
                                     ""title"": ""Fresh"",
                                     ""downloads"": {
-                                        ""flac"": { ""url"": ""https://bandcamp.com/statdownload/album/111?sig=flac"", ""size_mb"": 12 }
+                                        ""flac"": { ""url"": ""https://bandcamp.com/download/album/111?sig=flac"", ""size_mb"": 12 }
                                     }
                                 }]
                             };</script></head><body></body></html>",
@@ -184,6 +184,9 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                             new byte[] { 0x66, 0x4C, 0x61, 0x43, 0x00, 0x00, 0x00, 0x22 },
                             request,
                             "audio/flac"),
+                        var url when url.StartsWith("https://bandcamp.com/download/album/111?", StringComparison.Ordinal) =>
+                            new HttpResponse(request, new HttpHeader { { "Content-Type", "text/html" } },
+                                "<html><body>Download landing page, not archive bytes.</body></html>", HttpStatusCode.OK),
                         _ => CreateStringResponse(@"{""items"": []}", request)
                     };
                 });

@@ -317,6 +317,37 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
 
         #region ResolveStatdownloadUrlAsync Tests
 
+        [Theory]
+        [InlineData("https://popplers5.bandcamp.com/download/album?sig=a%2Fb%2Bc%3D&opaque=%2f", "https://popplers5.bandcamp.com/statdownload/album?sig=a%2Fb%2Bc%3D&opaque=%2f&.format=flac&.json=true")]
+        [InlineData("https://bandcamp.com/statdownload/album?id=1", "https://bandcamp.com/statdownload/album?id=1&.format=flac&.json=true")]
+        [InlineData("https://bandcamp.com/download/track", "https://bandcamp.com/statdownload/track?.format=flac&.json=true")]
+        [InlineData("https://bandcamp.com/download/album?next=/download/other", "https://bandcamp.com/statdownload/album?next=/download/other&.format=flac&.json=true")]
+        public async Task ResolveStatdownloadUrlAsync_UsesResolverPathAndPreservesSignedQuery(string input, string expected)
+        {
+            string? requested = null;
+            _innerHttpClientMock.Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
+                .ReturnsAsync((HttpRequest request) =>
+                {
+                    requested = request.Url.FullUri;
+                    return new HttpResponse(request, new HttpHeader(), "{\"url\":\"https://popplers5.bandcamp.com/archive\"}", HttpStatusCode.OK);
+                });
+            await CreateClient().ResolveStatdownloadUrlAsync("identity=sentinel", input, "flac");
+            Assert.Equal(expected, requested);
+        }
+
+        [Theory]
+        [InlineData("http://bandcamp.com/download/album?sig=sentinel")]
+        [InlineData("https://bandcamp.com.evil.test/download/album?sig=sentinel")]
+        [InlineData("https://user@bandcamp.com/download/album?sig=sentinel")]
+        [InlineData("https://bandcamp.com:444/download/album?sig=sentinel")]
+        public async Task ResolveStatdownloadUrlAsync_RejectsUntrustedInitialFormatLinkBeforeRequest(string input)
+        {
+            var error = await Assert.ThrowsAsync<DownloadException>(() =>
+                CreateClient().ResolveStatdownloadUrlAsync("identity=sentinel", input, "flac"));
+            _innerHttpClientMock.Verify(c => c.ExecuteAsync(It.IsAny<HttpRequest>()), Times.Never);
+            Assert.DoesNotContain("sentinel", error.Message);
+        }
+
         [Fact]
         public async Task ResolveStatdownloadUrlAsync_RedirectPreservesTrustedArchiveLocationInsteadOfFallingBack()
         {
