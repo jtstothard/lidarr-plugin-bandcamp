@@ -15,5 +15,7 @@
     "business_methods_invoked": false
   },
   "deployment_performed": false,
-  "native_redirect_behavior_qualified": false
+  "native_redirect_behavior_qualified": false,
+  "live_host_libraries_compared": 388,
+  "live_host_library_mismatches": []
 }

@@ -38,7 +38,7 @@ download-client configuration was restored exactly to its prior value (HTTP 202,
 readback equality true). `autoRedownloadFailed` is again true. Artist 268 and EP
 235830 remain unmonitored; their preparation and the spent history are retained.
 The target still has zero linked files. No import or existing-media overwrite occurred.
-No further grab or credential retry was dispatched after the first native failure.
+No further agent-issued grab or credential retry was dispatched after the first native failure.
 
 Protected server evidence remains under
 `/srv/docker-state/rollback-preparation/bandcamp-shared-renewal-20261115T115346Z`:
