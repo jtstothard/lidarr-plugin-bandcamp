@@ -12,7 +12,15 @@ var plugin = context.LoadFromAssemblyPath(pluginPath);
 var checkType = plugin.GetType("NzbDrone.Core.Download.Clients.Bandcamp.Session.BandcampSessionHealthCheck", true)!;
 var fixture = new SessionFixture(plugin, context);
 var scenario = args.Length > 3 ? args[3] : "healthy";
-const string expiredCause = "session cookie expired or invalid; paste a fresh identity cookie into the client settings";
+// The fake homepage explicitly reports isLoggedIn=false and a null fanId.
+// #46 distinguishes that evidence from an unrecognized/challenged page.
+const string signedOutCause = "Bandcamp positively signed the session out; renew in your browser and paste a fresh identity cookie, or configure complete email and password credentials";
+const string legacyExpiredCause = "session cookie expired or invalid; paste a fresh identity cookie into the client settings";
+// The retained incompatible v1.1.2 control predates typed validation. Require
+// its historical message until the modern ABI failure, without accepting that
+// obsolete diagnosis from a package exposing the new validation contract.
+var expectedCause = plugin.GetType("NzbDrone.Core.Download.Clients.Bandcamp.Session.BandcampValidationOutcome") != null
+    ? signedOutCause : legacyExpiredCause;
 object? provider = null;
 if (scenario is "healthy" or "warning" or "restored" or "disabled" or "multiple")
 {
@@ -46,8 +54,8 @@ bool IsWarning(object? value, bool multiple)
 {
     var message = Property(value, "Message");
     return Property(value, "Type") == "Warning" &&
-        message?.Contains("My Bandcamp: " + expiredCause) == true &&
-        (!multiple || message.Contains("Other Bandcamp: " + expiredCause)) &&
+        message?.Contains("My Bandcamp: " + expectedCause) == true &&
+        (!multiple || message.Contains("Other Bandcamp: " + expectedCause)) &&
         (value?.GetType().GetProperty("Reason") == null || Property(value, "Reason") == "DownloadClientStatusSingleClient");
 }
 var severity = Property(result, "Type");

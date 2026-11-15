@@ -1,0 +1,15 @@
+[xUnit.net 00:00:00.23]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.ExecuteDownloadAsync_ConvertsFormatDownloadLinkToResolverBeforeFileTransfer [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.ExecuteDownloadAsync_ConvertsFormatDownloadLinkToResolverBeforeFileTransfer [95 ms]
+  Error Message:
+   NzbDrone.Core.Download.Clients.Bandcamp.DownloadException : Received HTML response instead of expected audio archive (HTTP 200). Inspect the resolver response; this alone does not establish an expired session.
+  Stack Trace:
+     at NzbDrone.Core.Download.Clients.Bandcamp.BandcampApiClient.DownloadFileAsync(String cookies, String fileUrl, Stream destination) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-212bdad1-14c5abb378a0d146/src/Lidarr.Plugin.Bandcamp/Download/Clients/Bandcamp/BandcampApiClient.cs:line 579
+   at NzbDrone.Core.Download.Clients.Bandcamp.BandcampDownloadProxy.ExecuteFromPhase2Async(BandcampDownloadItem item, BandcampSession session, CancellationToken cancellationToken) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-212bdad1-14c5abb378a0d146/src/Lidarr.Plugin.Bandcamp/Download/Clients/Bandcamp/BandcampDownloadProxy.cs:line 272
+   at NzbDrone.Core.Download.Clients.Bandcamp.BandcampDownloadProxy.ExecuteFromPhase2Async(BandcampDownloadItem item, BandcampSession session, CancellationToken cancellationToken) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-212bdad1-14c5abb378a0d146/src/Lidarr.Plugin.Bandcamp/Download/Clients/Bandcamp/BandcampDownloadProxy.cs:line 288
+   at NzbDrone.Core.Download.Clients.Bandcamp.BandcampDownloadProxy.ExecuteDownloadCoreAsync(BandcampDownloadItem item, CancellationToken cancellationToken) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-212bdad1-14c5abb378a0d146/src/Lidarr.Plugin.Bandcamp/Download/Clients/Bandcamp/BandcampDownloadProxy.cs:line 99
+   at NzbDrone.Core.Download.Clients.Bandcamp.BandcampDownloadProxy.ExecuteDownloadCoreAsync(BandcampDownloadItem item, CancellationToken cancellationToken) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-212bdad1-14c5abb378a0d146/src/Lidarr.Plugin.Bandcamp/Download/Clients/Bandcamp/BandcampDownloadProxy.cs:line 110
+   at NzbDrone.Core.Download.Clients.Bandcamp.BandcampDownloadProxy.ExecuteDownloadAsync(BandcampDownloadItem item, CancellationToken cancellationToken) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-212bdad1-14c5abb378a0d146/src/Lidarr.Plugin.Bandcamp/Download/Clients/Bandcamp/BandcampDownloadProxy.cs:line 51
+   at Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.ExecuteDownloadAsync_ConvertsFormatDownloadLinkToResolverBeforeFileTransfer() in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-212bdad1-14c5abb378a0d146/tests/Lidarr.Plugin.Bandcamp.Test/Download/Clients/Bandcamp/BandcampDownloadProxyFixture.cs:line 206
+--- End of stack trace from previous location ---
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 95 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)

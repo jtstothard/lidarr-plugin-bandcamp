@@ -204,6 +204,80 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             };
         }
 
+        // Host-authenticated action: candidate travels only in the masked Cookies body field.
+        // Resolve the saved named owner, never apply proposed settings or call password login.
+        public override object RequestAction(string action, IDictionary<string, string> query)
+        {
+            if (action == "sessionStatus")
+            {
+                var owner = _sessionProviders.GetNamed(Definition.Name);
+                if (Definition.Id <= 0 || owner.DefinitionId != Definition.Id)
+                    return new { Success = false, Problem = "ConfigurationMissing" };
+                // Return only non-secret metadata. This never validates, logs in or writes settings.
+                var state = owner.State;
+                return new
+                {
+                    Success = true,
+                    OwnerDefinitionId = owner.DefinitionId,
+                    Status = state.Status.ToString(),
+                    state.EffectiveAuthMode,
+                    state.CheckedAtUtc,
+                    state.LastSuccessfulValidationUtc,
+                    Problem = state.Problem?.Code,
+                    state.Description
+                };
+            }
+            if (action == "clearLocalCredentials")
+            {
+                try
+                {
+                    return new { Success = _sessionProviders.ClearLocalCredentials(Definition.Id),
+                        Message = "Clears only this plugin definition's local credentials; does not revoke Bandcamp server sessions or erase backups, browser sessions or other definitions." };
+                }
+                catch (Exception) { return new { Success = false, Problem = "StorageFailure" }; }
+            }
+            if (action is not ("beginIdentityRenewal" or "renewIdentity" or "cancelIdentityRenewal" or "identityRenewalStatus"))
+                return base.RequestAction(action, query);
+            if (Definition.Id <= 0) return new { Success = false, State = "Unknown", Problem = "InvalidRequest" };
+            if (action == "beginIdentityRenewal")
+            {
+                var owner = _sessionProviders.GetNamed(Definition.Name);
+                if (owner.DefinitionId != Definition.Id)
+                    return new { Success = false, State = "Unknown", Problem = "ConfigurationMissing" };
+                return BandcampIdentityRenewals.Begin(Definition.Id, Definition.Name)?.Receipt()
+                    ?? new { Success = false, State = "Unknown", Problem = "Unavailable" };
+            }
+
+            if (!query.TryGetValue("operationId", out var id) || !Guid.TryParseExact(id, "D", out var operationId))
+                return new { Success = false, State = "Unknown", Problem = "InvalidRequest" };
+            var operation = BandcampIdentityRenewals.Find(operationId, Definition.Id, Definition.Name);
+            if (operation == null) return new { Success = false, State = "Unknown", Problem = "UnknownOperation" };
+            if (action == "cancelIdentityRenewal") operation.Cancel();
+            if (action != "renewIdentity" || !operation.Start()) return operation.Receipt();
+            try
+            {
+                if (!query.TryGetValue("fanId", out var value) || !long.TryParse(value, out var fanId) || fanId <= 0)
+                {
+                    operation.Complete(false, "InvalidRequest");
+                    return operation.Receipt();
+                }
+                var provider = _sessionProviders.GetNamed(Definition.Name);
+                if (provider.DefinitionId != Definition.Id)
+                {
+                    operation.Complete(false, "ConfigurationMissing");
+                    return operation.Receipt();
+                }
+                var session = provider.ReplaceIdentityForFanAsync(Settings.Cookies, fanId, Definition.Id,
+                    tryBeginCommit: operation.TryBeginCommit).GetAwaiter().GetResult();
+                operation.Complete(session != null, session == null ? provider.State.Problem?.Code : null);
+            }
+            catch (Exception)
+            {
+                operation.Complete(false, "RecoveryFailed");
+            }
+            return operation.Receipt();
+        }
+
         /// <summary>
         /// Validates the download client configuration:
         /// 1. Tests cookie auth by attempting fan_id resolution
@@ -218,12 +292,20 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             try
             {
                 var hasCredentials = Settings.HasCredentials();
-                var provider = SessionProvider;
-                var session = hasCredentials
+                var provider = _sessionProviders.GetForTest(Definition.Id, Settings);
+                var session = hasCredentials || !string.IsNullOrWhiteSpace(Settings.AuthConfiguration)
                     ? provider.RenewAsync().GetAwaiter().GetResult()
                     : provider.ValidateAsync().GetAwaiter().GetResult();
 
-                if (session == null && hasCredentials)
+                if (session == null && provider.State.Problem != null)
+                {
+                    var problem = provider.State.Problem;
+                    var field = problem == BandcampSessionProblem.ConfigurationMissing ? nameof(BandcampDownloadSettings.AuthConfiguration)
+                        : problem == BandcampSessionProblem.BadCredentials ? "Password"
+                        : problem == BandcampSessionProblem.VerificationNeeded ? "VerificationCode" : "Cookies";
+                    failures.Add(new ValidationFailure(field, problem.Description));
+                }
+                else if (session == null && hasCredentials)
                 {
                     failures.Add(LoginFailure(provider));
                     _logger.Debug("Bandcamp download client: Login test failed ({0})", provider.LastLoginOutcome);
@@ -267,6 +349,12 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
         private static ValidationFailure LoginFailure(IBandcampSessionProvider provider)
         {
+            if (provider.State.Problem == BandcampSessionProblem.StorageFailure ||
+                provider.State.Problem == BandcampSessionProblem.ReplacementConflict)
+            {
+                return new ValidationFailure("Cookies", provider.State.Problem.Description);
+            }
+
             return provider.LastLoginOutcome switch
             {
                 BandcampLoginOutcome.BadCredentials => new ValidationFailure("Password",

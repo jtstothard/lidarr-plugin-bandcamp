@@ -1,0 +1,19 @@
+{
+  "session_status_before_tests": {
+    "success": true,
+    "status": "Unknown",
+    "effectiveAuthMode": "Shared named configuration; Web identity (password fallback configured)",
+    "lastSuccessfulValidationUtc": null
+  },
+  "session_status_after_tests": {
+    "success": true,
+    "status": "Valid",
+    "effectiveAuthMode": "Shared named configuration; Web identity (password fallback configured)",
+    "lastSuccessfulValidationUtc": "2026-11-15T18:43:01.143656Z"
+  },
+  "working_definitions_unchanged": true,
+  "both_provider_tests_pass": true,
+  "eleven_flac_hashes_unchanged": true,
+  "linked_files": 11,
+  "no_download_dispatched": true
+}

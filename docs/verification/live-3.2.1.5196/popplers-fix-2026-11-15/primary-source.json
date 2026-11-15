@@ -1,0 +1,11 @@
+{
+  "url": "https://s4.bcbits.com/client-bundle/1/trackpipe/download_2016-f4e08eef438aa24c6774f765261e4b11.js",
+  "sha256": "3deda2073c091632582029ac8957a281e175b99bc463fe2b2730edf5825dd5df",
+  "bytes": 79888,
+  "observed_contract": [
+    "download-to-statdownload path conversion",
+    ".rand and .vrs=1",
+    "result ok gates download_url or original format link",
+    "url is status metadata; retry_url used by expired-free flow"
+  ]
+}

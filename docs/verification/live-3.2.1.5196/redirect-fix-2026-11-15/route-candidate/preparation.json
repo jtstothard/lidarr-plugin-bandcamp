@@ -1,0 +1,16 @@
+{
+  "rootfs": "/srv/docker-state/rollback-preparation/lidarr-resolver-route-20261115T150021Z/route-probe-rootfs",
+  "candidate_sha256": "ad312e81cbf9bcf3290aa761508fc69a9ee094b519b5c738233f54523c165f08",
+  "backup_root": "/srv/docker-state/rollback-preparation/lidarr-resolver-route-20261115T150021Z",
+  "installed_sha256": "2e1b47a848abfb74d6e261b4f44c405ca1c176c368ff8d2f50f924ed3b7c2625",
+  "backup_sqlite_integrity": "ok",
+  "exact_target_tests": 330,
+  "native_probe_exit": 0,
+  "native_type_count": 149,
+  "native_prepared_methods": 804,
+  "native_business_methods_invoked": false,
+  "deployment_performed": false,
+  "live_native_download_qualified": false,
+  "live_host_libraries_compared": 388,
+  "live_host_library_mismatches": []
+}

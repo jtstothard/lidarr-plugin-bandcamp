@@ -66,6 +66,15 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                 .ReturnsAsync(response);
         }
 
+        [Fact]
+        public async Task ResolveFanIdAsync_TransportFailure_DoesNotReportSignedOutToLegacyCallers()
+        {
+            _innerHttpClientMock.Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
+                .ThrowsAsync(new System.Net.Http.HttpRequestException("simulated outage"));
+            var ex = await Assert.ThrowsAsync<DownloadException>(() => CreateClient().ResolveFanIdAsync("identity=prior"));
+            Assert.Contains("availability", ex.Message);
+        }
+
         #region ResolveFanIdAsync Tests
 
         [Fact]
@@ -308,6 +317,79 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
 
         #region ResolveStatdownloadUrlAsync Tests
 
+        [Theory]
+        [InlineData("https://popplers5.bandcamp.com/download/album?sig=a%2Fb%2Bc%3D&opaque=%2f", "https://popplers5.bandcamp.com/statdownload/album?sig=a%2Fb%2Bc%3D&opaque=%2f&.rand=")]
+        [InlineData("https://bandcamp.com/statdownload/album?id=1", "https://bandcamp.com/statdownload/album?id=1&.rand=")]
+        [InlineData("https://bandcamp.com/download/track", "https://bandcamp.com/statdownload/track?.rand=")]
+        [InlineData("https://bandcamp.com/download/album?next=/download/other", "https://bandcamp.com/statdownload/album?next=/download/other&.rand=")]
+        public async Task ResolveStatdownloadUrlAsync_UsesResolverPathAndPreservesSignedQuery(string input, string expected)
+        {
+            string? requested = null;
+            _innerHttpClientMock.Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
+                .ReturnsAsync((HttpRequest request) =>
+                {
+                    requested = request.Url.FullUri;
+                    return new HttpResponse(request, new HttpHeader(), "{\"url\":\"https://popplers5.bandcamp.com/archive\"}", HttpStatusCode.OK);
+                });
+            await CreateClient().ResolveStatdownloadUrlAsync("identity=sentinel", input, "flac");
+            Assert.StartsWith(expected, requested);
+            Assert.Matches(@"^\d+&\.vrs=1$", requested![expected.Length..]);
+        }
+
+        [Theory]
+        [InlineData("http://bandcamp.com/download/album?sig=sentinel")]
+        [InlineData("https://bandcamp.com.evil.test/download/album?sig=sentinel")]
+        [InlineData("https://user@bandcamp.com/download/album?sig=sentinel")]
+        [InlineData("https://bandcamp.com:444/download/album?sig=sentinel")]
+        public async Task ResolveStatdownloadUrlAsync_RejectsUntrustedInitialFormatLinkBeforeRequest(string input)
+        {
+            var error = await Assert.ThrowsAsync<DownloadException>(() =>
+                CreateClient().ResolveStatdownloadUrlAsync("identity=sentinel", input, "flac"));
+            _innerHttpClientMock.Verify(c => c.ExecuteAsync(It.IsAny<HttpRequest>()), Times.Never);
+            Assert.DoesNotContain("sentinel", error.Message);
+        }
+
+        [Fact]
+        public async Task ResolveStatdownloadUrlAsync_RedirectPreservesTrustedArchiveLocationInsteadOfFallingBack()
+        {
+            const string target = "https://popplers5.bandcamp.com/archive?signature=sentinel";
+            _innerHttpClientMock.Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
+                .ReturnsAsync((HttpRequest request) => new HttpResponse(request,
+                    new HttpHeader { { "Location", target } }, "<html>redirect</html>", HttpStatusCode.Found));
+            using var destination = new System.IO.MemoryStream();
+            var result = await CreateClient().ResolveStatdownloadUrlAsync("identity=sentinel",
+                "https://bandcamp.com/statdownload/album?id=123", "flac", destination);
+            Assert.NotNull(result);
+            Assert.Equal(target, result.DownloadUrl);
+            Assert.False(result.ArchiveWrittenToDestination);
+            Assert.Empty(destination.ToArray());
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("http://popplers5.bandcamp.com/archive")]
+        [InlineData("https://bandcamp.com.evil.test/archive")]
+        [InlineData("https://127.0.0.1/archive")]
+        [InlineData("https://user@popplers5.bandcamp.com/archive")]
+        [InlineData("https://popplers5.bandcamp.com:444/archive")]
+        public async Task ResolveStatdownloadUrlAsync_RejectsUnsafeRedirectWithoutReturningFallback(string? location)
+        {
+            var calls = 0;
+            _innerHttpClientMock.Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
+                .ReturnsAsync((HttpRequest request) =>
+                {
+                    calls++;
+                    var headers = new HttpHeader();
+                    if (location != null) headers.Add("Location", location);
+                    return new HttpResponse(request, headers, "", HttpStatusCode.Found);
+                });
+            var error = await Assert.ThrowsAsync<DownloadException>(() => CreateClient().ResolveStatdownloadUrlAsync(
+                "identity=sentinel", "https://bandcamp.com/statdownload/album?id=123", "flac"));
+            Assert.Equal(1, calls);
+            Assert.DoesNotContain("sentinel", error.Message);
+            if (location != null) Assert.DoesNotContain(location, error.Message);
+        }
+
         [Fact]
         public async Task ResolveStatdownloadUrlAsync_JsonWithUrl_ReturnsResolvedUrl()
         {
@@ -436,7 +518,221 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
 
         #endregion
 
+        [Theory]
+        [InlineData("callback({\"url\":\"not-a-uri\",\"retry_url\":\"\"});")]
+        [InlineData("{\"url\":\"not-a-uri\"}")]
+        [InlineData("{\"url\":\"http://bandcamp.com/file.zip\"}")]
+        [InlineData("{\"url\":\"https://user:secret@bandcamp.com/file.zip\"}")]
+        [InlineData("{\"url\":\"https://bandcamp.com/landing\",\"retry_url\":\"\"}")]
+        [InlineData("{\"retry_url\":null}")]
+        [InlineData("{\"url\":\"https://bandcamp.com:8443/archive.zip\"}")]
+        [InlineData("{\"url\":\"https://bandcamp.com/archive.zip#fragment\"}")]
+        public async Task ResolveStatdownloadUrlAsync_UnusablePointerFailsBeforeTransfer(string body)
+        {
+            SetupGetAsync(CreateStringResponse(body));
+            var error = await Assert.ThrowsAsync<DownloadException>(() => CreateClient().ResolveStatdownloadUrlAsync(
+                "identity=sentinel", "https://bandcamp.com/download/album/12345?sig=abc", "flac"));
+            Assert.Contains("no usable archive pointer", error.Message);
+            Assert.DoesNotContain("not-a-uri", error.Message);
+            Assert.DoesNotContain("secret", error.Message);
+        }
+
+        [Theory]
+        [InlineData("callback({\"url\":\"not-a-uri\",\"retry_url\":\"//bandcamp.com/archive.zip?sig=a%2Bb\"});")]
+        [InlineData("{\"retry_url\":\"https://bandcamp.com/archive.zip?sig=a%2Bb\"}")]
+        public async Task ResolveStatdownloadUrlAsync_UsesStructuredRetryPointer(string body)
+        {
+            SetupGetAsync(CreateStringResponse(body));
+            var result = await CreateClient().ResolveStatdownloadUrlAsync(
+                "identity=sentinel", "https://bandcamp.com/download/album/12345", "flac");
+            Assert.Equal("https://bandcamp.com/archive.zip?sig=a%2Bb", result?.DownloadUrl);
+        }
+
+        [Theory]
+        [InlineData("if ( window.Downloads ) { Downloads.statResult( {\"result\":\"ok\",\"url\":\"/status-only\",\"retry_url\":\"\",\"download_url\":\"https://bandcamp.com/archive.zip\"} ) };")]
+        [InlineData("{\"result\":\"ok\",\"url\":\"/status-only\",\"download_url\":\"https://bandcamp.com/archive.zip\"}")]
+        public async Task ResolveStatdownloadUrlAsync_CurrentBrowserSuccessUsesDownloadUrl(string body)
+        {
+            SetupGetAsync(CreateStringResponse(body));
+            var result = await CreateClient().ResolveStatdownloadUrlAsync("identity=sentinel", "https://bandcamp.com/download/album/1?enc=flac", "flac");
+            Assert.Equal("https://bandcamp.com/archive.zip", result?.DownloadUrl);
+        }
+
+        [Fact]
+        public async Task ResolveStatdownloadUrlAsync_CurrentBrowserSuccessWithoutPointerUsesOriginalFormatLink()
+        {
+            SetupGetAsync(CreateStringResponse("if ( window.Downloads ) { Downloads.statResult( {\"result\":\"ok\",\"url\":\"/status-only\"} ) };"));
+            var result = await CreateClient().ResolveStatdownloadUrlAsync("identity=sentinel", "https://bandcamp.com/download/album/1?enc=flac", "flac");
+            Assert.Equal("https://bandcamp.com/download/album/1?enc=flac", result?.DownloadUrl);
+        }
+
+        [Fact]
+        public async Task ResolveStatdownloadUrlAsync_CurrentBrowserExpirationDoesNotFetchStatusUrlOrRetryCredentials()
+        {
+            SetupGetAsync(CreateStringResponse("if ( window.Downloads ) { Downloads.statResult( {\"result\":\"err\",\"errortype\":\"ExpirationError\",\"url\":\"/status-only\",\"retry_url\":\"\"} ) };"));
+            var error = await Assert.ThrowsAsync<DownloadException>(() => CreateClient().ResolveStatdownloadUrlAsync(
+                "identity=sentinel", "https://bandcamp.com/download/album/1?enc=flac", "flac"));
+            Assert.Contains("download link has expired", error.Message);
+            Assert.DoesNotContain("identity", error.Message);
+            _innerHttpClientMock.Verify(c => c.ExecuteAsync(It.IsAny<HttpRequest>()), Times.Once);
+        }
+
+        [Theory]
+        [InlineData("https://popplers5.bandcamp.com/statdownload/album/1?enc=flac", true)]
+        [InlineData("https://popplers12.bandcamp.com/statdownload/track/1", true)]
+        [InlineData("https://artist.bandcamp.com/statdownload/album/1", false)]
+        [InlineData("https://popplers5.bandcamp.com.evil.test/statdownload/album/1", false)]
+        [InlineData("https://popplers5.bandcamp.com/album/1", false)]
+        public async Task ResolveStatdownloadUrlAsync_SendsOnlyMinimalIdentityToDownloadServers(string url, bool expected)
+        {
+            HttpRequest? sent = null;
+            _innerHttpClientMock.Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>())).ReturnsAsync((HttpRequest r) =>
+            {
+                sent = r;
+                return new HttpResponse(r, new HttpHeader(), "{\"result\":\"ok\",\"download_url\":\"https://bcbits.com/archive.zip\"}", HttpStatusCode.OK);
+            });
+            if(url.Contains("evil.test"))
+            {
+                await Assert.ThrowsAsync<DownloadException>(() => CreateClient().ResolveStatdownloadUrlAsync("identity=sentinel; unrelated=private", url, "flac"));
+                Assert.Null(sent);
+                return;
+            }
+            await CreateClient().ResolveStatdownloadUrlAsync("identity=sentinel; unrelated=private", url, "flac");
+            Assert.Equal(expected ? "identity=sentinel" : null, sent!.Headers.GetValues("Cookie")?.SingleOrDefault());
+        }
+
+        [Theory]
+        [InlineData("https://popplers5.bandcamp.com/download/album/1", true)]
+        [InlineData("https://popplers12.bandcamp.com/download/track/1", true)]
+        [InlineData("https://artist.bandcamp.com/download/album/1", false)]
+        [InlineData("https://popplers5.bandcamp.com.evil.test/download/album/1", false)]
+        [InlineData("https://popplers5.bandcamp.com/archive.zip", false)]
+        [InlineData("https://bcbits.com/download/album/1", false)]
+        public async Task DownloadFileAsync_MinimalIdentityIsConfinedToExactDownloadServerPaths(string url, bool expected)
+        {
+            HttpRequest? sent = null;
+            _innerHttpClientMock.Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>())).ReturnsAsync((HttpRequest r) =>
+            {
+                sent = r;
+                return new HttpResponse(r, new HttpHeader { { "Content-Type", "application/zip" } }, new byte[] { 1,2 }, HttpStatusCode.OK);
+            });
+            using var destination = new System.IO.MemoryStream();
+            await CreateClient().DownloadFileAsync("identity=sentinel; unrelated=private", url, destination);
+            Assert.Equal(expected ? "identity=sentinel" : null, sent!.Headers.GetValues("Cookie")?.SingleOrDefault());
+        }
+
+        [Theory]
+        [InlineData("https://popplers5.bandcamp.com:444/download/album/1?sig=private-sentinel")]
+        [InlineData("http://popplers5.bandcamp.com/download/album/1?sig=private-sentinel")]
+        [InlineData("https://user@popplers5.bandcamp.com/download/album/1?sig=private-sentinel")]
+        [InlineData("https://popplers5.bandcamp.com/download/album/1#fragment?sig=private-sentinel")]
+        public async Task DownloadFileAsync_UnsafeInitialUrlRefusedBeforeRequestWithoutLeakingUrl(string url)
+        {
+            using var destination = new System.IO.MemoryStream();
+            var error = await Assert.ThrowsAsync<DownloadException>(() => CreateClient().DownloadFileAsync("identity=sentinel", url, destination));
+            Assert.DoesNotContain("private-sentinel", error.Message);
+            _innerHttpClientMock.Verify(c => c.ExecuteAsync(It.IsAny<HttpRequest>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task DownloadFileAsync_DropsMinimalIdentityPermanentlyAcrossDownloadServerRedirects()
+        {
+            var headers = new System.Collections.Generic.List<string?>();
+            _innerHttpClientMock.Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>())).ReturnsAsync((HttpRequest r) =>
+            {
+                headers.Add(r.Headers.GetValues("Cookie")?.SingleOrDefault());
+                return headers.Count < 3
+                    ? new HttpResponse(r, new HttpHeader { { "Location", headers.Count == 1 ? "https://popplers6.bandcamp.com/download/album/2" : "https://popplers5.bandcamp.com/download/album/3" } }, "", HttpStatusCode.Found)
+                    : new HttpResponse(r, new HttpHeader { { "Content-Type", "application/zip" } }, new byte[] { 1,2 }, HttpStatusCode.OK);
+            });
+            using var destination = new System.IO.MemoryStream();
+            await CreateClient().DownloadFileAsync("identity=sentinel; unrelated=private", "https://popplers5.bandcamp.com/download/album/1", destination);
+            Assert.Equal(new string?[] { "identity=sentinel", null, null }, headers);
+        }
+
         #region DownloadFileAsync Tests
+
+        [Fact]
+        public async Task DownloadFileAsync_FollowsTrustedArchiveRedirectWithoutForwardingIdentity()
+        {
+            var requests = new System.Collections.Generic.List<HttpRequest>();
+            _innerHttpClientMock.Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
+                .ReturnsAsync((HttpRequest request) =>
+                {
+                    requests.Add(request);
+                    if (requests.Count == 1)
+                        return new HttpResponse(request,
+                            new HttpHeader { { "Location", "https://popplers5.bandcamp.com/archive.zip?signature=sentinel" } },
+                            "redirect body", HttpStatusCode.Found);
+                    return new HttpResponse(request, new HttpHeader { { "Content-Type", "application/zip" } },
+                        new byte[] { 0x50, 0x4b, 0x03, 0x04 }, HttpStatusCode.OK);
+                });
+            using var destination = new System.IO.MemoryStream();
+            await CreateClient().DownloadFileAsync("identity=sentinel", "https://bandcamp.com/download/archive", destination);
+            Assert.Equal(2, requests.Count);
+            Assert.Single(requests[0].Headers.GetValues("Cookie"));
+            Assert.True(requests[1].Headers.GetValues("Cookie") == null || requests[1].Headers.GetValues("Cookie").Length == 0);
+            Assert.All(requests, r => Assert.False(r.AllowAutoRedirect));
+            Assert.Equal(new byte[] { 0x50, 0x4b, 0x03, 0x04 }, destination.ToArray());
+        }
+
+        [Theory]
+        [InlineData("http://popplers5.bandcamp.com/archive")]
+        [InlineData("https://bandcamp.com.evil.test/archive")]
+        [InlineData("https://127.0.0.1/archive")]
+        [InlineData("https://user@popplers5.bandcamp.com/archive")]
+        [InlineData("https://popplers5.bandcamp.com:444/archive")]
+        [InlineData("https://popplers5.bandcamp.com/archive#fragment")]
+        [InlineData("https://bandcamp.com/download/archive")]
+        [InlineData("")]
+        public async Task DownloadFileAsync_RefusesUnsafeOrCyclicRedirectBeforeSecondRequest(string location)
+        {
+            var calls = 0;
+            _innerHttpClientMock.Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
+                .ReturnsAsync((HttpRequest request) =>
+                {
+                    calls++;
+                    return new HttpResponse(request, new HttpHeader { { "Location", location } }, "", HttpStatusCode.Found);
+                });
+            using var destination = new System.IO.MemoryStream();
+            var error = await Assert.ThrowsAsync<DownloadException>(() =>
+                CreateClient().DownloadFileAsync("identity=sentinel", "https://bandcamp.com/download/archive", destination));
+            Assert.Equal(1, calls);
+            Assert.DoesNotContain(location.Length == 0 ? "sentinel" : location, error.Message);
+            Assert.Empty(destination.ToArray());
+        }
+
+        [Fact]
+        public async Task DownloadFileAsync_StopsAfterThreeRedirects()
+        {
+            var calls = 0;
+            _innerHttpClientMock.Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
+                .ReturnsAsync((HttpRequest request) => new HttpResponse(request,
+                    new HttpHeader { { "Location", "https://popplers5.bandcamp.com/archive/" + ++calls } }, "", HttpStatusCode.Found));
+            using var destination = new System.IO.MemoryStream();
+            await Assert.ThrowsAsync<DownloadException>(() =>
+                CreateClient().DownloadFileAsync("identity=sentinel", "https://bandcamp.com/download/archive", destination));
+            Assert.Equal(4, calls);
+        }
+
+        [Fact]
+        public async Task DownloadFileAsync_DoesNotRestoreIdentityWhenRedirectChainReturnsToAccountHost()
+        {
+            var requests = new System.Collections.Generic.List<HttpRequest>();
+            _innerHttpClientMock.Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
+                .ReturnsAsync((HttpRequest request) =>
+                {
+                    requests.Add(request);
+                    if (requests.Count < 3)
+                        return new HttpResponse(request, new HttpHeader { { "Location", requests.Count == 1
+                            ? "https://popplers5.bandcamp.com/archive" : "https://bandcamp.com/download/final" } }, "", HttpStatusCode.Found);
+                    return new HttpResponse(request, new HttpHeader(), new byte[] { 1, 2 }, HttpStatusCode.OK);
+                });
+            using var destination = new System.IO.MemoryStream();
+            await CreateClient().DownloadFileAsync("identity=sentinel", "https://bandcamp.com/download/archive", destination);
+            Assert.Equal(3, requests.Count);
+            Assert.All(requests.Skip(1), r => Assert.True(r.Headers.GetValues("Cookie") == null || r.Headers.GetValues("Cookie").Length == 0));
+        }
 
         [Fact]
         public async Task DownloadFileAsync_HtmlResponse_ThrowsDownloadException()

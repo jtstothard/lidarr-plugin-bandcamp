@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 
 namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 {
@@ -8,7 +9,15 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
     /// </summary>
     public interface IBandcampSessionStore
     {
+        /// <summary>Compare and replace under the per-definition plugin write gate.</summary>
+        bool TryReplaceCookies(int definitionId, string expectedCookies, string expectedCredentials, string cookies);
+
+        /// <summary>Save suppression and optional consumed-code clearing in one settings write.</summary>
+        void SaveChallenge(int definitionId, DateTime untilUtc, string problem, bool clearVerificationCode = false);
+
         void SaveCookies(int definitionId, string cookies);
+
+        void ClearLocalCredentials(int definitionId) => throw new NotSupportedException();
 
         /// <summary>Clears the one-time verification code from the saved settings.</summary>
         void ClearVerificationCode(int definitionId);
@@ -16,11 +25,48 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
     public class BandcampSessionStore : IBandcampSessionStore
     {
+        private static readonly ConcurrentDictionary<int, object> Gates = new();
         private readonly IDownloadClientRepository _repository;
 
         public BandcampSessionStore(IDownloadClientRepository repository)
         {
             _repository = repository;
+        }
+
+        public bool TryReplaceCookies(int definitionId, string expectedCookies, string expectedCredentials, string cookies)
+        {
+            lock (Gates.GetOrAdd(definitionId, _ => new object()))
+            {
+                var definition = _repository.Find(definitionId);
+                if (definition?.Settings is not BandcampDownloadSettings settings)
+                {
+                    throw new InvalidOperationException("Bandcamp definition is unavailable for session persistence");
+                }
+
+                if (!string.IsNullOrWhiteSpace(settings.AuthConfiguration) ||
+                    settings.Cookies != expectedCookies || settings.CredentialKey() != expectedCredentials)
+                {
+                    return false;
+                }
+
+                var candidate = settings.Copy();
+                candidate.Cookies = cookies;
+                _repository.SetFields(new DownloadClientDefinition { Id = definitionId, Settings = candidate }, d => d.Settings);
+                return true;
+            }
+        }
+
+        public void SaveChallenge(int definitionId, DateTime untilUtc, string problem, bool clearVerificationCode = false)
+        {
+            Update(definitionId, s =>
+            {
+                s.ChallengeUntilUtc = untilUtc;
+                s.ChallengeProblem = problem;
+                if (clearVerificationCode)
+                {
+                    s.VerificationCode = string.Empty;
+                }
+            });
         }
 
         public void ClearVerificationCode(int definitionId)
@@ -33,16 +79,43 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             Update(definitionId, s => s.Cookies = cookies);
         }
 
+        public void ClearLocalCredentials(int definitionId)
+        {
+            lock (Gates.GetOrAdd(definitionId, _ => new object()))
+            {
+                var definition = _repository.Find(definitionId);
+                if (definitionId <= 0 || definition?.Implementation != nameof(BandcampDownloadClient) ||
+                    definition.Settings is not BandcampDownloadSettings settings)
+                    throw new InvalidOperationException("Bandcamp definition unavailable");
+                var candidate = settings.Copy();
+                candidate.Email = candidate.Password = candidate.VerificationCode = candidate.Cookies = string.Empty;
+                candidate.ChallengeUntilUtc = null;
+                candidate.ChallengeProblem = null;
+                // Clear this definition only, including inactive legacy secrets. Never follow its selector.
+                _repository.SetFields(new DownloadClientDefinition { Id = definitionId, Settings = candidate }, d => d.Settings);
+            }
+        }
+
         private void Update(int definitionId, Action<BandcampDownloadSettings> change)
         {
-            var definition = _repository.Find(definitionId);
-            if (definition?.Settings is not BandcampDownloadSettings settings)
+            lock (Gates.GetOrAdd(definitionId, _ => new object()))
             {
-                return;
-            }
+                var definition = _repository.Find(definitionId);
+                if (definition?.Settings is not BandcampDownloadSettings settings)
+                {
+                    throw new InvalidOperationException("Bandcamp definition is unavailable for session persistence");
+                }
 
-            change(settings);
-            _repository.SetFields(definition, d => d.Settings);
+                if (!string.IsNullOrWhiteSpace(settings.AuthConfiguration))
+                {
+                    throw new InvalidOperationException("Bandcamp authentication owner changed during recovery");
+                }
+
+                var candidate = settings.Copy();
+                change(candidate);
+                var update = new DownloadClientDefinition { Id = definitionId, Settings = candidate };
+                _repository.SetFields(update, d => d.Settings);
+            }
         }
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -35,6 +36,15 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         /// cache. Used by Test().
         /// </summary>
         Task<BandcampSession?> ValidateAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Validates an externally obtained identity read-only, then saves it before activation.
+        /// An invalid or superseded candidate leaves the old identity intact. Cancellation is checked
+        /// before the optional commit gate; once that gate accepts, persistence cannot be cancelled.
+        /// </summary>
+        Task<BandcampSession?> ReplaceIdentityForFanAsync(string cookies, long expectedFanId, int expectedDefinitionId, CancellationToken cancellationToken = default, Func<bool>? tryBeginCommit = null);
+
+        Task<BandcampSession?> ReplaceIdentityAsync(string cookies, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Called when a session that was handed out has stopped working. Returns a session

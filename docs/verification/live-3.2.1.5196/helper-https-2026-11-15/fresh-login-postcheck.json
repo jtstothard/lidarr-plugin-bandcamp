@@ -1,0 +1,13 @@
+{
+  "operation_id": "c32a5a01-b2ed-46d0-9521-5121fe63bc1d",
+  "downloader_test_pass": true,
+  "shared_indexer_test_pass": true,
+  "flac_search_results": 1,
+  "indexer_definition_unchanged": true,
+  "owner_identity_changed": false,
+  "owner_changed_field_names": [],
+  "linked_files": 11,
+  "retry_flag": true,
+  "target_commands": 0,
+  "installed_sha256": "674d2de854890f625e84d0d3702d0a9cbc3f0860c9479f5eee6f86aa93c26cc4"
+}

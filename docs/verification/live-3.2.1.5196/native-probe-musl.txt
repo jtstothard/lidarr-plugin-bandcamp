@@ -1,0 +1,17 @@
+Running as unit: lidarr-metadata-probe-20261115T0920b.service
+The command could not be loaded, possibly because:
+  * You intended to execute a .NET application:
+      The application 'exec' does not exist.
+  * You intended to execute a .NET SDK command:
+      No .NET SDKs were found.
+
+Download a .NET SDK:
+https://aka.ms/dotnet/download
+
+Learn about SDK resolution:
+https://aka.ms/dotnet/sdk-not-found
+Finished with result: exit-code
+Main processes terminated with: code=exited, status=145/n/a
+Service runtime: 45ms
+CPU time consumed: 29ms
+Memory peak: 2M (swap: 0B)

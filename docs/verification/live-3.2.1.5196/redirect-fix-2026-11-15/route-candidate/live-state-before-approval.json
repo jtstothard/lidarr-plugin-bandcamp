@@ -1,0 +1,9 @@
+{
+  "installed_sha256": "2e1b47a848abfb74d6e261b4f44c405ca1c176c368ff8d2f50f924ed3b7c2625",
+  "container_running": true,
+  "started_at": "2026-11-15T14:44:07.947239929Z",
+  "total_grabs": 21,
+  "total_failures": 21,
+  "linked_target_tracks": 0,
+  "auto_redownload_failed": true
+}

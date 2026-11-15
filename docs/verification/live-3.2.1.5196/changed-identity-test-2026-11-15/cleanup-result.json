@@ -1,0 +1,71 @@
+{
+  "test_definitions_retained_disabled": [
+    13,
+    14,
+    29
+  ],
+  "test_owner_local_credentials_cleared": true,
+  "bandcamp_server_session_not_revoked": true,
+  "working_definitions_unchanged": true,
+  "working_downloader_and_indexer_tests_pass": true,
+  "linked_files": 11,
+  "retry_flag": true,
+  "no_download_dispatched": true,
+  "audio_files": [
+    {
+      "relative_path": "Great Cynics - Album - 2017 - POSI/0101 - Let Me Go Home.flac",
+      "sha256": "4f4417d06ef7eabf735621e11f276dbed58befe7ebd0a602ef396a3740b9a76b",
+      "bytes": 21140397
+    },
+    {
+      "relative_path": "Great Cynics - Album - 2017 - POSI/0102 - Only In Memories.flac",
+      "sha256": "30234ce4b41bf977c75901cadea1aeb9816efa30546c738e8fac3b6c84081792",
+      "bytes": 22637125
+    },
+    {
+      "relative_path": "Great Cynics - Album - 2017 - POSI/0103 - Blue Roll and Duck Tape.flac",
+      "sha256": "857072c56bf95588c5504363aeeab6e377159f45c825c84995f9e59b8c01daf5",
+      "bytes": 18944708
+    },
+    {
+      "relative_path": "Great Cynics - Album - 2017 - POSI/0104 - Happiness London.flac",
+      "sha256": "de4acb6f6db4045e95a62f7706a4d521e78c6c7584562867e17c912f2a73ee76",
+      "bytes": 17431636
+    },
+    {
+      "relative_path": "Great Cynics - Album - 2017 - POSI/0105 - Shabba Shabba.flac",
+      "sha256": "2705fb4d03cd0bf75c52c86a62ba98a2849e78a233688cbe50a4a4fbb580a6fd",
+      "bytes": 17440400
+    },
+    {
+      "relative_path": "Great Cynics - Album - 2017 - POSI/0106 - Don't Buy The Sun.flac",
+      "sha256": "d655089e0eaec93772540ed899a01bc6cabe86191d6ec3a360b0be265987007a",
+      "bytes": 13609458
+    },
+    {
+      "relative_path": "Great Cynics - Album - 2017 - POSI/0107 - Easily Done.flac",
+      "sha256": "338619249f870dc2c35a78766682a2c0ac19810ed45f9f10c8ff1350f6b2e108",
+      "bytes": 19109028
+    },
+    {
+      "relative_path": "Great Cynics - Album - 2017 - POSI/0108 - Too Much.flac",
+      "sha256": "7c54c0319b90057f056a8946a24081db1288873939f1627f6df1422041c09dd5",
+      "bytes": 18594636
+    },
+    {
+      "relative_path": "Great Cynics - Album - 2017 - POSI/0109 - Summer At Home.flac",
+      "sha256": "a7a3668bb1137d5f4797f67385fc120d1c49322af4b1af6639be10ae772b466c",
+      "bytes": 22877884
+    },
+    {
+      "relative_path": "Great Cynics - Album - 2017 - POSI/0110 - Butterfly Net.flac",
+      "sha256": "93a5471e4ff379cfb589d125856dce2a29b78bffd730025f8151b4751d385445",
+      "bytes": 29544027
+    },
+    {
+      "relative_path": "Great Cynics - Album - 2017 - POSI/0111 - Things We Don't Need.flac",
+      "sha256": "b330b74f879cee95686e5cbbe9ff2e609b72e39609a1b8365ebef84c464a393f",
+      "bytes": 6300120
+    }
+  ]
+}

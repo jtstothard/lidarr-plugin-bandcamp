@@ -1,0 +1,258 @@
+Baseline behavioral RED (3 failures)
+$ dotnet test tests/Lidarr.Plugin.Bandcamp.Test -c Release -m:1 -p:TreatWarningsAsErrors=false --filter 'FullyQualifiedName~ValidRotationFromAnotherFan|FullyQualifiedName~BandcampHostLoggingFixture' --logger 'console;verbosity=normal'
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.Test.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.1 (arm64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 10.0.3)
+[xUnit.net 00:00:00.05]   Discovering: Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.09]   Discovered:  Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.10]   Starting:    Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.23]     Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.ValidRotationFromAnotherFanCannotSwitchTheSharedOwner [FAIL]
+[xUnit.net 00:00:00.23]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:00.23]       Expected: WrongAccount
+[xUnit.net 00:00:00.23]       Actual:   null
+[xUnit.net 00:00:00.23]       Stack Trace:
+[xUnit.net 00:00:00.23]         /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/Http/BandcampIdentityRotationFixture.cs(107,0): at Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.ValidRotationFromAnotherFanCannotSwitchTheSharedOwner()
+[xUnit.net 00:00:00.23]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.25]     Lidarr.Plugin.Bandcamp.Test.Http.BandcampHostLoggingFixture.ContainerResolvedExecutionDoesNotExposeSignedUrlsOrNonHtmlErrorBodies(raw: False) [FAIL]
+[xUnit.net 00:00:00.25]       Assert.DoesNotContain() Failure: Sub-string found
+[xUnit.net 00:00:00.25]                                       ↓ (pos 100)
+[xUnit.net 00:00:00.25]       String: ···".com/download?token=signed-host-seam-priv"···
+[xUnit.net 00:00:00.25]       Found:  "signed-host-seam-private-token"
+[xUnit.net 00:00:00.25]       Stack Trace:
+[xUnit.net 00:00:00.25]         /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/Http/BandcampHostLoggingFixture.cs(74,0): at Lidarr.Plugin.Bandcamp.Test.Http.BandcampHostLoggingFixture.ContainerResolvedExecutionDoesNotExposeSignedUrlsOrNonHtmlErrorBodies(Boolean raw)
+[xUnit.net 00:00:00.25]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.25]     Lidarr.Plugin.Bandcamp.Test.Http.BandcampHostLoggingFixture.ContainerResolvedExecutionDoesNotExposeSignedUrlsOrNonHtmlErrorBodies(raw: True) [FAIL]
+[xUnit.net 00:00:00.25]       Assert.DoesNotContain() Failure: Sub-string found
+[xUnit.net 00:00:00.25]                                       ↓ (pos 100)
+[xUnit.net 00:00:00.25]       String: ···".com/download?token=signed-host-seam-priv"···
+[xUnit.net 00:00:00.25]       Found:  "signed-host-seam-private-token"
+[xUnit.net 00:00:00.25]       Stack Trace:
+[xUnit.net 00:00:00.25]         /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/Http/BandcampHostLoggingFixture.cs(74,0): at Lidarr.Plugin.Bandcamp.Test.Http.BandcampHostLoggingFixture.ContainerResolvedExecutionDoesNotExposeSignedUrlsOrNonHtmlErrorBodies(Boolean raw)
+[xUnit.net 00:00:00.25]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.25]   Finished:    Lidarr.Plugin.Bandcamp.Test
+  Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.ValidRotationFromAnotherFanCannotSwitchTheSharedOwner [105 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: WrongAccount
+Actual:   null
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.ValidRotationFromAnotherFanCannotSwitchTheSharedOwner() in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/Http/BandcampIdentityRotationFixture.cs:line 107
+--- End of stack trace from previous location ---
+  Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampHostLoggingFixture.ContainerResolvedExecutionDoesNotExposeSignedUrlsOrNonHtmlErrorBodies(raw: False) [129 ms]
+  Error Message:
+   Assert.DoesNotContain() Failure: Sub-string found
+                                ↓ (pos 100)
+String: ···".com/download?token=signed-host-seam-priv"···
+Found:  "signed-host-seam-private-token"
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.Test.Http.BandcampHostLoggingFixture.ContainerResolvedExecutionDoesNotExposeSignedUrlsOrNonHtmlErrorBodies(Boolean raw) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/Http/BandcampHostLoggingFixture.cs:line 74
+--- End of stack trace from previous location ---
+  Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampHostLoggingFixture.ContainerResolvedExecutionDoesNotExposeSignedUrlsOrNonHtmlErrorBodies(raw: True) [3 ms]
+  Error Message:
+   Assert.DoesNotContain() Failure: Sub-string found
+                                ↓ (pos 100)
+String: ···".com/download?token=signed-host-seam-priv"···
+Found:  "signed-host-seam-private-token"
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.Test.Http.BandcampHostLoggingFixture.ContainerResolvedExecutionDoesNotExposeSignedUrlsOrNonHtmlErrorBodies(Boolean raw) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/Http/BandcampHostLoggingFixture.cs:line 74
+--- End of stack trace from previous location ---
+
+Test Run Failed.
+Total tests: 3
+     Failed: 3
+ Total time: 0.5475 Seconds
+
+Fan binding GREEN
+$ dotnet test tests/Lidarr.Plugin.Bandcamp.Test -c Release -m:1 -p:TreatWarningsAsErrors=false --no-restore --filter FullyQualifiedName~ValidRotationFromAnotherFan --logger 'console;verbosity=normal'
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.Test.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.1 (arm64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 10.0.3)
+[xUnit.net 00:00:00.04]   Discovering: Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.09]   Discovered:  Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.09]   Starting:    Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.23]   Finished:    Lidarr.Plugin.Bandcamp.Test
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.ValidRotationFromAnotherFanCannotSwitchTheSharedOwner [117 ms]
+
+Test Run Successful.
+Total tests: 1
+     Passed: 1
+ Total time: 0.5372 Seconds
+
+Consumer rate-limit RED (6 failures)
+$ dotnet test tests/Lidarr.Plugin.Bandcamp.Test -c Release -m:1 -p:TreatWarningsAsErrors=false --no-restore --filter FullyQualifiedName~BandcampConsumerRateLimitFixture --logger 'console;verbosity=normal'
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.Test.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.1 (arm64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 10.0.3)
+[xUnit.net 00:00:00.05]   Discovering: Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.10]   Discovered:  Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.10]   Starting:    Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.22]     Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(file: False, retryAfter: "120", waitSeconds: 120) [FAIL]
+[xUnit.net 00:00:00.22]       Assert.NotNull() Failure: Value is null
+[xUnit.net 00:00:00.22]       Stack Trace:
+[xUnit.net 00:00:00.22]         /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/Http/BandcampConsumerRateLimitFixture.cs(51,0): at Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(Boolean file, String retryAfter, Int32 waitSeconds)
+[xUnit.net 00:00:00.22]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.23]     Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(file: False, retryAfter: "invalid", waitSeconds: 300) [FAIL]
+[xUnit.net 00:00:00.23]       Assert.NotNull() Failure: Value is null
+[xUnit.net 00:00:00.23]       Stack Trace:
+[xUnit.net 00:00:00.23]         /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/Http/BandcampConsumerRateLimitFixture.cs(51,0): at Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(Boolean file, String retryAfter, Int32 waitSeconds)
+[xUnit.net 00:00:00.23]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.23]     Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(file: False, retryAfter: "Sat, 14 Nov 2026 12:02:00 GMT", waitSeconds: 120) [FAIL]
+[xUnit.net 00:00:00.23]       Assert.NotNull() Failure: Value is null
+[xUnit.net 00:00:00.23]       Stack Trace:
+[xUnit.net 00:00:00.23]         /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/Http/BandcampConsumerRateLimitFixture.cs(51,0): at Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(Boolean file, String retryAfter, Int32 waitSeconds)
+[xUnit.net 00:00:00.23]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.23]     Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(file: True, retryAfter: "120", waitSeconds: 120) [FAIL]
+[xUnit.net 00:00:00.23]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:00.23]       Expected: RateLimited
+[xUnit.net 00:00:00.23]       Actual:   Valid
+[xUnit.net 00:00:00.23]       Stack Trace:
+[xUnit.net 00:00:00.23]         /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/Http/BandcampConsumerRateLimitFixture.cs(56,0): at Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(Boolean file, String retryAfter, Int32 waitSeconds)
+[xUnit.net 00:00:00.23]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.23]     Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(file: True, retryAfter: "Sat, 14 Nov 2026 12:02:00 GMT", waitSeconds: 120) [FAIL]
+[xUnit.net 00:00:00.23]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:00.23]       Expected: RateLimited
+[xUnit.net 00:00:00.23]       Actual:   Valid
+[xUnit.net 00:00:00.23]       Stack Trace:
+[xUnit.net 00:00:00.23]         /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/Http/BandcampConsumerRateLimitFixture.cs(56,0): at Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(Boolean file, String retryAfter, Int32 waitSeconds)
+[xUnit.net 00:00:00.23]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.23]     Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(file: True, retryAfter: "invalid", waitSeconds: 300) [FAIL]
+[xUnit.net 00:00:00.23]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:00.23]       Expected: RateLimited
+[xUnit.net 00:00:00.23]       Actual:   Valid
+[xUnit.net 00:00:00.23]       Stack Trace:
+[xUnit.net 00:00:00.23]         /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/Http/BandcampConsumerRateLimitFixture.cs(56,0): at Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(Boolean file, String retryAfter, Int32 waitSeconds)
+[xUnit.net 00:00:00.23]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.23]   Finished:    Lidarr.Plugin.Bandcamp.Test
+  Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(file: False, retryAfter: "120", waitSeconds: 120) [98 ms]
+  Error Message:
+   Assert.NotNull() Failure: Value is null
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(Boolean file, String retryAfter, Int32 waitSeconds) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/Http/BandcampConsumerRateLimitFixture.cs:line 51
+--- End of stack trace from previous location ---
+  Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(file: False, retryAfter: "invalid", waitSeconds: 300) [< 1 ms]
+  Error Message:
+   Assert.NotNull() Failure: Value is null
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(Boolean file, String retryAfter, Int32 waitSeconds) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/Http/BandcampConsumerRateLimitFixture.cs:line 51
+--- End of stack trace from previous location ---
+  Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(file: False, retryAfter: "Sat, 14 Nov 2026 12:02:00 GMT", waitSeconds: 120) [< 1 ms]
+  Error Message:
+   Assert.NotNull() Failure: Value is null
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(Boolean file, String retryAfter, Int32 waitSeconds) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/Http/BandcampConsumerRateLimitFixture.cs:line 51
+--- End of stack trace from previous location ---
+  Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(file: True, retryAfter: "120", waitSeconds: 120) [3 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: RateLimited
+Actual:   Valid
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(Boolean file, String retryAfter, Int32 waitSeconds) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/Http/BandcampConsumerRateLimitFixture.cs:line 56
+--- End of stack trace from previous location ---
+  Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(file: True, retryAfter: "Sat, 14 Nov 2026 12:02:00 GMT", waitSeconds: 120) [< 1 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: RateLimited
+Actual:   Valid
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(Boolean file, String retryAfter, Int32 waitSeconds) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/Http/BandcampConsumerRateLimitFixture.cs:line 56
+--- End of stack trace from previous location ---
+  Failed Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(file: True, retryAfter: "invalid", waitSeconds: 300) [< 1 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: RateLimited
+Actual:   Valid
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(Boolean file, String retryAfter, Int32 waitSeconds) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/Http/BandcampConsumerRateLimitFixture.cs:line 56
+--- End of stack trace from previous location ---
+
+Test Run Failed.
+Total tests: 6
+     Failed: 6
+ Total time: 0.5275 Seconds
+
+Consumer rate-limit GREEN
+$ dotnet test tests/Lidarr.Plugin.Bandcamp.Test -c Release -m:1 -p:TreatWarningsAsErrors=false --no-restore --filter FullyQualifiedName~BandcampConsumerRateLimitFixture --logger 'console;verbosity=normal'
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.Test.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.1 (arm64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 10.0.3)
+[xUnit.net 00:00:00.05]   Discovering: Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.09]   Discovered:  Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.10]   Starting:    Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.22]   Finished:    Lidarr.Plugin.Bandcamp.Test
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(file: False, retryAfter: "120", waitSeconds: 120) [99 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(file: False, retryAfter: "invalid", waitSeconds: 300) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(file: False, retryAfter: "Sat, 14 Nov 2026 12:02:00 GMT", waitSeconds: 120) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(file: True, retryAfter: "120", waitSeconds: 120) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(file: True, retryAfter: "Sat, 14 Nov 2026 12:02:00 GMT", waitSeconds: 120) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampConsumerRateLimitFixture.CollectionAndFile429BlockBothConsumersWithoutLoginAndRecoverWhenDue(file: True, retryAfter: "invalid", waitSeconds: 300) [< 1 ms]
+
+Test Run Successful.
+Total tests: 6
+     Passed: 6
+ Total time: 0.5181 Seconds
+
+Public consumer recovery GREEN
+$ dotnet test tests/Lidarr.Plugin.Bandcamp.Test -c Release -m:1 -p:TreatWarningsAsErrors=false --no-restore --filter FullyQualifiedName~Consumer429StopsSearchAndDownload --logger 'console;verbosity=normal'
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.Test.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.1 (arm64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 10.0.3)
+[xUnit.net 00:00:00.05]   Discovering: Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.09]   Discovered:  Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.09]   Starting:    Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.34]   Finished:    Lidarr.Plugin.Bandcamp.Test
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadClientSessionRenewalFixture.Consumer429StopsSearchAndDownloadUntilSharedWaitExpires(file: True) [195 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadClientSessionRenewalFixture.Consumer429StopsSearchAndDownloadUntilSharedWaitExpires(file: False) [25 ms]
+
+Test Run Successful.
+Total tests: 2
+     Passed: 2
+ Total time: 0.6549 Seconds
+
+Host-seam diagnostics GREEN
+$ dotnet test tests/Lidarr.Plugin.Bandcamp.Test -c Release -m:1 -p:TreatWarningsAsErrors=false --no-restore --filter FullyQualifiedName~BandcampHostLoggingFixture --logger 'console;verbosity=detailed' -- xUnit.ParallelizeTestCollections=false xUnit.MaxParallelThreads=1
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.Test.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.1 (arm64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-c81b03f6-6783cc9b17277777/tests/Lidarr.Plugin.Bandcamp.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.Test.dll
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 10.0.3)
+[xUnit.net 00:00:00.04]   Discovering: Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.08]   Discovered:  Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.09]   Starting:    Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.28]   Finished:    Lidarr.Plugin.Bandcamp.Test
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampHostLoggingFixture.ContainerResolvedExecutionDoesNotExposeSignedUrlsOrNonHtmlErrorBodies(raw: False) [167 ms]
+  Standard Output Messages:
+ Original host Trace exposure positive control: confirmed for URL and error body.
+ host-http-seam Bandcamp request: GET 
+ host-http-seam Bandcamp response: 400 (26 bytes) 
+
+
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampHostLoggingFixture.ContainerResolvedExecutionDoesNotExposeSignedUrlsOrNonHtmlErrorBodies(raw: True) [2 ms]
+  Standard Output Messages:
+ Original host Trace exposure positive control: confirmed for URL and error body.
+ host-http-seam Bandcamp request: GET 
+ host-http-seam Bandcamp response: 400 (26 bytes) 
+
+
+
+Test Run Successful.
+Total tests: 2
+     Passed: 2
+ Total time: 0.5590 Seconds

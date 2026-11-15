@@ -1,0 +1,9 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Lidarr.Plugin.Bandcamp -> /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-f92ef155-ca51c297e3171bc9/src/Lidarr.Plugin.Bandcamp/bin/Release/net8.0/Lidarr.Plugin.Bandcamp.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:02.43

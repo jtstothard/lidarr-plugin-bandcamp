@@ -10,6 +10,7 @@ using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Http;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Download.Clients.Bandcamp;
+using NzbDrone.Core.Download.Clients.Bandcamp.Session;
 using NzbDrone.Core.IndexerSearch.Definitions;
 using NzbDrone.Core.Parser;
 using NzbDrone.Core.Parser.Model;
@@ -28,6 +29,8 @@ namespace NzbDrone.Core.Indexers.Bandcamp
     public class BandcampIndexer : HttpIndexerBase<BandcampIndexerSettings>
     {
         private readonly BandcampApiClient _apiClient;
+        private readonly IIndexerRepository? _repository;
+        private readonly IBandcampSessionProviderRegistry? _sessionProviders;
 
         public override string Name => "Bandcamp";
         public override string Protocol => nameof(BandcampDownloadProtocol);
@@ -41,10 +44,31 @@ namespace NzbDrone.Core.Indexers.Bandcamp
                                IIndexerStatusService indexerStatusService,
                                IConfigService configService,
                                IParsingService parsingService,
-                               Logger logger)
+                               Logger logger,
+                               IBandcampSessionProviderRegistry? sessionProviders = null,
+                               IIndexerRepository? repository = null)
             : base(httpClient, indexerStatusService, configService, parsingService, logger)
         {
+            _repository = repository;
             _apiClient = apiClient;
+            _sessionProviders = sessionProviders;
+        }
+
+        // Host-authenticated POST action. Never follows Shared Authentication to clear an owner.
+        public override object RequestAction(string action, IDictionary<string, string> query)
+        {
+            if (action != "clearLocalCredentials") return base.RequestAction(action, query);
+            try
+            {
+                var definition = Definition.Id > 0 ? _repository?.Find(Definition.Id) : null;
+                if (definition?.Implementation != nameof(BandcampIndexer) || definition.Settings is not BandcampIndexerSettings current)
+                    return new { Success = false, Problem = "ConfigurationMissing" };
+                var candidate = new BandcampIndexerSettings { Cookies = string.Empty, BaseUrl = current.BaseUrl,
+                    AuthConfiguration = current.AuthConfiguration, EarlyReleaseLimit = current.EarlyReleaseLimit };
+                _repository!.SetFields(new IndexerDefinition { Id = Definition.Id, Settings = candidate }, d => d.Settings);
+                return new { Success = true, Message = "Clears only this plugin definition's local cookie; does not revoke Bandcamp server sessions or erase backups, browser sessions or other definitions." };
+            }
+            catch (Exception) { return new { Success = false, Problem = "StorageFailure" }; }
         }
 
         public override IIndexerRequestGenerator GetRequestGenerator()
@@ -95,20 +119,21 @@ namespace NzbDrone.Core.Indexers.Bandcamp
         /// </summary>
         protected override async Task<ValidationFailure> TestConnection()
         {
-            if (Settings.Cookies.IsNullOrWhiteSpace())
+            if (Settings.Cookies.IsNullOrWhiteSpace() && string.IsNullOrWhiteSpace(Settings.AuthConfiguration))
             {
                 return new ValidationFailure("Cookies", "Bandcamp identity cookie is required for search.");
             }
 
             try
             {
-                var fanId = await _apiClient.ResolveFanIdAsync(Settings.Cookies).ConfigureAwait(false);
-                if (fanId == null)
+                var session = await GetSessionAsync(true).ConfigureAwait(false);
+                if (session == null)
                 {
                     return new ValidationFailure("Cookies", "Could not verify Bandcamp identity cookie.");
                 }
 
-                var collection = await _apiClient.GetDownloadableCollectionAsync(Settings.Cookies, fanId.Value, maxPages: 1)
+                using var observation = _apiClient.ObserveSession(session);
+                var collection = await _apiClient.GetDownloadableCollectionAsync(session.Cookies, session.FanId, maxPages: 1)
                     .ConfigureAwait(false);
 
                 if (collection.Empty())
@@ -122,21 +147,48 @@ namespace NzbDrone.Core.Indexers.Bandcamp
             catch (Exception ex)
             {
                 _logger.Warn(ex, "Bandcamp indexer collection test failed");
-                return new ValidationFailure(string.Empty, "Unable to connect to Bandcamp indexer. " + ex.Message);
+                return new ValidationFailure(string.IsNullOrWhiteSpace(Settings.AuthConfiguration) ? string.Empty : nameof(BandcampIndexerSettings.AuthConfiguration),
+                    "Unable to connect to Bandcamp indexer. " + ex.Message);
             }
+        }
+
+        private async Task<BandcampSession?> GetSessionAsync(bool force = false)
+        {
+            if (!string.IsNullOrWhiteSpace(Settings.AuthConfiguration))
+            {
+                var provider = _sessionProviders?.GetNamed(Settings.AuthConfiguration);
+                if (provider == null)
+                {
+                    throw new InvalidOperationException(BandcampSessionProblem.ConfigurationMissing.Description);
+                }
+
+                var session = force ? await provider.RenewAsync().ConfigureAwait(false)
+                    : await provider.GetSessionAsync().ConfigureAwait(false);
+                if (session == null)
+                {
+                    throw new InvalidOperationException(provider.State.Description);
+                }
+
+                return session;
+            }
+
+            var cookies = Settings.Cookies;
+            var fanId = await _apiClient.ResolveFanIdAsync(cookies).ConfigureAwait(false);
+            return fanId.HasValue ? new BandcampSession(cookies, fanId.Value) : null;
         }
 
         private async Task<List<ReleaseInfo>> FetchCollectionReleases(AlbumSearchCriteria searchCriteria)
         {
             var results = new List<ReleaseInfo>();
-            var fanId = await _apiClient.ResolveFanIdAsync(Settings.Cookies).ConfigureAwait(false);
-            if (fanId == null)
+            var session = await GetSessionAsync().ConfigureAwait(false);
+            if (session == null)
             {
                 _logger.Debug("Bandcamp indexer: Cannot search collection because fan_id could not be resolved");
                 return results;
             }
 
-            var collection = await _apiClient.GetDownloadableCollectionAsync(Settings.Cookies, fanId.Value)
+            using var observation = _apiClient.ObserveSession(session);
+            var collection = await _apiClient.GetDownloadableCollectionAsync(session.Cookies, session.FanId)
                 .ConfigureAwait(false);
 
             // Extract expected track counts from search criteria for release specificity
@@ -155,7 +207,7 @@ namespace NzbDrone.Core.Indexers.Bandcamp
 
             foreach (var item in matches)
             {
-                var releases = await BuildReleaseInfosForCollectionItem(item, expectedTrackCounts).ConfigureAwait(false);
+                var releases = await BuildReleaseInfosForCollectionItem(item, session.Cookies, expectedTrackCounts).ConfigureAwait(false);
                 foreach (var release in releases)
                 {
                     if (results.All(existing => !string.Equals(existing.Guid, release.Guid, StringComparison.OrdinalIgnoreCase)))
@@ -171,14 +223,15 @@ namespace NzbDrone.Core.Indexers.Bandcamp
         private async Task<List<ReleaseInfo>> FetchCollectionReleases(string artistQuery, string? albumQuery)
         {
             var results = new List<ReleaseInfo>();
-            var fanId = await _apiClient.ResolveFanIdAsync(Settings.Cookies).ConfigureAwait(false);
-            if (fanId == null)
+            var session = await GetSessionAsync().ConfigureAwait(false);
+            if (session == null)
             {
                 _logger.Debug("Bandcamp indexer: Cannot search collection because fan_id could not be resolved");
                 return results;
             }
 
-            var collection = await _apiClient.GetDownloadableCollectionAsync(Settings.Cookies, fanId.Value)
+            using var observation = _apiClient.ObserveSession(session);
+            var collection = await _apiClient.GetDownloadableCollectionAsync(session.Cookies, session.FanId)
                 .ConfigureAwait(false);
 
             var matches = collection
@@ -194,7 +247,7 @@ namespace NzbDrone.Core.Indexers.Bandcamp
 
             foreach (var item in matches)
             {
-                var releases = await BuildReleaseInfosForCollectionItem(item).ConfigureAwait(false);
+                var releases = await BuildReleaseInfosForCollectionItem(item, session.Cookies).ConfigureAwait(false);
                 foreach (var release in releases)
                 {
                     if (results.All(existing => !string.Equals(existing.Guid, release.Guid, StringComparison.OrdinalIgnoreCase)))
@@ -207,7 +260,7 @@ namespace NzbDrone.Core.Indexers.Bandcamp
             return results;
         }
 
-        private async Task<List<ReleaseInfo>> BuildReleaseInfosForCollectionItem(BandcampCollectionItem item, HashSet<int>? expectedTrackCounts = null)
+        private async Task<List<ReleaseInfo>> BuildReleaseInfosForCollectionItem(BandcampCollectionItem item, string cookies, HashSet<int>? expectedTrackCounts = null)
         {
             var releases = new List<ReleaseInfo>();
 
@@ -216,9 +269,9 @@ namespace NzbDrone.Core.Indexers.Bandcamp
                 return releases;
             }
 
-            var pageData = await _apiClient.GetDownloadPageDataAsync(Settings.Cookies, item.DownloadPageUrl!)
+            var pageData = await _apiClient.GetDownloadPageDataAsync(cookies, item.DownloadPageUrl!)
                 .ConfigureAwait(false);
-            var albumDurationSeconds = await _apiClient.GetAlbumDurationSecondsAsync(Settings.Cookies, item.ItemUrl!)
+            var albumDurationSeconds = await _apiClient.GetAlbumDurationSecondsAsync(cookies, item.ItemUrl!)
                 .ConfigureAwait(false);
 
             if (pageData == null)

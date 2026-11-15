@@ -154,7 +154,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         }
 
         [Fact]
-        public async Task ExecuteDownloadAsync_DownloadPageUrlWithFormatFragment_DoesNotQueryCollection()
+        public async Task ExecuteDownloadAsync_ConvertsFormatDownloadLinkToResolverBeforeFileTransfer()
         {
             _httpClientMock
                 .Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
@@ -172,18 +172,23 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                                     ""item_type"": ""album"",
                                     ""title"": ""Fresh"",
                                     ""downloads"": {
-                                        ""flac"": { ""url"": ""https://bandcamp.com/statdownload/album/111?sig=flac"", ""size_mb"": 12 }
+                                        ""flac"": { ""url"": ""https://popplers5.bandcamp.com/download/album/111?sig=flac"", ""size_mb"": 12 }
                                     }
                                 }]
                             };</script></head><body></body></html>",
                             request),
-                        "https://bandcamp.com/statdownload/album/111?sig=flac&.format=flac&.json=true" => CreateStringResponse(
-                            @"{""url"":""https://files.example.com/fresh.flac""}",
+                        var statUrl when System.Text.RegularExpressions.Regex.IsMatch(statUrl, @"^https://popplers5\.bandcamp\.com/statdownload/album/111\?sig=flac&\.rand=\d+&\.vrs=1$") => CreateStringResponse(
+                            request.Headers.GetValues("Cookie")?.SingleOrDefault() == "identity=testcookie"
+                                ? @"if ( window.Downloads ) { Downloads.statResult( {""result"":""ok"",""url"":""/status"",""download_url"":""https://files.example.com/fresh.flac""} ) };"
+                                : @"{""result"":""err"",""errortype"":""ExpirationError"",""url"":""/status""}",
                             request),
                         "https://files.example.com/fresh.flac" => CreateBinaryResponse(
                             new byte[] { 0x66, 0x4C, 0x61, 0x43, 0x00, 0x00, 0x00, 0x22 },
                             request,
                             "audio/flac"),
+                        var url when url.StartsWith("https://bandcamp.com/download/album/111?", StringComparison.Ordinal) =>
+                            new HttpResponse(request, new HttpHeader { { "Content-Type", "text/html" } },
+                                "<html><body>Download landing page, not archive bytes.</body></html>", HttpStatusCode.OK),
                         _ => CreateStringResponse(@"{""items"": []}", request)
                     };
                 });
@@ -315,6 +320,33 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         /// Mimics Lidarr's ManagedHttpDispatcher: when the request carries a
         /// ResponseStream, a 200 body is copied into it and ResponseData stays null.
         /// </summary>
+        [Theory]
+        [InlineData("callback({\"url\":\"not-a-uri\",\"retry_url\":\"\"});")]
+        [InlineData("garbled resolver response")]
+        [InlineData("{\"nested\":{\"url\":\"https://bandcamp.com/archive.zip\"}}")]
+        public async Task ExecuteDownloadAsync_UnusableResolverPointerStopsBeforeArchiveRequest(string resolverBody)
+        {
+            SetupStreamingDownload(
+                System.Text.Encoding.UTF8.GetBytes(resolverBody),
+                "application/json", null);
+            var item = new BandcampDownloadItem
+            {
+                AlbumUrl = "https://bandcamp.com/download?type=album&id=111#format=flac",
+                Title = "Fresh - Fresh [FLAC]",
+                OutputPath = _tempRoot,
+                SessionProvider = new BandcampSessionProvider(1,
+                    new BandcampDownloadSettings { Cookies = "identity=testcookie" },
+                    _apiClient, LogManager.GetCurrentClassLogger())
+            };
+            var error = await Assert.ThrowsAsync<DownloadException>(() => _subject.ExecuteDownloadAsync(item, CancellationToken.None));
+            Assert.Contains("no usable archive pointer", error.Message);
+            _httpClientMock.Verify(c => c.ExecuteAsync(It.Is<HttpRequest>(r =>
+                r.Url.FullUri != "https://bandcamp.com" &&
+                !r.Url.FullUri.StartsWith("https://bandcamp.com/download?") &&
+                !r.Url.FullUri.StartsWith("https://bandcamp.com/statdownload/"))), Times.Never);
+            Assert.True(!Directory.Exists(_tempRoot) || Directory.GetFiles(_tempRoot).Length == 0);
+        }
+
         private void SetupStreamingDownload(byte[] statdownloadBody, string statdownloadContentType, byte[]? fileBody)
         {
             _httpClientMock
@@ -324,7 +356,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                     var uri = request.Url.FullUri;
                     var body = uri switch
                     {
-                        "https://bandcamp.com/statdownload/album/111?sig=flac&.format=flac&.json=true" => statdownloadBody,
+                        var statUrl when System.Text.RegularExpressions.Regex.IsMatch(statUrl, @"^https://bandcamp\.com/statdownload/album/111\?sig=flac&\.rand=\d+&\.vrs=1$") => statdownloadBody,
                         "https://files.example.com/album.zip" => fileBody,
                         _ => null
                     };

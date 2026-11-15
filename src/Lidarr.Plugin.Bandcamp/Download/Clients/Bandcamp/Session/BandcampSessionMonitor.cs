@@ -98,11 +98,8 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
                     try
                     {
-                        var session = await provider.ValidateAsync(cancellationToken).ConfigureAwait(false);
-                        if (session == null)
-                        {
-                            await provider.RenewAsync(cancellationToken).ConfigureAwait(false);
-                        }
+                        // Renewal already validates first and only logs in on positive sign-out.
+                        await provider.RenewAsync(cancellationToken).ConfigureAwait(false);
                     }
                     catch (Exception ex) when (ex is not OperationCanceledException)
                     {

@@ -1,0 +1,28 @@
+.NET 8.0.27
+Lidarr.Core, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null
+Lidarr.Common, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null
+Lidarr.Plugin.Bandcamp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+reference System.Runtime, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+reference Lidarr.Core, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null
+reference Lidarr.Common, Version=3.2.1.5196, Culture=neutral, PublicKeyToken=null
+reference NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c
+reference System.Linq.Expressions, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+reference FluentValidation, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7de548da2fbae0f0
+reference System.Collections, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+reference System.Linq, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+reference System.Text.RegularExpressions, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+reference System.Text.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51
+reference System.Threading, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+reference System.Net.Http, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+reference System.Collections.Concurrent, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+reference System.Threading.Channels, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51
+reference System.Net.Primitives, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+reference System.Collections.Specialized, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+reference System.Security.Cryptography, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+reference System.Memory, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51
+reference System.IO.Compression.ZipFile, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
+Loaded all 149 plugin types
+JIT prepared 803 method/constructor bodies without invocation
+Plugin descriptor Bandcamp
+Native DI selected NzbDrone.Core.Http.Bandcamp.BandcampHttpDispatcher with mock constructor dependencies
+Confinement: production/default config paths unavailable; AF_INET socket creation denied

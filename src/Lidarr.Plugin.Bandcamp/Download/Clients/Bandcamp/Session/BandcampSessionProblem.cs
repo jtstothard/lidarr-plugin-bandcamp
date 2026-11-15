@@ -8,9 +8,12 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
     {
         private static readonly string CooldownText = $"{BandcampSessionProvider.ChallengeCooldown.TotalHours:0} hours";
 
+        public static readonly BandcampSessionProblem ConfigurationMissing = new(
+            "ConfigurationMissing", "shared authentication owner is missing, ambiguous, or refers to another owner; select the exact unique name of a saved Bandcamp download client whose Shared Authentication is empty; legacy local secrets were retained and will not be merged or used as fallback");
+
         public static readonly BandcampSessionProblem CookieExpired = new(
             "CookieExpired",
-            "session cookie expired or invalid; paste a fresh identity cookie into the client settings");
+            "Bandcamp positively signed the session out; renew in your browser and paste a fresh identity cookie, or configure complete email and password credentials; the isolated desktop helper is documented in docs/browser-renewal.md");
 
         public static readonly BandcampSessionProblem BadCredentials = new(
             "BadCredentials",
@@ -22,7 +25,48 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
         public static readonly BandcampSessionProblem CaptchaRequired = new(
             "CaptchaRequired",
-            "Bandcamp asked for a captcha, which can't be solved here; paste a session cookie from your browser into the client settings (login is retried at most every " + CooldownText + ")");
+            "Bandcamp asked for a captcha, which can't be solved here; use the isolated desktop helper (docs/browser-renewal.md) or paste a session cookie from your browser into the client settings (login is retried at most every " + CooldownText + ")");
+
+        public static readonly BandcampSessionProblem WrongAccount = new(
+            "WrongAccount", "the candidate belongs to a different fan account; the saved identity was retained; repeat browser login with the intended account");
+
+        public static readonly BandcampSessionProblem ReplacementConflict = new(
+            "ReplacementConflict",
+            "Bandcamp settings changed during recovery; the saved identity was retained; retry using the current settings");
+
+        public static readonly BandcampSessionProblem StorageFailure = new(
+            "StorageFailure",
+            "could not save Bandcamp session settings; check Lidarr database storage and permissions, then retry recovery");
+
+        public static readonly BandcampSessionProblem Missing = new(
+            "Missing", "no session configured; enter complete email and password credentials or paste a browser identity cookie");
+
+        public static readonly BandcampSessionProblem ChallengeOrUnrecognized = new(
+            "ChallengeOrUnrecognized", "Bandcamp returned a challenge or unrecognized page; check Bandcamp in your browser and renew manually if required; the saved identity has been retained");
+
+        public static readonly BandcampSessionProblem Unavailable = new(
+            "Unavailable", "Bandcamp is temporarily unavailable; check network and service availability and try later; the saved identity has been retained");
+
+        public static readonly BandcampSessionProblem LoginResponseUnrecognized = new(
+            "LoginResponseUnrecognized", "Bandcamp returned a challenge or unrecognized login response; check Bandcamp in your browser and paste an identity cookie if needed; no replacement identity was obtained (login is retried at most every " + CooldownText + ")");
+
+        public static readonly BandcampSessionProblem LoginPageRejected = new(
+            "LoginPageRejected", "Bandcamp could not load the login page; check Bandcamp in your browser for access restrictions or service errors; no replacement identity was obtained");
+
+        public static readonly BandcampSessionProblem LoginCallbackRejected = new(
+            "LoginCallbackRejected", "Bandcamp login submission returned an unsuccessful HTTP status; check Bandcamp in your browser for challenges or service errors; no replacement identity was obtained");
+
+        public static readonly BandcampSessionProblem LoginSessionMissing = new(
+            "LoginSessionMissing", "Bandcamp accepted login but issued no identity cookie; check Bandcamp in your browser and renew manually; no replacement identity was obtained");
+
+        public static readonly BandcampSessionProblem LoginTransportFailure = new(
+            "LoginTransportFailure", "Bandcamp login request could not be completed; check connectivity and try later; no replacement identity was obtained");
+
+        public static readonly BandcampSessionProblem LoginFailed = new(
+            "LoginFailed", "Bandcamp login failed for an unclassified reason; check Bandcamp in your browser; no replacement identity was obtained");
+
+        public static BandcampSessionProblem RateLimited(System.DateTime untilUtc) => new(
+            "RateLimited", $"Bandcamp rate limited requests; wait until {untilUtc:yyyy-MM-dd HH:mm:ss} UTC before trying again; do not change credentials");
 
         private BandcampSessionProblem(string code, string description)
         {

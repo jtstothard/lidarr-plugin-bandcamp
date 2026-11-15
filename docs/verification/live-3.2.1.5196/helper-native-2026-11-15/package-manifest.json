@@ -1,0 +1,1852 @@
+{
+  "runtime_id": "osx-arm64",
+  "self_contained": true,
+  "runtime_version": "8.0.24",
+  "archive": "/private/tmp/bandcamp-cookie-push-osx-arm64-20261115.tar.gz",
+  "archive_bytes": 73136972,
+  "archive_sha256": "0725afd862be721fe24351c9a3f6e09a829eb17eefc66a65b7eb94a195df095a",
+  "files": [
+    {
+      "path": ".playwright/node/LICENSE",
+      "bytes": 157609,
+      "sha256": "5888dbb9a1d2b18f2c3e6c5f6af1b39de658372b402a0577b002777f14c62ace",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/node/darwin-arm64/node",
+      "bytes": 122545856,
+      "sha256": "6f32069480ec14d52b6d7b1f3c7124cfbbc46203abf5ddf5c65b127435f3f329",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/LICENSE",
+      "bytes": 11601,
+      "sha256": "45873d00a0dd243596deb4aa23b2493b3d1f0671921bf2538ea431d7380220eb",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/NOTICE",
+      "bytes": 254,
+      "sha256": "6d602191187b35b9b01d2cffa01c8469c2c8d9de8a96f1bf868e0f264f51c81d",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/README.md",
+      "bytes": 120,
+      "sha256": "d16ff7f8e38fa1fc954f695ad551cdc118d9c9bdd5f3d83203901f4c317d7d7e",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/ThirdPartyNotices.txt",
+      "bytes": 676,
+      "sha256": "a549d329bad8806fe279f0ecae0fc0270dec7e7c2dc8ec10f90e394f7c32b144",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/bin/install_media_pack.ps1",
+      "bytes": 174,
+      "sha256": "bc20f049badf021e3a53bdb4156603caa5ef482c9a9a251f927605e676a44171",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/bin/install_webkit_wsl.ps1",
+      "bytes": 1464,
+      "sha256": "bc61beda37a808eef27d39ce684baa792f6d17737a25a432b1a84d3b591ab815",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/bin/reinstall_chrome_beta_linux.sh",
+      "bytes": 1217,
+      "sha256": "dc8c22b9dde76583cece2857575b88094299615f3136a3c598149710c45dee3a",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/bin/reinstall_chrome_beta_mac.sh",
+      "bytes": 563,
+      "sha256": "a92eaeb4ebcf5633a4e9c981481e14c80764fc81b6fcbc0565398e50ff319433",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/bin/reinstall_chrome_beta_win.ps1",
+      "bytes": 957,
+      "sha256": "b6d9e44742feafb98d5edc56fa20042949973cf30d141a1c5b4fb384096967c5",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/bin/reinstall_chrome_stable_linux.sh",
+      "bytes": 1212,
+      "sha256": "dc72ab3567a4ce43bd8353d4ecf41f1d9c03e870169367cd3ed9043aabf67dd1",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/bin/reinstall_chrome_stable_mac.sh",
+      "bytes": 519,
+      "sha256": "bb43a96c192a6cc81524ade0264686fff7809c019a89f7db0a9849635879c3be",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/bin/reinstall_chrome_stable_win.ps1",
+      "bytes": 923,
+      "sha256": "3d96c4e2f4ebbb3fad44cf3ba58d9cf90af1c9fb3073e3b27d45a74cf005515b",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/bin/reinstall_msedge_beta_linux.sh",
+      "bytes": 1494,
+      "sha256": "10b26f35dbc2000b94edf1172d803a29c5873a4eb8d523afbc687997b642767e",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/bin/reinstall_msedge_beta_mac.sh",
+      "bytes": 377,
+      "sha256": "0036d738bc90d686100d81f328ba0003bf07863f5500b792c8da391d149750fa",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/bin/reinstall_msedge_beta_win.ps1",
+      "bytes": 874,
+      "sha256": "b173c378a59f0cc38033cee702de1f44f09276c9b2270d1a650ebe66ee312433",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/bin/reinstall_msedge_dev_linux.sh",
+      "bytes": 1489,
+      "sha256": "00e4947e7a4f8339c6db09c87976d808583c07f9179e4aa7694d88614b82fe95",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/bin/reinstall_msedge_dev_mac.sh",
+      "bytes": 372,
+      "sha256": "6f899e3b311f742c24ca37ff9e32298e8290514ffc14bf588cc51556a29da4c0",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/bin/reinstall_msedge_dev_win.ps1",
+      "bytes": 869,
+      "sha256": "46f7f98c81cb0abe687d7f4a5afea9b897a38d2a6dd6f6662fbd847f7a22bd51",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/bin/reinstall_msedge_stable_linux.sh",
+      "bytes": 1507,
+      "sha256": "ec0a31a5f09c565e108473a1850895a4458ab00c713ac1de3aa2001912e4668f",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/bin/reinstall_msedge_stable_mac.sh",
+      "bytes": 371,
+      "sha256": "3af1e893527ff2257aa2dbc3b259a053b92f45c3eadb13e38eba46e87902655d",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/bin/reinstall_msedge_stable_win.ps1",
+      "bytes": 856,
+      "sha256": "40bb5fcbfcebbbe2ce43c6e736e7c5deefc5be03b6e9c6914423c06ec1f591be",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/browsers.json",
+      "bytes": 1135,
+      "sha256": "2cfd419f71ac6475d81e1301fa86c34cf2a2a6bae2a0da4b5a2b18310216b6bf",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/cli.js",
+      "bytes": 867,
+      "sha256": "7c46f799363eee3e0bb7a7d7c870a92316a1601bf6fda780b656df4209542aa9",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/index.d.ts",
+      "bytes": 634,
+      "sha256": "7a8ec10b0834eb7183e4bfcd929838ac77583828e343211bb73676d1e47f6f01",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/index.js",
+      "bytes": 697,
+      "sha256": "a58fb2cec4293e7dcf73c58a179898a4f3986666451a19da4e731fa3af63265b",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/index.mjs",
+      "bytes": 1063,
+      "sha256": "3d36e2132d3c8b62397d23f0bb4177336aaee503203ae2a2c90fbeb5bf3317dd",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/bootstrap.js",
+      "bytes": 5739,
+      "sha256": "39dd64cc9472275d1b25c170fefa2a98353bcca598b741788faac2e6e15fc737",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/coreBundle.js",
+      "bytes": 3585406,
+      "sha256": "829521b67ed7be90c7d6d6098ff39f2241562d47e4ad7ccab13710924a56001d",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/entry/cliDaemon.js",
+      "bytes": 197,
+      "sha256": "062f256fb29a7bf91793a014b9c3f1f9cf2dc6b12e40a8a2ebba88a630ae16a0",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/entry/dashboardApp.js",
+      "bytes": 108,
+      "sha256": "209962c6eaeef11629f226d6a2ab33ec7a2480754242b6e19590a9e6eb71d126",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/entry/mcp.js",
+      "bytes": 442,
+      "sha256": "cc87dc0020cb41caebbf04f50e42bc7835b033a6d80e9c3f0a3d0b3dbdf341c7",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/entry/oopBrowserDownload.js",
+      "bytes": 120,
+      "sha256": "87567cdbd67dd2f50bb232d47d3784701ece7c81e39c0287bb7d1b466b68cf06",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/package.js",
+      "bytes": 2112,
+      "sha256": "9f938e1d44a0dd231b1660ca62f7dae964859b79cbdc370b8542c5d375ca3c05",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/server/chromium/appIcon.png",
+      "bytes": 16565,
+      "sha256": "6ba994f05c5cf18e22d9b6bef9898fbdec6ad4d4d77f5187d0609cb42d72d01e",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/server/electron/loader.js",
+      "bytes": 5407,
+      "sha256": "ade9159c9691597140bb2658b85f5055ff3fa7bc5c0e2b6d5532f9fbd46dfdaa",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/serverRegistry.js",
+      "bytes": 57039,
+      "sha256": "38025f08f335705b099b9f188bf45b5908a56a722825fe895b1e90f56d5595b6",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/serverRegistry.js.LICENSE",
+      "bytes": 2982,
+      "sha256": "3098a6efcbc11752cbdf6075fa65480f5470f78c8d981fab9c0796dc9a41cefe",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/cli-client/channelSessions.js",
+      "bytes": 7087,
+      "sha256": "6b9c613e87340f48ad7182addd7495a8ff3fbe55feb1bbd0ce04f59f1552e126",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/cli-client/cli.js",
+      "bytes": 225,
+      "sha256": "3f9694e461ef0d6ebab068fdf3da98e1f3bce7cd4d2c32e667f2d0fb218c6472",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/cli-client/help.json",
+      "bytes": 44187,
+      "sha256": "922b302fdf697f32c37d9ac4de453c98f89f8edfc15b1d310fad347107a12bf1",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/cli-client/minimist.js",
+      "bytes": 4109,
+      "sha256": "9430489ebc06fd02231dccfe844516f743e812a9ac4fe8e6748a67718738851c",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/cli-client/output.js",
+      "bytes": 12359,
+      "sha256": "de5701d6dba77b3c77471c3e81ad901dfd1a9122d38f25f5c06fa1356dc002b6",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/cli-client/program.js",
+      "bytes": 16554,
+      "sha256": "c22d2d11c862df198228d9612e6bf6d42d86079d0445f151f0efa9a26d034189",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/cli-client/registry.js",
+      "bytes": 6768,
+      "sha256": "4976cd5b2b3a25572cc1a4b5f055a756dacd4cc1b19d48987ee3253428e759b8",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/cli-client/session.js",
+      "bytes": 9650,
+      "sha256": "8c3f9aff3fab537771cb560e1bad3e417e16b3315b7a3dc10a305faeca3f6024",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/dashboard/appIcon.png",
+      "bytes": 18945,
+      "sha256": "38037bcf18c7f9b950da2e1a2d8800d38fb27637ccda293d38368a3704b67f18",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/skills/playwright-cli/SKILL.md",
+      "bytes": 15662,
+      "sha256": "49bebc4b652d58860e91d6478fa446645e349ba8556667cc02702645d7ffde0b",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/skills/playwright-cli/references/element-attributes.md",
+      "bytes": 665,
+      "sha256": "bf19aa4671e0a50a0fefa9c790f39124e803060eefe395042b723c29fcb7faa2",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/skills/playwright-cli/references/playwright-tests.md",
+      "bytes": 1690,
+      "sha256": "c5b0719fef2cfdff50bd744051b2f9afc119775db4b48e9b2882c1cf3886797c",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/skills/playwright-cli/references/pr-attachments.md",
+      "bytes": 2830,
+      "sha256": "24b118e74598be72e73e24fe223d295b9099c85b1860a7c8f6e5690c9038fa2a",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/skills/playwright-cli/references/request-mocking.md",
+      "bytes": 2182,
+      "sha256": "54e801c9663fc2b6d68ceb058cb1c360724c2499f42acc7852a68e83e5b5f37c",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/skills/playwright-cli/references/running-code.md",
+      "bytes": 5913,
+      "sha256": "3029569ed6ddaeffc0b87badde967efdc2973b1677f078830098146eb3b78ebe",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/skills/playwright-cli/references/session-management.md",
+      "bytes": 5929,
+      "sha256": "a4f16271f95d3eec7bc56e659d8adbb8f6ad7d603a6fa15efdcdd071a50c6ce3",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/skills/playwright-cli/references/storage-state.md",
+      "bytes": 5198,
+      "sha256": "9ac47f9ae4a1aedcd2077f8ac9ab1ba6bee1962cb83ff51adcd36fb6d83b5ec6",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/skills/playwright-cli/references/test-generation.md",
+      "bytes": 16070,
+      "sha256": "27ecb11ef647999bd7486695bb1aacc3682097e6bb5742804cb6c8769c2b5364",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/skills/playwright-cli/references/tracing.md",
+      "bytes": 3456,
+      "sha256": "ef73e71bee792e341df9cd4f60529c929ade48b538ac76e033f4f20843e8dbda",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/skills/playwright-cli/references/video-recording.md",
+      "bytes": 9388,
+      "sha256": "1c800b897824cb54394c34265d8ebffdbb530adfc8d612c5d798b667a1799f48",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/skills/playwright-component-testing/SKILL.md",
+      "bytes": 10404,
+      "sha256": "60f57b31767d562c30cc5332081418c2945f4d9c998efa6e09191333654dd429",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/skills/playwright-component-testing/references/gallery-spec.md",
+      "bytes": 6199,
+      "sha256": "0ca25dde6112eb379f56eb618585b64dc2dfd13c2f7f956ac7eabbd76a68912b",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/skills/playwright-component-testing/references/migration.md",
+      "bytes": 5031,
+      "sha256": "bc3a336f7970bb7455fa5a38f937e45b35fb0c18d6c3b9f37916a4ff757b7acc",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/skills/playwright-component-testing/references/react.md",
+      "bytes": 3115,
+      "sha256": "54af9cc1cdb6d4ccdb8e811c0abb29b960d5c9304f4df7d1dcf9b8df3f973102",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/skills/playwright-component-testing/references/typing.md",
+      "bytes": 6883,
+      "sha256": "c511025b5c9b02d7f49034a5613c8b478193bf60c90ea6dddb3faf9c6985c82b",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/skills/playwright-component-testing/references/vue.md",
+      "bytes": 3374,
+      "sha256": "d1b129f126c700702a3c00ad8eb6c86898bc941c29a656c1191eb7230650bf8b",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/skills/playwright-trace/SKILL.md",
+      "bytes": 4862,
+      "sha256": "c76d28244c05a6474f6030213127cd62253208b06430ea2378576f0669db2c9a",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/utils/extension.js",
+      "bytes": 4689,
+      "sha256": "404ae19e57a7c7c5ed3e6ecf9df26a3fcf95867250732f954823078ccb879e63",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/tools/utils/socketConnection.js",
+      "bytes": 3317,
+      "sha256": "973c2bea70a1f1445f4673f99e9fa351e50a2ec9fd93d7381b2c41bb4de764dd",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/utilsBundle.js",
+      "bytes": 3085095,
+      "sha256": "75f1431ea7ee00b2b291a0a72d4fa1c07ae04d999f21a00cd03b8f454a5840fc",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/utilsBundle.js.LICENSE",
+      "bytes": 106591,
+      "sha256": "1362b7f413c08083af537384162ab69a323d019fe26e0a2cd78536fafd6b9cbf",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/dashboard/assets/codeMirrorModule--QdMvsKi.css",
+      "bytes": 6251,
+      "sha256": "20be824a82832b62cc04642d31da3c609fd280b23f1cdcb1e622c4f40aac5ab8",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/dashboard/assets/codeMirrorModule-CQ8RZGBm.js",
+      "bytes": 307374,
+      "sha256": "56b9c6a50c09dfac28eea5ec3e76c8ae85a26009b20ebac9928959cf3c3312bb",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/dashboard/assets/codicon-DCmgc-ay.ttf",
+      "bytes": 80340,
+      "sha256": "0f1d5219934e96e83b8db162d60b4d8c09b5de1e7d38031cbafe4a3c0f2889c9",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/dashboard/assets/firefox-1bWoP6pv.svg",
+      "bytes": 7488,
+      "sha256": "3f3742d1e78c0db6c2d3531250f70c30675ee5310de32fa89befaf738c54efd0",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/dashboard/assets/firefox-beta-k3eOH_eK.svg",
+      "bytes": 9280,
+      "sha256": "7eab5ffdc25903ba33a7202f7fffa1999f119c7be45a39e9e703c118904f917a",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/dashboard/assets/firefox-nightly-Cp5nfeDT.svg",
+      "bytes": 9143,
+      "sha256": "f311c074b0fa999fcd6b73441301fb54ee87a48ff3bf05f318647928110476da",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/dashboard/assets/index-AwgwcYie.css",
+      "bytes": 139111,
+      "sha256": "82d06f291a7d0860e1b1e1803ab6f2e49c637541779a37168652e10b062b67f9",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/dashboard/assets/index-hRvO4yU2.js",
+      "bytes": 336491,
+      "sha256": "3a05ed0b026442a1459952df25b9a836d4fa1a917838cf6f9357daefc0e42285",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/dashboard/assets/safari-na3_-uQk.svg",
+      "bytes": 5254,
+      "sha256": "80fd72ca5eb8545f1981277b31f4f92951d469d4efebd078e4086b676fe517dc",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/dashboard/index.html",
+      "bytes": 1078,
+      "sha256": "202903aad66040604bc1a0c85615dda4bfc7e6f4a4674e60d9eda4d44f6faea7",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/dashboard/playwright-logo.svg",
+      "bytes": 5645,
+      "sha256": "511524a1c145819303a18fb71870a4307c3e740f9e9722f7686a2b42b0995b6c",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/htmlReport/index.html",
+      "bytes": 464,
+      "sha256": "ce7c098020a0eb9ce10edd416245ea6da50dfeaab18dfd0a2176979d22643be6",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/htmlReport/report.css",
+      "bytes": 100452,
+      "sha256": "d98a244bf950333ade383b109e97d396f970f650b20f2e5ef5ecc2740205dff7",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/htmlReport/report.js",
+      "bytes": 415889,
+      "sha256": "0ecf5329ce34f0b809753392b8715521c30eeb46e24f7749d2537c06aa5bcea4",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/recorder/assets/codeMirrorModule--QdMvsKi.css",
+      "bytes": 6251,
+      "sha256": "20be824a82832b62cc04642d31da3c609fd280b23f1cdcb1e622c4f40aac5ab8",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/recorder/assets/codeMirrorModule-DK72OMRi.js",
+      "bytes": 307374,
+      "sha256": "44cc2e8413f941b4ce136fae229ce375a0bfe15e9f1172dc0deb0230791149f4",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/recorder/assets/codicon-DCmgc-ay.ttf",
+      "bytes": 80340,
+      "sha256": "0f1d5219934e96e83b8db162d60b4d8c09b5de1e7d38031cbafe4a3c0f2889c9",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/recorder/assets/index-BZpYJZ-P.css",
+      "bytes": 85502,
+      "sha256": "cc24563b96f286614b88f74da413e9984de263227971c4cdfabe1f73be095514",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/recorder/assets/index-Cn0mmDuv.js",
+      "bytes": 358646,
+      "sha256": "b57add9e1086d2b7058a66f77a1c19ba8bfbcf1f76831565e7662892c68d601a",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/recorder/index.html",
+      "bytes": 1078,
+      "sha256": "8338faa7d5856d725400a1c1aa37541bf45ad0e9ca0391b05d622118a47d5bc0",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/recorder/playwright-logo.svg",
+      "bytes": 5033,
+      "sha256": "6b0a4367bdeab10995bc239278f04c68c10e48adbec15e799e01909a0d66dcb9",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/traceViewer/assets/codeMirrorModule-BEB2e8M3.js",
+      "bytes": 307393,
+      "sha256": "0da75d228abc1d8b940aa04ec086570dace7b2e7b2ccc5f4bc16f05e79bdb7d7",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/traceViewer/assets/defaultSettingsView-D-g2vrvf.js",
+      "bytes": 667649,
+      "sha256": "554bdef910d18e763118f1221667b809edafba46e29e3f8de4b9dcf21c6b7d79",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/traceViewer/assets/urlMatch-L3liM589.js",
+      "bytes": 2510,
+      "sha256": "1bc6321e32d11c31a452bc75896f0b344e6153321854d9f1658818be7f845c16",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/traceViewer/assets/xtermModule-B794rD2Z.js",
+      "bytes": 288730,
+      "sha256": "7f3c6bda9e7b6327740dff3b946c68a52027357ef2b14b1ea373aa614cbb7977",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/traceViewer/codeMirrorModule.-QdMvsKi.css",
+      "bytes": 6251,
+      "sha256": "20be824a82832b62cc04642d31da3c609fd280b23f1cdcb1e622c4f40aac5ab8",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/traceViewer/codicon.DCmgc-ay.ttf",
+      "bytes": 80340,
+      "sha256": "0f1d5219934e96e83b8db162d60b4d8c09b5de1e7d38031cbafe4a3c0f2889c9",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/traceViewer/defaultSettingsView.C8BeHuxd.css",
+      "bytes": 107270,
+      "sha256": "278101b68ab48ee6323a6afbf4e0e629324e10e96902a62a0875643a1bba3d94",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/traceViewer/index.B_TqY17P.css",
+      "bytes": 2055,
+      "sha256": "08a212fcacae1866f44f065654afcc4c7d03409c68c74b3315c5bda17a0ca003",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/traceViewer/index.html",
+      "bytes": 2363,
+      "sha256": "4c168083713c6868f577f492f3d50eecdfbf6235e0b0af421796b7ddd9013bd6",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/traceViewer/index.oNry3Hjv.js",
+      "bytes": 6628,
+      "sha256": "87f339e5e169f67633a91e17d9c8f65afb8de66d9b88a4167c79da78f562518d",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/traceViewer/manifest.webmanifest",
+      "bytes": 429,
+      "sha256": "d8540500603a32a39fe7e5a0375dc0f9ebafd11118e06a846db7efc608223ab9",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/traceViewer/playwright-logo.svg",
+      "bytes": 5033,
+      "sha256": "6b0a4367bdeab10995bc239278f04c68c10e48adbec15e799e01909a0d66dcb9",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/traceViewer/snapshot.B_Jk1wbt.js",
+      "bytes": 650,
+      "sha256": "d4d09e05451d107d8e1a6bbd041405fe518b9fd2833890e4ebaaad83b7f554f5",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/traceViewer/snapshot.html",
+      "bytes": 389,
+      "sha256": "c608c8899c95c5a74d3f556e20146c3d852b9df85ae2854c659a7cc773c9b727",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/traceViewer/sw.bundle.js",
+      "bytes": 96737,
+      "sha256": "d1d6fec6687eb3fd93a8990bd9daa3951422695afffae2382f97f10811cf1c30",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/traceViewer/uiMode.CYwC_gH1.js",
+      "bytes": 38121,
+      "sha256": "c920eaa161f65b6c0dd431a642c4bdf2e6262ae51335c02d155b187f48c0296c",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/traceViewer/uiMode.CyMfwkXJ.css",
+      "bytes": 54590,
+      "sha256": "fb403cf0b07007bc1d771e29737f7408924da300e2fab8b289a3ef2e8fc08d7b",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/traceViewer/uiMode.html",
+      "bytes": 727,
+      "sha256": "6de2f5db7f7532c30e8b1381752a1daf23facbdef6bea130cef0cfa5a003eb22",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/vite/traceViewer/xtermModule.kHJ-D0s7.css",
+      "bytes": 2853,
+      "sha256": "0dd60056134e6a2994a86b59a1e9789b9f04e92924da109aef8c923acaf08ce5",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/webp_codec.LICENSE",
+      "bytes": 8841,
+      "sha256": "995c7ee35aceb7666829b7a501ca89c0864e12b493c1174b155774ab1e03d831",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/webp_codec.wasm",
+      "bytes": 565369,
+      "sha256": "164cd9583a3e4d081f767d3b41ff0a730443dc7535fcc5caff83561463384b79",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/lib/xdg-open",
+      "bytes": 32416,
+      "sha256": "7d759d54f0d4ce1beeb34ee62c587985b5042374e8de237b0dcb8cd47aa698cf",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/package.json",
+      "bytes": 876,
+      "sha256": "8aa1c9863fa8dea324e674254158cdc79440f4124ef2d84d38053013541cb7d6",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/types/protocol.d.ts",
+      "bytes": 819286,
+      "sha256": "ccd722dea5eca655cf111348ec27a38a376d467407c4cc763d31514550d04d5d",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/types/structs.d.ts",
+      "bytes": 2455,
+      "sha256": "c9b9179b7291c8562eb0fb781219ddbdcf36149ebd7bd355e5b4a553d6b60b81",
+      "mode": "0o744"
+    },
+    {
+      "path": ".playwright/package/types/types.d.ts",
+      "bytes": 1150893,
+      "sha256": "c458c9da21dde7732dd440f4f2f861ec66ef89813955a591157ec30e4a90186e",
+      "mode": "0o744"
+    },
+    {
+      "path": "Microsoft.Bcl.AsyncInterfaces.dll",
+      "bytes": 16000,
+      "sha256": "5705d245072d3eb78400547b32147dbb6e2c8b02ba8bda76729798f5efdeaecb",
+      "mode": "0o744"
+    },
+    {
+      "path": "Microsoft.CSharp.dll",
+      "bytes": 915248,
+      "sha256": "6912f9d9088eb2bb7b0ed593b36eb03313e24b225dc75c7d7e047d4b681c46da",
+      "mode": "0o744"
+    },
+    {
+      "path": "Microsoft.Playwright.dll",
+      "bytes": 1086776,
+      "sha256": "2c1c5089efc306a0f56187921cf52cef430303f504bb003189437dfd4b3a7bc9",
+      "mode": "0o744"
+    },
+    {
+      "path": "Microsoft.VisualBasic.Core.dll",
+      "bytes": 1381688,
+      "sha256": "c9682c57c74b0d421e4e76667047294de6f8424d7a87785351ff695e5631ec0f",
+      "mode": "0o744"
+    },
+    {
+      "path": "Microsoft.VisualBasic.dll",
+      "bytes": 17672,
+      "sha256": "4030e6c08d41b2591b61e35fb7ea83c9bcf35bb844e9a54dbf9fe04a6898577e",
+      "mode": "0o744"
+    },
+    {
+      "path": "Microsoft.Win32.Primitives.dll",
+      "bytes": 15632,
+      "sha256": "d03b4fd9def7e9699f7e03aeb4a3d061150bda9768c58352ebeb3fbb9d0c6034",
+      "mode": "0o744"
+    },
+    {
+      "path": "Microsoft.Win32.Registry.dll",
+      "bytes": 33032,
+      "sha256": "5e3714cd907180b83fbfdcf7b37af935b0f5e0f80e1de2cca436215f270a9796",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.AppContext.dll",
+      "bytes": 15632,
+      "sha256": "29f99ecff8ef2ad097de83dcea5346381495432210a13eb37d686e93a741c131",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Buffers.dll",
+      "bytes": 15624,
+      "sha256": "e61400a9eeebca32e25292a8bfc0536536d8e0cf84a86b6cf43f3d88121aebb9",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Collections.Concurrent.dll",
+      "bytes": 288016,
+      "sha256": "bf56e9beaf43fde41e02bc96419c200af0edd8f2658f64a26276ca5a0cfef2b0",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Collections.Immutable.dll",
+      "bytes": 853296,
+      "sha256": "6d5e39c9180aca60df0cf681c3d81adca827209ce1fd7bc27842c66ba38dbde6",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Collections.NonGeneric.dll",
+      "bytes": 104712,
+      "sha256": "963008352e5a087a06197c6e29778a22eead44bbba330b18b3d97356a14a61ac",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Collections.Specialized.dll",
+      "bytes": 106808,
+      "sha256": "06ba6575e77145050ed1dd38581c9fc92a09de0645f6382a90ed2f9cd616846e",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Collections.dll",
+      "bytes": 286520,
+      "sha256": "e775c80fee626d8263f5d03dad3bec80d0af58f915420c87b8a7ab8b951633dd",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.ComponentModel.Annotations.dll",
+      "bytes": 217400,
+      "sha256": "efe8ea8c0d9f8716b32373b87df9b4e15fd7591762129d5d5fae20490ccde185",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.ComponentModel.DataAnnotations.dll",
+      "bytes": 17168,
+      "sha256": "6b145b459dd86b3eea78a6ec64e4fd0f700bd84707ec4fc2dd046d51a514821c",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.ComponentModel.EventBasedAsync.dll",
+      "bytes": 38664,
+      "sha256": "cf39e590afcdf0aac351eb77334dc0b1dcf5ef5c3ac209d2261063448658a407",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.ComponentModel.Primitives.dll",
+      "bytes": 79632,
+      "sha256": "562828b9f2ce41a67f449f67374a37472dadfacb5c61979994cd7e4b06290a1c",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.ComponentModel.TypeConverter.dll",
+      "bytes": 857400,
+      "sha256": "c6f2f4c463b84ac1faa1707cbe15d2c62b0441a1f131e50be34b0f10cbac18e3",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.ComponentModel.dll",
+      "bytes": 17672,
+      "sha256": "30a5c25dab35f4799f530763c72fa1013a7bd8db64cb465acfe981f0579147ce",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Configuration.dll",
+      "bytes": 19760,
+      "sha256": "dd624d338b9be8c1d5ddcada6058f6c19a59a297f8fd291e80c858e477f008f1",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Console.dll",
+      "bytes": 227640,
+      "sha256": "c791392a3dd5f477b503e83f70b45467c71482f4ea39f9f588dee66329e30aa3",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Core.dll",
+      "bytes": 23824,
+      "sha256": "824cbf477bd83679db1310e254010030e5eb29411dab7b7d187c4068e532ecb1",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Data.Common.dll",
+      "bytes": 3329296,
+      "sha256": "c3bef250a512cbaa1bc3008fd43fbb0d3ac42ad1a227923cbe560faab0fd6caf",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Data.DataSetExtensions.dll",
+      "bytes": 16184,
+      "sha256": "0e134637d6d506d2b5c274829d423918c266cb7984a03d017dba5ba26175bea8",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Data.dll",
+      "bytes": 25400,
+      "sha256": "bd7dddfcba9d6f1e5bba76563bcdb78aa1e5ae1fa9933ad313457d768b3f16f0",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Diagnostics.Contracts.dll",
+      "bytes": 16656,
+      "sha256": "6a9e55ec32fab380e181daa4febd32694d72ef13304e5ddc15076a6600162daf",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Diagnostics.Debug.dll",
+      "bytes": 16136,
+      "sha256": "70154fdff98d716d7caeddf8a99c89e75100a021207cebd1d5646a4eca041a62",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Diagnostics.DiagnosticSource.dll",
+      "bytes": 461072,
+      "sha256": "f797d0ec1b40fb855700732ba74934433f224e21d980ad5b69d222839ff41e9d",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Diagnostics.FileVersionInfo.dll",
+      "bytes": 45832,
+      "sha256": "362568b55119df88c3fb2f86adb0b818081608eb7ad61ba3e9392067411ccbae",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Diagnostics.Process.dll",
+      "bytes": 276272,
+      "sha256": "0bd7e1444d31bc295b94dcc23e39877482b83a984d9eef2f715e624c85daa264",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Diagnostics.StackTrace.dll",
+      "bytes": 30992,
+      "sha256": "cb58afe3c7eb35e701269f10a4fc2e13a2c241617f3ba0c8ee8f7f5441d8434a",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Diagnostics.TextWriterTraceListener.dll",
+      "bytes": 66824,
+      "sha256": "c28d193b95519329aff52326f587729b6cc68ee2a8e124f06099578765e48c9b",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Diagnostics.Tools.dll",
+      "bytes": 15624,
+      "sha256": "1284644b9aa87c21d5aeed0e663e6b8cc9bc6633f4d69eb54cb2e9803e9429d6",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Diagnostics.TraceSource.dll",
+      "bytes": 155400,
+      "sha256": "a221a2be26599f1863ef87a8deeb990bd8bd6fbc053117ad019e265d5eef96f8",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Diagnostics.Tracing.dll",
+      "bytes": 16656,
+      "sha256": "0394bb5aff439686909fafd24bab4e42f50662d4f58051f83b280372028df6f4",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Drawing.Primitives.dll",
+      "bytes": 132880,
+      "sha256": "8d295110af74e9fcef5d1c52bf74c8de2da20b5a7f32d053bc55be0943901e96",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Drawing.dll",
+      "bytes": 20784,
+      "sha256": "bebf957e327a23a713435244804a1e904f3a86ad192423514a2c67b607b5c5a7",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Dynamic.Runtime.dll",
+      "bytes": 16656,
+      "sha256": "ca2594d918360da84ee9895a67a59cf47c93e582f8db6d6fb0534234838cf56c",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Formats.Asn1.dll",
+      "bytes": 253712,
+      "sha256": "68b748f2e24b1fbb282e46cd4455d0553c8b05a2af5569e18623c2be32d17588",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Formats.Tar.dll",
+      "bytes": 312072,
+      "sha256": "ef76019b86608f1acf70a48a5437fd36b925117fe3410431ac9a33855c36bdab",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Globalization.Calendars.dll",
+      "bytes": 16136,
+      "sha256": "2fe77458371dece4d0a7730c24ea5a5098fb0281fe4bdda5f9c487e7979c3f7f",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Globalization.Extensions.dll",
+      "bytes": 15664,
+      "sha256": "ffa1d10a41d869bbda715e6b003d244d1db43b1f09e7fd8a426fbe4bb9a7dee6",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Globalization.dll",
+      "bytes": 16184,
+      "sha256": "4f48f83ba98dca3ea1afa12c8b6980eb55eee4bc0ffb156019440f1221331db2",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.IO.Compression.Brotli.dll",
+      "bytes": 80648,
+      "sha256": "0760d74220f3e454a1e975f15951de7493191093b2152752c04bdf350b88b9fb",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.IO.Compression.FileSystem.dll",
+      "bytes": 15672,
+      "sha256": "f10d906b6f47430e350effd9fb25699d3a5f58a34ca4013b76bb16636f869e8f",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.IO.Compression.ZipFile.dll",
+      "bytes": 59704,
+      "sha256": "0a83a40385112834a3b6c687df56c26e9aad0594d75da176831c21d083a8f7a9",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.IO.Compression.dll",
+      "bytes": 293168,
+      "sha256": "1e29e1d16253402714948773f65a7eaa9827236607ac13e205d336b43c0e6c1c",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.IO.FileSystem.AccessControl.dll",
+      "bytes": 32056,
+      "sha256": "fcc1e2e6f14864365e06582afbf28374c70d711fcc2efe82f24e98a989340bf5",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.IO.FileSystem.DriveInfo.dll",
+      "bytes": 87304,
+      "sha256": "7c24324c02b5f1b0edc09f4bf0762dbaa07e8b2fcbcd3419ab650a6d8c5a061f",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.IO.FileSystem.Primitives.dll",
+      "bytes": 15624,
+      "sha256": "360a1651ef96f716c18fb69fb98375be6fb24f94576b6808b013b301886f0f57",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.IO.FileSystem.Watcher.dll",
+      "bytes": 122120,
+      "sha256": "d7aaaa55053ae0c21aab4300fda88fcd01002279bcfbef898beddc748369e563",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.IO.FileSystem.dll",
+      "bytes": 16144,
+      "sha256": "c203ebce3ef3979c4c704722f6b96ccbea4dc724ee3329f23ae596f940e0b03e",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.IO.IsolatedStorage.dll",
+      "bytes": 84232,
+      "sha256": "1c36a0a57c1b16da82c7a144055bed83d7b1e817c47f76bb9c8971c6d65f1679",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.IO.MemoryMappedFiles.dll",
+      "bytes": 91400,
+      "sha256": "c66116673f2d2a71b2bcab2bcf2a5dbd29cd0eba59b715776a42f498ba9b261b",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.IO.Pipes.AccessControl.dll",
+      "bytes": 23816,
+      "sha256": "9bdd05c5959f430fa84d4d8ab1db5730a2aea68364b983d9faaead81eb09f911",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.IO.Pipes.dll",
+      "bytes": 146184,
+      "sha256": "98fc41e3dcddd10515dff03bcd85040a6e38f1f774f03aa88acd05ab4cab431f",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.IO.UnmanagedMemoryStream.dll",
+      "bytes": 15632,
+      "sha256": "9fae58801575f493a2b65c3ac5389ac134f1a5ec04a934e91d19863929988b9a",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.IO.dll",
+      "bytes": 16144,
+      "sha256": "fc7bfc0fefa669d62ff390181041ce0aae8db3f4676f404d7d6f5ef14e783413",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Linq.Expressions.dll",
+      "bytes": 4700432,
+      "sha256": "52c8e3288ee0ec273e5c68a166b57046a6c2dabf0a13f74d048ac155fc16097c",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Linq.Parallel.dll",
+      "bytes": 911112,
+      "sha256": "2984fe8bdef309bd4a8f45eb836cd067a68cfd747c9c22b723ddc00703a8caa0",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Linq.Queryable.dll",
+      "bytes": 199984,
+      "sha256": "c6d4877ac365403d6ec5e95569b1589f7abafca00f9a7e8139c3f5356542eadf",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Linq.dll",
+      "bytes": 603440,
+      "sha256": "386bf8d3703c335d92ba1aec128b902df52f11b3256752b57a97e23c448f540a",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Memory.dll",
+      "bytes": 161040,
+      "sha256": "f61e10c2d910462acf83368f329e506f6e758774cb747b7a8253d3488936ee10",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Net.Http.Json.dll",
+      "bytes": 129840,
+      "sha256": "636a86b35ab9c745364df0af727107822d85ad45d0ed8418babeac73fa6ca7ed",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Net.Http.dll",
+      "bytes": 1947912,
+      "sha256": "817d8131f638dc9cc7d3b5c674c8a0f36706e222d9c19c576d86eb5689bb7f90",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Net.HttpListener.dll",
+      "bytes": 333072,
+      "sha256": "2db4477fc1f5110da62dece121087a937a6c4e581a92079a062738578b826467",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Net.Mail.dll",
+      "bytes": 487184,
+      "sha256": "21c39a405eb4e71b83cf27859260ac3907fa4e1a79aaa8bbb8f267984aed6470",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Net.NameResolution.dll",
+      "bytes": 96016,
+      "sha256": "fda5150bc1141473fe08a803cbc26ff7b9355c5556f1db7436575146ba108ee4",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Net.NetworkInformation.dll",
+      "bytes": 155912,
+      "sha256": "cfb8b23c56d5ec9f0b7ae9e3516cece4094967d16c111d253202760fd8938e53",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Net.Ping.dll",
+      "bytes": 91952,
+      "sha256": "7981e7d34ee73481e53fc0ed9895047fe827780b2887381e013e31dbc9a45b05",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Net.Primitives.dll",
+      "bytes": 258832,
+      "sha256": "8183d1b43f5f2483b1d2fec4d7c8265b2c477b0fde8db49251e622c85219cc76",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Net.Quic.dll",
+      "bytes": 316176,
+      "sha256": "a087c34f0cbcb1ab2ff61b3eb6cec674155ee916e074e1d1f75f982177e46ddc",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Net.Requests.dll",
+      "bytes": 388872,
+      "sha256": "f3c7bcdbadee18a5709c1a09b2b0f2ae741340d7c47e1e010b5fd83896856eae",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Net.Security.dll",
+      "bytes": 804152,
+      "sha256": "c82cc8a503217975776f9f9bb7a8421be504b3180c5506d33c14374822709096",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Net.ServicePoint.dll",
+      "bytes": 37648,
+      "sha256": "a33be75b66e4cf7c2ae9ef3764f2e2c0778ee69d59de80c011e5dc6807091d74",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Net.Sockets.dll",
+      "bytes": 690992,
+      "sha256": "2e2dce9adfba0f4dbc281e55c3801a1f1d0548d9afc0733820f85615a906985f",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Net.WebClient.dll",
+      "bytes": 181000,
+      "sha256": "3f13aa470471896438465d489cd8e56834ac7f4bf768316619664094b8605db0",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Net.WebHeaderCollection.dll",
+      "bytes": 64776,
+      "sha256": "8339f25421f2b0a37326c8e6f64be67c753006e0f279efdea63aca1966cf86e1",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Net.WebProxy.dll",
+      "bytes": 35592,
+      "sha256": "bb8e039e6881348cadacab522720960df16cbd5bd8b5292a586f752c53b25be3",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Net.WebSockets.Client.dll",
+      "bytes": 99088,
+      "sha256": "38dd5fb31a24b93e7980eda3efd9c6e5942f76f987fb81f5ac40f3a6d5027705",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Net.WebSockets.dll",
+      "bytes": 196880,
+      "sha256": "2dc2291affb2ec0e3dc905516f4a5e4caf5ac5de02555685c2c3cebdecb809cd",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Net.dll",
+      "bytes": 17680,
+      "sha256": "0d362a7ad93e12e4b2477daace78f364cfa6a5a50dbf2ebe9cb63b221d58571c",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Numerics.Vectors.dll",
+      "bytes": 16176,
+      "sha256": "a1a99c6edd765c0d6e502aada69bd62a3c07e4bfa6efa36c60826e1de50d681d",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Numerics.dll",
+      "bytes": 15624,
+      "sha256": "a808de26b6b3625fc207f9a4910bfff7d6173b1b5949c64307ed4bfaa0b1da4f",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.ObjectModel.dll",
+      "bytes": 76040,
+      "sha256": "fd6591bf563efab88bd5221750e8992d8ed3da141d215d44a1b65e1cc73f2f56",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Private.CoreLib.dll",
+      "bytes": 14181176,
+      "sha256": "1d51eac6660731b3ed541b28d270afb883ab0a45cd2ab8733e1066f9c2ae4eea",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Private.DataContractSerialization.dll",
+      "bytes": 2428168,
+      "sha256": "33a7f44ded0e610baabdd143a12ef48053ae441b841c224d35a0a110c1a5a943",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Private.Uri.dll",
+      "bytes": 271120,
+      "sha256": "cda4c81409bc3dda8d7f0822107c14f5acb152aa5f495affdd925b59eee7127b",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Private.Xml.Linq.dll",
+      "bytes": 453896,
+      "sha256": "cac6fd119eac7c01c289eb42a50353ed80579df9b5becc77cd65f6a39c80d2d1",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Private.Xml.dll",
+      "bytes": 9281800,
+      "sha256": "e2f5aabe043ea78ea4da55d499813577b86da1a3d721abc978a2601c1d1ffc08",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Reflection.DispatchProxy.dll",
+      "bytes": 70968,
+      "sha256": "92652065e8652e717311a05a09e6e9ece30e9e4f0c407be12515104921e93c77",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Reflection.Emit.ILGeneration.dll",
+      "bytes": 16144,
+      "sha256": "8b72a3226a4cc8bbf8a7844c346640e89f54017f4e9d11ff31ddc2319fd79599",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Reflection.Emit.Lightweight.dll",
+      "bytes": 16136,
+      "sha256": "903ba619e374d64d7725d5dac39faa62d945d6150a7cd6657925711e200d8daa",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Reflection.Emit.dll",
+      "bytes": 130832,
+      "sha256": "792de95340b7a9385baba8ad8b732fc16992b381a0fdddd7b4ce646456045b3f",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Reflection.Extensions.dll",
+      "bytes": 15624,
+      "sha256": "48f63dc512b46c41f45e763770f1a12f4b2976489aaa7c1954c58202212138a0",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Reflection.Metadata.dll",
+      "bytes": 1223480,
+      "sha256": "792a0545ee38a1d806fe485a894c8ced934417d53fc4a3adfd43fd5d0dcd291e",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Reflection.Primitives.dll",
+      "bytes": 16136,
+      "sha256": "31153f8ecac923fe1c0f4c72e88313aaae5c0d86bfd5b7dc4a15adc95f1af3fa",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Reflection.TypeExtensions.dll",
+      "bytes": 34056,
+      "sha256": "673e77b6bc4ef77603988b84175506d68ff2b4f560d701050763a0dc4d8a4203",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Reflection.dll",
+      "bytes": 16648,
+      "sha256": "0d7ec9e5a524ff1a0625a43315d9eb0f28e71cf5893485f04ae87800d6aa9abb",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Resources.Reader.dll",
+      "bytes": 15664,
+      "sha256": "c21d62fea5ae260857699e18e45df52ca12318c6b9951ceb31eccc6f131face4",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Resources.ResourceManager.dll",
+      "bytes": 16136,
+      "sha256": "8e719f3d63fba460e0db08c784590bb1bed6a6380d21af01c61ac56d4fa1db7f",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Resources.Writer.dll",
+      "bytes": 47408,
+      "sha256": "5bf51cc3ad738e5ef481b03b7fd13ed7664af7c48212f5caa772c8e465941d38",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Runtime.CompilerServices.Unsafe.dll",
+      "bytes": 15672,
+      "sha256": "ab77aac3f2e3cab0656ae8da0892ef5329895672ff94e87b8eefe904bda3ea64",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Runtime.CompilerServices.VisualC.dll",
+      "bytes": 19720,
+      "sha256": "961fb11055c6060097cf9130bbdbd91b4038936ba4bb566c8fb7cccdb36034a4",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Runtime.Extensions.dll",
+      "bytes": 18184,
+      "sha256": "b6048857dd6ddfd1e2e18b51d78a1abf7f31a57c7f44c01ab1541d485fe6544a",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Runtime.Handles.dll",
+      "bytes": 15672,
+      "sha256": "22cc212278b21896df3daee94409d176a39f9b2b9e0ef9fa8aa9900a12e9960b",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Runtime.InteropServices.JavaScript.dll",
+      "bytes": 38704,
+      "sha256": "67aa71da5445844aecab58443a7230cee9958fd1ee730b107ea1f03ed0fd1cec",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Runtime.InteropServices.RuntimeInformation.dll",
+      "bytes": 15624,
+      "sha256": "19e521c5cd61c65d0999c7379c5000c081e875ec77c2cc372e1db5ac8d201732",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Runtime.InteropServices.dll",
+      "bytes": 92472,
+      "sha256": "6c326a14b9435f458b1a48fdaeae67946914f965f510b498ce68dd19e7f2b4d7",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Runtime.Intrinsics.dll",
+      "bytes": 17160,
+      "sha256": "210efe6e0b7d5be4c4835d93ee01ea058b949bb9784d338d9c82879306f50662",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Runtime.Loader.dll",
+      "bytes": 16144,
+      "sha256": "9b0a2e9d324f6fba3142679a22883853409486e65ac3bbd407aff79698b39d4c",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Runtime.Numerics.dll",
+      "bytes": 330040,
+      "sha256": "129a3cb10ce3881b8b304c63242af35b782ac28e7a93892afc93f68ccc69c836",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Runtime.Serialization.Formatters.dll",
+      "bytes": 347408,
+      "sha256": "e96736e100a852b38e586066b15099fc77aea797c706c55f47221ad17fb7c07a",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Runtime.Serialization.Json.dll",
+      "bytes": 16176,
+      "sha256": "637a65f89b3a6d155fed2626e94e9c46bf76fdca7fca648878ac56da242b5324",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Runtime.Serialization.Primitives.dll",
+      "bytes": 30008,
+      "sha256": "4a9d12ce8f7ce707d9f466b4682f95aba844f5378afa7e0c9235f77f6efc2f85",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Runtime.Serialization.Xml.dll",
+      "bytes": 17168,
+      "sha256": "2ff5c2510cf7281282861131ffcb4d335eade972f594b04762f7bc8d3ff18cef",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Runtime.Serialization.dll",
+      "bytes": 17208,
+      "sha256": "3b8472f3bac8e8ec941185a0f0eb39beb194d48e646ab2d887457d02851c658f",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Runtime.dll",
+      "bytes": 43784,
+      "sha256": "ac0a8716f508a1e95e7f62b9af44f9cbd658203adaf1af9fab636c97df4b4a59",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Security.AccessControl.dll",
+      "bytes": 58120,
+      "sha256": "adf4140f3267f8a1671ddc9e353d3cdc451486fbfe2d1abcbe9f765535d843d4",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Security.Claims.dll",
+      "bytes": 98616,
+      "sha256": "d458722c56fa60d00ee760baeb3494d2bbc65e20cfe09007ee3eff5e54f817a6",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Security.Cryptography.Algorithms.dll",
+      "bytes": 17672,
+      "sha256": "88c4ceba46298f27712c8ed35b54782dbb51790a7a0195fcddbd94a17d347715",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Security.Cryptography.Cng.dll",
+      "bytes": 16648,
+      "sha256": "d149136760e4a21c58824d45c2da9f203041cce44f2e56990d51ad515ca8d091",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Security.Cryptography.Csp.dll",
+      "bytes": 16144,
+      "sha256": "fcd6b26d4992088be4a07fe5252daa34894fde7111cfcd6bda121594c628a6e2",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Security.Cryptography.Encoding.dll",
+      "bytes": 16184,
+      "sha256": "04c0df7982c4e83804cc6618f724dfaed1f8f3ca14886b88eb7a7f23468d80bd",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Security.Cryptography.OpenSsl.dll",
+      "bytes": 15632,
+      "sha256": "1e020b3bffd16edb60e0b100d5820c99b467b2c8067ea41dc6fa7c5fd0bad62a",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Security.Cryptography.Primitives.dll",
+      "bytes": 16136,
+      "sha256": "9a84f07e876ff941030a21979696c3a32a01b94b7a5bf99da0f439e0d30fb4c6",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Security.Cryptography.X509Certificates.dll",
+      "bytes": 17168,
+      "sha256": "e7b2475aec5c3652e337af24fdc8bdf3fdc62a0963e879e38c895fbe6187d8f6",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Security.Cryptography.dll",
+      "bytes": 2353416,
+      "sha256": "015a5a11549163c730854da50be1a41582481611b6e50afd2be33e80c69fb837",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Security.Principal.Windows.dll",
+      "bytes": 37688,
+      "sha256": "8aaf44100ede959ee6b1308265082a192b0bffc234303162e463382ced9eca0e",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Security.Principal.dll",
+      "bytes": 15672,
+      "sha256": "98e748a2f62abbe4dd756052df0d5f081f08613140ca465ab687e62ddd9366d1",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Security.SecureString.dll",
+      "bytes": 15664,
+      "sha256": "3fda2340b0bae6f4c3405f35b055997004a4a08c870babebc94348b0ad91f22e",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Security.dll",
+      "bytes": 18696,
+      "sha256": "5f6e53b36bc37bff9f7f9a88a6ec39dfb0fabb50c1b1c306de5dbee9bb2928b4",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.ServiceModel.Web.dll",
+      "bytes": 17208,
+      "sha256": "4308e54aafde61e17c1e16881a2a35bed19eb3e1f1191d03adb1e42474b952f7",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.ServiceProcess.dll",
+      "bytes": 16136,
+      "sha256": "a4d761803ab89247ee17a5bbdc81f789f59eb2b9f7bb66cce75e8f9cc777bda2",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Text.Encoding.CodePages.dll",
+      "bytes": 870712,
+      "sha256": "2d8e197576df9e6310d6df2a5658e90344ce29102395d02d71d06d570c809da1",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Text.Encoding.Extensions.dll",
+      "bytes": 16184,
+      "sha256": "e6dbe6d51463bbdb633f2daa76c1181a7bf0f91030931b1d3693ae4c12af57ce",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Text.Encoding.dll",
+      "bytes": 16136,
+      "sha256": "b7b23aa1d8daac637ad9bdc039f25bec125fa634684331ef66b17c014c7fd2f1",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Text.Encodings.Web.dll",
+      "bytes": 132368,
+      "sha256": "02c6e3cc237216a16f0fa758e085c2aa7bbfae7ccf43a57ff0666c97dcba6622",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Text.Json.dll",
+      "bytes": 1658120,
+      "sha256": "7701ce2a2b15199920eb869422b404a6cbc314893664a9a24dd33b04979771cd",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Text.RegularExpressions.dll",
+      "bytes": 1146672,
+      "sha256": "5d48086401ab136335a1f964afe2285cecb05cd8ad0464fbec156bdc5d4cd49f",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Threading.Channels.dll",
+      "bytes": 135984,
+      "sha256": "4e48f35ac970e2d713bb312a49b1037c5907e15d007cf7ea67e4155420c4d6a4",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Threading.Overlapped.dll",
+      "bytes": 16136,
+      "sha256": "82f22391c8d6490945c6b4661391a35a4bc985112dbaa61c7f50299ef2e9a32c",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Threading.Tasks.Dataflow.dll",
+      "bytes": 548656,
+      "sha256": "36f4170eec4a1ef93ea4a30bdd2aff3f9650229b3f3763c8211d806ca87d473e",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Threading.Tasks.Extensions.dll",
+      "bytes": 16184,
+      "sha256": "12ef92a73ca9302c8f86fad7caf9dc5755968a839b0daa05d68c14cd733e9a2a",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Threading.Tasks.Parallel.dll",
+      "bytes": 136456,
+      "sha256": "4a3e2cdaaeafacaf54e86e72b30f18d79b9c860df63dc162c391a68008e0a5fc",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Threading.Tasks.dll",
+      "bytes": 16648,
+      "sha256": "187b03217bb19952cbb14ecef706c8227ce439213250ca4c86b59281ce1977ea",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Threading.Thread.dll",
+      "bytes": 16136,
+      "sha256": "7155852b4044501e41f30114eca475fba63edb53a168c47bea95463177cb6d06",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Threading.ThreadPool.dll",
+      "bytes": 16144,
+      "sha256": "5f2015fe43c6f20d49fa38320a2889057226910ca72445c79f401a49c4c22041",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Threading.Timer.dll",
+      "bytes": 15664,
+      "sha256": "ae5a1c2bbc9f6a31c2afa2b54720f3f83bab12295da6b26f164da3dff0ee9223",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Threading.dll",
+      "bytes": 80648,
+      "sha256": "7b0d71c2b5da4d137a42a70d3483db0aeac86b56e5bdb95e10df8d0537cbfe54",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Transactions.Local.dll",
+      "bytes": 405776,
+      "sha256": "62fe9244d6d6898cb12614dcb67c1806540d2bdf2b883b756be78128d7402930",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Transactions.dll",
+      "bytes": 16696,
+      "sha256": "574d762952d4b2a99144f8682a1a23304e587075c02f8125b971cb24a502eadb",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.ValueTuple.dll",
+      "bytes": 15624,
+      "sha256": "0c4bf43daea44c7defbe389a5dfdcf0207aef6920e52e1c0d121c130119ca862",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Web.HttpUtility.dll",
+      "bytes": 53552,
+      "sha256": "5921bd275ae20c13bd61f4fa2c8644f6b9be529ba41b28306f07b1a06f0277dc",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Web.dll",
+      "bytes": 15672,
+      "sha256": "3a0cc69542fe3da482bf3893c2d55ee8f9a18274ea7b2f5cb48a45ba871a0c40",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Windows.dll",
+      "bytes": 16136,
+      "sha256": "cb992fc4bc109bcf65601194001f0d4adfee6eddeb43b9bc9dfb4cdd329b4306",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Xml.Linq.dll",
+      "bytes": 16136,
+      "sha256": "c1bffd15501bf219842d2860bfc63411729aad1b08ecf8debb95628f502d69fe",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Xml.ReaderWriter.dll",
+      "bytes": 22288,
+      "sha256": "9510dd346587f60ec3060bd9c6e42b6450bbf1a8f3d7e7e62eff33e39f4ad41e",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Xml.Serialization.dll",
+      "bytes": 16656,
+      "sha256": "601068ced22a483285db2efe29a594849312ed4db4bd81af1f403b7e757f0a08",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Xml.XDocument.dll",
+      "bytes": 16136,
+      "sha256": "49a0b7ab4e9bf0c95cdffff84b64085bdfe104649c5379c71e117fd9529994fc",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Xml.XPath.XDocument.dll",
+      "bytes": 17160,
+      "sha256": "58c8e7aa0065439259783ae204e077a743ce45d214aed6883a397ace91dac116",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Xml.XPath.dll",
+      "bytes": 16136,
+      "sha256": "2319c1f282d666bb125abf979dda311c71d721dc974d62effca2246f57da7801",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Xml.XmlDocument.dll",
+      "bytes": 16144,
+      "sha256": "60e5d0ce10a29bf8c28b9eba9e0dcf9b984ae8b28b6efd9669413434c54c3b3f",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Xml.XmlSerializer.dll",
+      "bytes": 18184,
+      "sha256": "7d604310c5c50ff7ceb169eddbf69fcf0fc2cd364752b5d094e94c4646940368",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.Xml.dll",
+      "bytes": 23824,
+      "sha256": "6ae7c0eaf6f03c10e70f0897ac2c7b9469cac8d8f300444fcdd577c383bd926b",
+      "mode": "0o744"
+    },
+    {
+      "path": "System.dll",
+      "bytes": 50488,
+      "sha256": "eaaf88106ff79668a08a73a4d0b1adf443df821903d10c99d2b3b0d7364af8cd",
+      "mode": "0o744"
+    },
+    {
+      "path": "WindowsBase.dll",
+      "bytes": 16648,
+      "sha256": "38ac8251c8d75f2ef126df703694cc17095bf5590732423e57ae1394b1ec7f0f",
+      "mode": "0o744"
+    },
+    {
+      "path": "bandcamp-cookie-push",
+      "bytes": 106792,
+      "sha256": "8a4bae1b99dbf9eeffb4140723ed7dfdfe25e8ef5d61e32996eff95e14d3cd33",
+      "mode": "0o755"
+    },
+    {
+      "path": "bandcamp-cookie-push.deps.json",
+      "bytes": 27526,
+      "sha256": "73c18ce73bd6456cad50ffbee297540a621a10cb3630a1af9ad52299862914a0",
+      "mode": "0o644"
+    },
+    {
+      "path": "bandcamp-cookie-push.dll",
+      "bytes": 38912,
+      "sha256": "570c45c0f42e9c3abaff00513772ea7416e711c15549024afab1e8ad42ec6a5e",
+      "mode": "0o644"
+    },
+    {
+      "path": "bandcamp-cookie-push.pdb",
+      "bytes": 16016,
+      "sha256": "58383b5316718e22e25a32adef0360e0e98f69ca7db2d24c62b8bb5b3c6adb59",
+      "mode": "0o644"
+    },
+    {
+      "path": "bandcamp-cookie-push.runtimeconfig.json",
+      "bytes": 358,
+      "sha256": "8c52de784a65b3984659fff01d9c7c72d15f4f6129200e33aad57591e7931ac1",
+      "mode": "0o644"
+    },
+    {
+      "path": "createdump",
+      "bytes": 174592,
+      "sha256": "df2ab1c7c8ac660eaf4f107db088e082c014146c32c4b2037bab9413faf1474b",
+      "mode": "0o744"
+    },
+    {
+      "path": "libSystem.Globalization.Native.dylib",
+      "bytes": 139936,
+      "sha256": "e4ad73bc62516e5ec703705ef376a59595e7dd12e12d3e388c542cf4d8420097",
+      "mode": "0o744"
+    },
+    {
+      "path": "libSystem.IO.Compression.Native.dylib",
+      "bytes": 839776,
+      "sha256": "59223e29dee225c0dad775908ba764a39415a25158fcec2ce3632240182031fd",
+      "mode": "0o744"
+    },
+    {
+      "path": "libSystem.Native.dylib",
+      "bytes": 144608,
+      "sha256": "c3a63d2f807e37419f0be7c5813e23385f2af715d26d8b618952213ce1a4ec09",
+      "mode": "0o744"
+    },
+    {
+      "path": "libSystem.Net.Security.Native.dylib",
+      "bytes": 71280,
+      "sha256": "718bd3385618f67b172bedbbe096407fc153042a39d9447167f4cfac24f1112f",
+      "mode": "0o744"
+    },
+    {
+      "path": "libSystem.Security.Cryptography.Native.Apple.dylib",
+      "bytes": 149776,
+      "sha256": "80263cdfcbcbefd88a5af5f64bb2b94a7d53ae393945b1695df87c2db04e9ca1",
+      "mode": "0o744"
+    },
+    {
+      "path": "libSystem.Security.Cryptography.Native.OpenSsl.dylib",
+      "bytes": 251920,
+      "sha256": "a397ab6944c6ff39c6fd4ae6ea67ef0b3de086544e3c387cd76bd8556d0698f0",
+      "mode": "0o744"
+    },
+    {
+      "path": "libclrgc.dylib",
+      "bytes": 884816,
+      "sha256": "2dc26408a65173f10d498ff63cb6634259d6c6561f5624c968792d35ddf13365",
+      "mode": "0o744"
+    },
+    {
+      "path": "libclrjit.dylib",
+      "bytes": 2666736,
+      "sha256": "c9e134fa6704477b62f0c8c53494860ad5c16de9adffc73175632aa8fb35a4e4",
+      "mode": "0o744"
+    },
+    {
+      "path": "libcoreclr.dylib",
+      "bytes": 6404128,
+      "sha256": "84dbfbd3774cc3f6245e06c78ba8db55bf2aaac32cffbfd9bd816c683f639a12",
+      "mode": "0o744"
+    },
+    {
+      "path": "libhostfxr.dylib",
+      "bytes": 387632,
+      "sha256": "b4b78afa51851187bf223a7ee5ff9015592f66bc2661f810e2a61858b55ff521",
+      "mode": "0o744"
+    },
+    {
+      "path": "libhostpolicy.dylib",
+      "bytes": 411872,
+      "sha256": "d862994a733de04c5c78fe8c404096ca14f9d04708c1dd3528d200d9b6422198",
+      "mode": "0o744"
+    },
+    {
+      "path": "libmscordaccore.dylib",
+      "bytes": 2377600,
+      "sha256": "2c1f3330ea7d65c56a469f5dd711c87e53e66865ebc5a9424cbd320ee3819985",
+      "mode": "0o744"
+    },
+    {
+      "path": "libmscordbi.dylib",
+      "bytes": 1739968,
+      "sha256": "502e92dbbb34f0b6689343e8443cf1173d6bf5302bb5ff6ccf474e6aa8a64624",
+      "mode": "0o744"
+    },
+    {
+      "path": "mscorlib.dll",
+      "bytes": 59656,
+      "sha256": "365b32d8295e6909332e7cbd19a64f8928201936999beb9a37099d310fe0a6f3",
+      "mode": "0o744"
+    },
+    {
+      "path": "netstandard.dll",
+      "bytes": 101128,
+      "sha256": "bf65746e93d12593ef7fcf18d0b69cd5b431faa468451de33f09a3738210373d",
+      "mode": "0o744"
+    },
+    {
+      "path": "playwright.ps1",
+      "bytes": 412,
+      "sha256": "98d6d87fbb7b285a552ba4469fefb4e89a631e5fa896f126e4dc4bcde4b66a63",
+      "mode": "0o744"
+    }
+  ]
+}

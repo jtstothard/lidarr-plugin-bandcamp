@@ -32,9 +32,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         {
             var problems = _downloadClientFactory.All()
                 .Where(d => d.Enable && d.Implementation == nameof(BandcampDownloadClient))
-                .Select(d => new { d.Name, Problem = _sessionProviders.Find(d.Id)?.State.Problem })
-                .Where(p => p.Problem != null)
-                .Select(p => $"{p.Name}: {p.Problem!.Description}")
+                .Select(d => new { d.Name, State = _sessionProviders.Find(d.Id)?.State })
+                .Where(p => p.State?.Problem != null)
+                .Select(p => $"{p.Name}: {p.State!.Description}")
                 .ToList();
 
             if (problems.Count == 0)
@@ -44,7 +44,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
             return BandcampHealthResult.Warning(
                 GetType(),
-                "Bandcamp session invalid. " + string.Join("; ", problems));
+                "Bandcamp session needs attention. " + string.Join("; ", problems));
         }
     }
 }

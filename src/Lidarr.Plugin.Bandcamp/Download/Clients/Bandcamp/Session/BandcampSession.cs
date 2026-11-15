@@ -1,3 +1,7 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 {
     /// <summary>
@@ -16,5 +20,18 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         public string Cookies { get; }
 
         public long FanId { get; }
+
+        internal Action<string?>? RateLimitObserver { get; init; }
+
+        internal Func<bool>? RequestAllowed { get; init; }
+
+        internal void ReportRateLimit(string? retryAfter) => RateLimitObserver?.Invoke(retryAfter);
+
+        internal bool CanRequest() => RequestAllowed?.Invoke() ?? true;
+
+        internal Func<string, string, CancellationToken, Task<BandcampSession?>>? IdentityObserver { get; init; }
+
+        internal Task<BandcampSession?> ObserveIdentityAsync(string expected, string candidate, CancellationToken cancellationToken) =>
+            IdentityObserver?.Invoke(expected, candidate, cancellationToken) ?? Task.FromResult<BandcampSession?>(null);
     }
 }

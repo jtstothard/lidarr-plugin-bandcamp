@@ -1,0 +1,9 @@
+{"homepageFan":67857,"expectedFan":true}
+COLLECTION {"$id":"1","status":200,"json":true,"count":95}
+{"statHost":"popplers5.bandcamp.com","flac":false,"identitySent":true,"hasOrigin":true,"hasReferer":false}
+{"statStatus":200,"result":"ok","error":"OtherOrAbsent"}
+{"statHost":"popplers5.bandcamp.com","flac":false,"identitySent":true,"hasOrigin":true,"hasReferer":false}
+{"statStatus":200,"result":"ok","error":"OtherOrAbsent"}
+PAGE {"$id":"1","title":"Bandcamp","expiryMessage":false,"clientChallenge":false,"hasCaptcha":false}
+STAT_REQUEST_COUNT=6
+BROWSER_CHECK_EXIT 0

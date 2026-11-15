@@ -16,11 +16,17 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         /// <summary>No session is configured.</summary>
         Missing,
 
-        /// <summary>The fan_id lookup returned no fan (cookie expired or invalid).</summary>
+        /// <summary>The session is positively signed out, or credential login needs user action.</summary>
         Invalid,
 
-        /// <summary>The fan_id lookup failed with an error (network, parse, etc.).</summary>
-        Error
+        /// <summary>The lookup or login failed; the typed problem identifies the failure without implying an outage.</summary>
+        Error,
+
+        /// <summary>The page does not prove a usable session or positive sign-out.</summary>
+        ChallengeOrUnrecognized,
+
+        /// <summary>Bandcamp requests must wait until the reported retry condition.</summary>
+        RateLimited
     }
 
     /// <summary>
@@ -31,14 +37,25 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
     {
         public static readonly BandcampSessionState Initial = new(BandcampSessionStatus.Unknown, null);
 
-        public BandcampSessionState(BandcampSessionStatus status, DateTime? checkedAtUtc, BandcampSessionProblem? problem = null)
+        public BandcampSessionState(BandcampSessionStatus status, DateTime? checkedAtUtc, BandcampSessionProblem? problem = null,
+            DateTime? lastSuccessfulValidationUtc = null, string effectiveAuthMode = "Not configured")
         {
             Problem = problem;
             Status = status;
             CheckedAtUtc = checkedAtUtc;
+            LastSuccessfulValidationUtc = lastSuccessfulValidationUtc;
+            EffectiveAuthMode = effectiveAuthMode;
         }
 
         public BandcampSessionStatus Status { get; }
+
+        public DateTime? LastSuccessfulValidationUtc { get; }
+
+        public string EffectiveAuthMode { get; }
+
+        public string Description => (Problem?.Description ?? Status.ToString()) +
+            $". Auth mode: {EffectiveAuthMode}. Last successful validation: " +
+            (LastSuccessfulValidationUtc.HasValue ? $"{LastSuccessfulValidationUtc.Value:yyyy-MM-dd HH:mm:ss} UTC" : "never");
 
         /// <summary>Gets when the last live validation finished (UTC), or null if never.</summary>
         public DateTime? CheckedAtUtc { get; }

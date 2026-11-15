@@ -26,17 +26,30 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         /// <summary>Bandcamp wants a captcha solved; only a pasted cookie can recover.</summary>
         CaptchaRequired,
 
-        /// <summary>Network failure, server error or a response we don't understand.</summary>
-        Error
+        /// <summary>Unclassified login failure; does not establish a network outage.</summary>
+        Error,
+
+        RateLimited,
+
+        UnrecognizedResponse,
+
+        LoginPageRejected,
+
+        LoginCallbackRejected,
+
+        SessionNotIssued,
+
+        RequestFailed
     }
 
     public sealed class BandcampLoginResult
     {
-        private BandcampLoginResult(BandcampLoginOutcome outcome, string? cookies, string? message)
+        private BandcampLoginResult(BandcampLoginOutcome outcome, string? cookies, string? message, string? retryAfter = null)
         {
             Outcome = outcome;
             Cookies = cookies;
             Message = message;
+            RetryAfter = retryAfter;
         }
 
         public BandcampLoginOutcome Outcome { get; }
@@ -47,9 +60,11 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         /// <summary>Gets a non-secret diagnostic for failures.</summary>
         public string? Message { get; }
 
+        public string? RetryAfter { get; }
+
         public static BandcampLoginResult Success(string cookies) => new(BandcampLoginOutcome.Success, cookies, null);
 
-        public static BandcampLoginResult Failed(BandcampLoginOutcome outcome, string? message = null) => new(outcome, null, message);
+        public static BandcampLoginResult Failed(BandcampLoginOutcome outcome, string? message = null, string? retryAfter = null) => new(outcome, null, message, retryAfter);
     }
 
     /// <summary>
@@ -89,6 +104,18 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 pageBuilder.SuppressHttpError = true;
                 var page = await _httpClient.ExecuteAsync(pageBuilder.Build()).ConfigureAwait(false);
 
+                if ((int)page.StatusCode == 429)
+                {
+                    var values = page.Headers?.GetValues("Retry-After");
+                    return BandcampLoginResult.Failed(BandcampLoginOutcome.RateLimited,
+                        retryAfter: values?.Length == 1 ? values[0] : null);
+                }
+
+                if (page.StatusCode != HttpStatusCode.OK)
+                {
+                    return BandcampLoginResult.Failed(BandcampLoginOutcome.LoginPageRejected, "Bandcamp could not load the login page");
+                }
+
                 var preLoginCookies = string.Join("; ", page.GetCookies().Select(kv => $"{kv.Key}={kv.Value}"));
                 var crumb = ExtractLoginCrumb(page.Content ?? string.Empty);
                 cancellationToken.ThrowIfCancellationRequested();
@@ -119,10 +146,17 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
 
                 var response = await _httpClient.ExecuteAsync(builder.Build()).ConfigureAwait(false);
 
+                if ((int)response.StatusCode == 429)
+                {
+                    var values = response.Headers?.GetValues("Retry-After");
+                    return BandcampLoginResult.Failed(BandcampLoginOutcome.RateLimited,
+                        retryAfter: values?.Length == 1 ? values[0] : null);
+                }
+
                 if (response.StatusCode != HttpStatusCode.OK)
                 {
                     _logger.Debug("Bandcamp login: login_cb returned HTTP {0}", (int)response.StatusCode);
-                    return BandcampLoginResult.Failed(BandcampLoginOutcome.Error, $"Bandcamp returned HTTP {(int)response.StatusCode}");
+                    return BandcampLoginResult.Failed(BandcampLoginOutcome.LoginCallbackRejected, "Bandcamp login submission returned an unsuccessful HTTP status");
                 }
 
                 var result = Classify(response.Content ?? string.Empty);
@@ -135,7 +169,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 if (string.IsNullOrWhiteSpace(identity))
                 {
                     _logger.Debug("Bandcamp login: login_cb reported ok but set no identity cookie");
-                    return BandcampLoginResult.Failed(BandcampLoginOutcome.Error, "Bandcamp accepted the login but issued no session");
+                    return BandcampLoginResult.Failed(BandcampLoginOutcome.SessionNotIssued, "Bandcamp accepted login but issued no identity cookie");
                 }
 
                 return BandcampLoginResult.Success("identity=" + identity);
@@ -149,7 +183,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 // The exception text can echo request details, so it stays out of the
                 // user-facing message and the log; only its type is logged.
                 _logger.Debug("Bandcamp login: request failed ({0})", ex.GetType().Name);
-                return BandcampLoginResult.Failed(BandcampLoginOutcome.Error, "Could not reach Bandcamp to log in");
+                return BandcampLoginResult.Failed(BandcampLoginOutcome.RequestFailed, "Bandcamp login request could not be completed");
             }
         }
 
@@ -180,6 +214,11 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 using var doc = JsonDocument.Parse(body);
                 var root = doc.RootElement;
 
+                if (root.ValueKind != JsonValueKind.Object)
+                {
+                    return BandcampLoginResult.Failed(BandcampLoginOutcome.UnrecognizedResponse);
+                }
+
                 if (root.TryGetProperty("ok", out var ok) && ok.ValueKind == JsonValueKind.True)
                 {
                     return null;
@@ -190,7 +229,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 {
                     foreach (var error in errors.EnumerateArray())
                     {
-                        if (error.TryGetProperty("field", out var field) && field.ValueKind == JsonValueKind.String)
+                        if (error.ValueKind == JsonValueKind.Object && error.TryGetProperty("field", out var field) && field.ValueKind == JsonValueKind.String)
                         {
                             fields.Add(field.GetString()!.ToLowerInvariant());
                         }
@@ -213,12 +252,12 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 }
 
                 _logger.Debug("Bandcamp login: unrecognised login_cb response");
-                return BandcampLoginResult.Failed(BandcampLoginOutcome.Error, "Unrecognised login response from Bandcamp");
+                return BandcampLoginResult.Failed(BandcampLoginOutcome.UnrecognizedResponse, "Unrecognized login response from Bandcamp");
             }
             catch (JsonException)
             {
                 _logger.Debug("Bandcamp login: login_cb response was not JSON");
-                return BandcampLoginResult.Failed(BandcampLoginOutcome.Error, "Unrecognised login response from Bandcamp");
+                return BandcampLoginResult.Failed(BandcampLoginOutcome.UnrecognizedResponse, "Unrecognized login response from Bandcamp");
             }
         }
     }

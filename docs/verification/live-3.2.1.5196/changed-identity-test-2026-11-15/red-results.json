@@ -1,0 +1,18 @@
+[
+  {
+    "role": "consumer",
+    "http_status": 400,
+    "failed_as_expected": true,
+    "validation_properties": [
+      "Cookies"
+    ]
+  },
+  {
+    "role": "indexer",
+    "http_status": 400,
+    "failed_as_expected": true,
+    "validation_properties": [
+      "AuthConfiguration"
+    ]
+  }
+]

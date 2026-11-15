@@ -1,0 +1,162 @@
+Credential-login diagnosis regression — 2026-11-15
+Base: c927c85 (includes 2da1107 exact-host compatibility).
+Approved seams: #46 Testing Decisions; public downloader Test, provider health,
+HTTP boundary and controlled clock. No live account requests or deployment.
+
+Observed live failure cause remains UNKNOWN. The supplied live observation only
+shows the old generic message. A credential-free GET 200 and prior saved-provider
+Test success do not identify the failed submitted credential-login response.
+
+Confirmed local defect: login page rejection, callback rejection, missing issued
+identity, unrecognized response and request exception were all Error, mapped to
+Unavailable, discarding the safe reason before Test/health. Fixed typed outcomes
+map to fixed, sanitized problems; no response content, prefix, digest or exception
+message is included. Unknown/bot/challenge HTML is not proof of CAPTCHA or outage.
+Explicit CAPTCHA stays distinct; 429 keeps the existing Retry-After gate.
+
+No replacement identity obtained is accurate for blank-cookie input and retained
+prior-cookie input. Failed login never replaces either cookie. Unknown responses
+use the existing persisted six-hour challenge cooldown; verification cannot bypass
+it. No new login scheduler or replay mechanism was introduced. Existing coalescing,
+credential rejection, cancellation and transactional replacement remain in place.
+
+Local exact host input (existing copy, no remote refresh):
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-f92ef155-ca51c297e3171bc9/artifacts/live-3.2.1.5196
+
+Commands (run one at a time):
+dotnet test tests/Lidarr.Plugin.Bandcamp.Test -c Release -p:LidarrBinaryPath=<above> --filter FullyQualifiedName~Test_UnrecognizedCredentialResponse --logger 'console;verbosity=normal'
+dotnet test tests/Lidarr.Plugin.Bandcamp.Test -c Release -p:LidarrBinaryPath=<above> --filter FullyQualifiedName~Test_CredentialFailures
+dotnet test tests/Lidarr.Plugin.Bandcamp.Test -c Release -m:1 -p:LidarrBinaryPath=<above> -- RunConfiguration.MaxCpuCount=1 xUnit.ParallelizeTestCollections=false
+dotnet build src/Lidarr.Plugin.Bandcamp -c Release -m:1 -p:LidarrBinaryPath=<above>
+dotnet test tests/Lidarr.Plugin.Bandcamp.CookiePush.Test -c Release -m:1 -- RunConfiguration.MaxCpuCount=1 xUnit.ParallelizeTestCollections=false
+python3 -m unittest discover -s tools/bandcamp-evaluation
+
+First full suite: 303 passed / 1 failed because ext/.../nin.flac was absent.
+Copied the existing fixture from the preparation checkout into ignored ext here,
+without replacing references. Subsequent serial suite passes all 304 tests.
+Python: 6/6 OK. Exact-target Release build: 0 warnings, 0 errors. Test compilation
+retains existing xUnit analyzer warnings. Native startup and live authentication
+were not run; this is local build/fixture evidence only. Health adapter untouched.
+
+Actual captured outputs follow (build chatter omitted):
+
+INITIAL RED
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-b6f39f53-db118b3ed2188a08/tests/Lidarr.Plugin.Bandcamp.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.Test.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.1 (arm64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 10.0.3)
+[xUnit.net 00:00:00.05]   Discovering: Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.10]   Discovered:  Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.10]   Starting:    Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.27]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_UnrecognizedCredentialResponse_ReportsBrowserHandoffWithoutPasswordReplay [FAIL]
+[xUnit.net 00:00:00.27]       Assert.Contains() Failure: Sub-string not found
+[xUnit.net 00:00:00.27]       String:    "Bandcamp is temporarily unavailable; chec"···
+[xUnit.net 00:00:00.27]       Not found: "unrecognized login response"
+[xUnit.net 00:00:00.27]       Stack Trace:
+[xUnit.net 00:00:00.27]         /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-b6f39f53-db118b3ed2188a08/tests/Lidarr.Plugin.Bandcamp.Test/Download/Clients/Bandcamp/BandcampCredentialLoginFixture.cs(951,0): at Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_UnrecognizedCredentialResponse_ReportsBrowserHandoffWithoutPasswordReplay()
+[xUnit.net 00:00:00.27]            at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+[xUnit.net 00:00:00.27]            at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[xUnit.net 00:00:00.28]   Finished:    Lidarr.Plugin.Bandcamp.Test
+  Failed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_UnrecognizedCredentialResponse_ReportsBrowserHandoffWithoutPasswordReplay [141 ms]
+  Error Message:
+   Assert.Contains() Failure: Sub-string not found
+String:    "Bandcamp is temporarily unavailable; chec"···
+Not found: "unrecognized login response"
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_UnrecognizedCredentialResponse_ReportsBrowserHandoffWithoutPasswordReplay() in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-b6f39f53-db118b3ed2188a08/tests/Lidarr.Plugin.Bandcamp.Test/Download/Clients/Bandcamp/BandcampCredentialLoginFixture.cs:line 951
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+Test Run Failed.
+Total tests: 1
+     Failed: 1
+ Total time: 0.5867 Seconds
+
+REASON CASES RED
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-b6f39f53-db118b3ed2188a08/tests/Lidarr.Plugin.Bandcamp.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.Test.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.1 (arm64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.26]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_CredentialFailures_PreserveSanitizedReasonInTestAndHealth(failure: "callback", code: "LoginCallbackRejected", reason: "login submission returned an unsuccessful HTTP sta"···, posts: 1) [FAIL]
+[xUnit.net 00:00:00.27]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_CredentialFailures_PreserveSanitizedReasonInTestAndHealth(failure: "no-session", code: "LoginSessionMissing", reason: "accepted login but issued no identity cookie", posts: 1) [FAIL]
+[xUnit.net 00:00:00.27]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_CredentialFailures_PreserveSanitizedReasonInTestAndHealth(failure: "page", code: "LoginPageRejected", reason: "could not load the login page", posts: 0) [FAIL]
+[xUnit.net 00:00:00.28]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_CredentialFailures_PreserveSanitizedReasonInTestAndHealth(failure: "transport", code: "LoginTransportFailure", reason: "login request could not be completed", posts: 0) [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_CredentialFailures_PreserveSanitizedReasonInTestAndHealth(failure: "callback", code: "LoginCallbackRejected", reason: "login submission returned an unsuccessful HTTP sta"···, posts: 1) [131 ms]
+  Error Message:
+   Assert.Contains() Failure: Sub-string not found
+String:    "Bandcamp is temporarily unavailable; chec"···
+Not found: "login submission returned an unsuccessful"···
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_CredentialFailures_PreserveSanitizedReasonInTestAndHealth(String failure, String code, String reason, Int32 posts) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-b6f39f53-db118b3ed2188a08/tests/Lidarr.Plugin.Bandcamp.Test/Download/Clients/Bandcamp/BandcampCredentialLoginFixture.cs:line 985
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+  Failed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_CredentialFailures_PreserveSanitizedReasonInTestAndHealth(failure: "no-session", code: "LoginSessionMissing", reason: "accepted login but issued no identity cookie", posts: 1) [5 ms]
+  Error Message:
+   Assert.Contains() Failure: Sub-string not found
+String:    "Bandcamp is temporarily unavailable; chec"···
+Not found: "accepted login but issued no identity coo"···
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_CredentialFailures_PreserveSanitizedReasonInTestAndHealth(String failure, String code, String reason, Int32 posts) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-b6f39f53-db118b3ed2188a08/tests/Lidarr.Plugin.Bandcamp.Test/Download/Clients/Bandcamp/BandcampCredentialLoginFixture.cs:line 985
+   at InvokeStub_BandcampCredentialLoginFixture.Test_CredentialFailures_PreserveSanitizedReasonInTestAndHealth(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_CredentialFailures_PreserveSanitizedReasonInTestAndHealth(failure: "page", code: "LoginPageRejected", reason: "could not load the login page", posts: 0) [3 ms]
+  Error Message:
+   Assert.Contains() Failure: Sub-string not found
+String:    "Bandcamp is temporarily unavailable; chec"···
+Not found: "could not load the login page"
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_CredentialFailures_PreserveSanitizedReasonInTestAndHealth(String failure, String code, String reason, Int32 posts) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-b6f39f53-db118b3ed2188a08/tests/Lidarr.Plugin.Bandcamp.Test/Download/Clients/Bandcamp/BandcampCredentialLoginFixture.cs:line 985
+   at InvokeStub_BandcampCredentialLoginFixture.Test_CredentialFailures_PreserveSanitizedReasonInTestAndHealth(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_CredentialFailures_PreserveSanitizedReasonInTestAndHealth(failure: "transport", code: "LoginTransportFailure", reason: "login request could not be completed", posts: 0) [3 ms]
+  Error Message:
+   Assert.Contains() Failure: Sub-string not found
+String:    "Bandcamp is temporarily unavailable; chec"···
+Not found: "login request could not be completed"
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_CredentialFailures_PreserveSanitizedReasonInTestAndHealth(String failure, String code, String reason, Int32 posts) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-b6f39f53-db118b3ed2188a08/tests/Lidarr.Plugin.Bandcamp.Test/Download/Clients/Bandcamp/BandcampCredentialLoginFixture.cs:line 985
+   at InvokeStub_BandcampCredentialLoginFixture.Test_CredentialFailures_PreserveSanitizedReasonInTestAndHealth(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+
+Failed!  - Failed:     4, Passed:     2, Skipped:     0, Total:     6, Duration: 157 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+FIRST GREEN
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-b6f39f53-db118b3ed2188a08/tests/Lidarr.Plugin.Bandcamp.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.Test.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.1 (arm64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 133 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+FINAL SERIAL GREEN
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-b6f39f53-db118b3ed2188a08/tests/Lidarr.Plugin.Bandcamp.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.Test.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.1 (arm64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:   304, Skipped:     0, Total:   304, Duration: 1 s - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+EXACT HOST BUILD
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Lidarr.Plugin.Bandcamp -> /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-b6f39f53-db118b3ed2188a08/src/Lidarr.Plugin.Bandcamp/bin/Release/net8.0/Lidarr.Plugin.Bandcamp.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.80
+
+HELPER GREEN
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-b6f39f53-db118b3ed2188a08/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.1 (arm64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    30, Skipped:     0, Total:    30, Duration: 423 ms - Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (net10.0)

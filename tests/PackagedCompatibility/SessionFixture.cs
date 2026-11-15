@@ -47,9 +47,26 @@ public sealed class SessionFixture
             var response = responseCtor.Invoke(responseArgs);
             return typeof(Task).GetMethod(nameof(Task.FromResult))!.MakeGenericMethod(responseType).Invoke(null, new[] { response });
         });
-        var wrapper = Activator.CreateInstance(plugin.GetType("NzbDrone.Core.Http.Bandcamp.BandcampHttpClient", true)!, http, logger);
+        // The integration intentionally made the fake-HTTP constructor internal so
+        // host DI cannot select it. Keep this fixture on that exact transport seam;
+        // never instantiate a real dispatcher or make an external request here.
+        var wrapperType = plugin.GetType("NzbDrone.Core.Http.Bandcamp.BandcampHttpClient", true)!;
+        var wrapperConstructor = wrapperType.GetConstructor(
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null,
+            new[] { common.GetType("NzbDrone.Common.Http.IHttpClient", true)!, logger!.GetType() }, null)
+            ?? throw new MissingMethodException(wrapperType.FullName, "fixture HTTP constructor");
+        var wrapper = wrapperConstructor.Invoke(new[] { http, logger });
         var api = Activator.CreateInstance(plugin.GetType(ClientNamespace + "BandcampApiClient", true)!, wrapper, logger);
-        registry = Activator.CreateInstance(plugin.GetType(SessionNamespace + "BandcampSessionProviderRegistry", true)!, api, null, null, logger)!;
+        var registryConstructor = plugin.GetType(SessionNamespace + "BandcampSessionProviderRegistry", true)!
+            .GetConstructors().Single();
+        var registryArguments = new List<object?> { api, null, null, logger };
+        foreach (var parameter in registryConstructor.GetParameters().Skip(4))
+        {
+            if (!parameter.IsOptional || parameter.ParameterType.Name != "IDownloadClientRepository")
+                throw new InvalidOperationException("Unexpected registry fixture parameter: " + parameter);
+            registryArguments.Add(null);
+        }
+        registry = registryConstructor.Invoke(registryArguments.ToArray());
         clients = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(core.GetType("NzbDrone.Core.Download.DownloadClientDefinition", true)!))!;
     }
 

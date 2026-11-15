@@ -51,3 +51,50 @@ cookie out of browser DevTools.
 ## Update 2026-11-14
 
 A live check showed Bandcamp currently requires a reCAPTCHA token on every web login (`login.captcha` / `missing`). Credential login therefore ends in Captcha required today, and the pasted cookie is the working path. The decision stands: the flow is correct if Bandcamp stops demanding a captcha for some logins, and the gate, health check and write-back still apply to cookie mode.
+
+## Update: transactional recovery (#46, #49)
+
+The original in-memory-first write-back order above is superseded. Login-issued and externally
+obtained candidate identities now use the session provider's `ReplaceIdentityAsync` transaction:
+read-only fan validation, comparison with the current identity/credentials, one saved-settings
+write on a detached copy, then activation in memory. Invalid candidates, cancellation before the
+commit point, storage errors and superseded recoveries retain the previous identity. Storage
+failures have a separate health problem; they are not reported as rejected Bandcamp credentials.
+The store serializes plugin writes per definition and compares the saved identity/credentials
+before replacement. This coordinates plugin recovery writers in one Lidarr process; it does not
+provide a database compare-and-swap against unrelated host/API writers or another process.
+
+Challenge cause and UTC deadline are persisted as settings metadata, preserving the legacy
+`Cookies` representation and defaulting to no challenge for older settings. Restarted providers
+honor the remaining cooldown; verification codes answer verification challenges only, never
+CAPTCHA. If saving challenge metadata fails, the current process still suppresses retries and
+reports storage failure, but restart durability cannot be guaranteed until storage works.
+Partial email/password pairs are rejected even when a cookie is configured.
+
+Regression evidence uses the approved settings, session/credential-login, monitor/health and
+public download seams with controlled time, serialized persisted rereads, cancellation,
+competing recovery providers and injected repository failures. No live account qualification
+is implied by those fixtures.
+
+## Update: named shared ownership (#46, #50)
+
+A saved Bandcamp downloader with an empty Shared Authentication selector is a named auth owner.
+Indexer and downloader definitions may explicitly select its unique Lidarr Name. The registry
+resolves saved settings for execution, keys the existing engine by owner id, and delegates to
+that engine. It does not add credential-login scheduling or silently infer account equivalence.
+Legacy definitions stay independent until deliberately mapped, with every legacy secret retained.
+
+This uses the existing host provider settings/repository/API instead of a second persistence
+system. One validated persisted replacement updates the owner alone and repairs both consumers.
+The supported downgrade representation is the owner's legacy cookie/credential fields; consumer
+legacy fields are retained but not synchronized. Before downgrade they require deliberate account
+reconciliation and cookie copy. See [migration and limitations](../shared-authentication.md).
+
+## Update: isolated desktop handoff (#46, #51)
+
+The existing #40/#41 helper is aligned with named ownership: visible temporary Bandcamp-only
+browser capture, minimal identity, explicit expected fan id, selected owner id binding, and one
+read-only validation/replacement transaction. The host-authenticated `renewIdentity` RequestAction
+accepts the candidate in the masked Cookies body field; it never applies proposed provider settings
+or performs a password login. Older print-cookie, write-before-Test and separate indexer-update
+paths are superseded. See [workflow and qualification limits](../browser-renewal.md).

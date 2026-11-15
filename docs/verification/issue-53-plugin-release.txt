@@ -1,0 +1,389 @@
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Lidarr.Plugin.Bandcamp.Test.csproj : warning NU1902: Package 'MailKit' 4.14.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-9j88-vvj5-vhgr
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Lidarr.Plugin.Bandcamp.Test.csproj : warning NU1902: Package 'MimeKit' 4.14.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-g7hc-96xr-gvvx
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Lidarr.Plugin.Bandcamp.Test.csproj : warning NU1902: Package 'SixLabors.ImageSharp' 3.1.11 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-gwg2-r3hj-4w44
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Lidarr.Plugin.Bandcamp.Test.csproj : warning NU1903: Package 'SixLabors.ImageSharp' 3.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-j3p4-wp97-rph4
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Lidarr.Plugin.Bandcamp.Test.csproj : warning NU1903: Package 'SixLabors.ImageSharp' 3.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-j9gm-c75j-xc9q
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Lidarr.Plugin.Bandcamp.Test.csproj : warning NU1903: Package 'SixLabors.ImageSharp' 3.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-jjfr-hcj7-qf5w
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Lidarr.Plugin.Bandcamp.Test.csproj : warning NU1903: Package 'SixLabors.ImageSharp' 3.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-v76p-62qx-wwq2
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Lidarr.Plugin.Bandcamp.Test.csproj : warning NU1902: Package 'SixLabors.ImageSharp' 3.1.11 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-wmxv-xphr-5c9g
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Lidarr.Plugin.Bandcamp.Test.csproj : warning NU1902: Package 'System.Security.Cryptography.Pkcs' 9.0.4 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-2fmv-rv2c-59x7
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Lidarr.Plugin.Bandcamp.Test.csproj : warning NU1903: Package 'System.Security.Cryptography.Pkcs' 9.0.4 has a known high severity vulnerability, https://github.com/advisories/GHSA-846f-f764-76mx
+  Lidarr.Plugin.Bandcamp.CookiePush -> /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/src/Lidarr.Plugin.Bandcamp.CookiePush/bin/Release/net8.0/bandcamp-cookie-push.dll
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/ext/Lidarr/src/NzbDrone.Core/Lidarr.Core.csproj : warning NU1902: Package 'MailKit' 4.14.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-9j88-vvj5-vhgr [TargetFramework=net8.0]
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/ext/Lidarr/src/NzbDrone.Core/Lidarr.Core.csproj : warning NU1902: Package 'SixLabors.ImageSharp' 3.1.11 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-gwg2-r3hj-4w44 [TargetFramework=net8.0]
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/ext/Lidarr/src/NzbDrone.Core/Lidarr.Core.csproj : warning NU1903: Package 'SixLabors.ImageSharp' 3.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-j3p4-wp97-rph4 [TargetFramework=net8.0]
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/ext/Lidarr/src/NzbDrone.Core/Lidarr.Core.csproj : warning NU1903: Package 'SixLabors.ImageSharp' 3.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-j9gm-c75j-xc9q [TargetFramework=net8.0]
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/ext/Lidarr/src/NzbDrone.Core/Lidarr.Core.csproj : warning NU1903: Package 'SixLabors.ImageSharp' 3.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-jjfr-hcj7-qf5w [TargetFramework=net8.0]
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/ext/Lidarr/src/NzbDrone.Core/Lidarr.Core.csproj : warning NU1903: Package 'SixLabors.ImageSharp' 3.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-v76p-62qx-wwq2 [TargetFramework=net8.0]
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/ext/Lidarr/src/NzbDrone.Core/Lidarr.Core.csproj : warning NU1902: Package 'SixLabors.ImageSharp' 3.1.11 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-wmxv-xphr-5c9g [TargetFramework=net8.0]
+  Lidarr.Common -> /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/ext/Lidarr/_output/net8.0/Lidarr.Common.dll
+  The Sentry CLI is not fully configured with authentication, organization, and project.
+  Lidarr.Core -> /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/ext/Lidarr/_output/net8.0/Lidarr.Core.dll
+  The Sentry CLI is not fully configured with authentication, organization, and project.
+  Lidarr.Plugin.Bandcamp -> /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/src/Lidarr.Plugin.Bandcamp/bin/Release/net8.0/Lidarr.Plugin.Bandcamp.dll
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Http/BandcampIdentityRotationFixture.cs(69,74): warning CS8604: Possible null reference argument for parameter 'values' in 'bool HttpHeaders.TryAddWithoutValidation(string name, IEnumerable<string?> values)'. [/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Lidarr.Plugin.Bandcamp.Test.csproj]
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Download/Clients/Bandcamp/BandcampDownloadClientAuthGateFixture.cs(58,13): warning xUnit2031: Do not use a Where clause to filter before calling Assert.Single. Use the overload of Assert.Single that accepts a filtering function. (https://xunit.net/xunit.analyzers/rules/xUnit2031) [/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Lidarr.Plugin.Bandcamp.Test.csproj]
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Download/Clients/Bandcamp/BandcampDownloadClientQueueFixture.cs(61,24): warning xUnit2031: Do not use a Where clause to filter before calling Assert.Single. Use the overload of Assert.Single that accepts a filtering function. (https://xunit.net/xunit.analyzers/rules/xUnit2031) [/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Lidarr.Plugin.Bandcamp.Test.csproj]
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Indexers/Bandcamp/BandcampIndexerFixture.cs(124,22): warning xUnit2031: Do not use a Where clause to filter before calling Assert.Single. Use the overload of Assert.Single that accepts a filtering function. (https://xunit.net/xunit.analyzers/rules/xUnit2031) [/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Lidarr.Plugin.Bandcamp.Test.csproj]
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Indexers/Bandcamp/BandcampIndexerFixture.cs(130,24): warning xUnit2031: Do not use a Where clause to filter before calling Assert.Single. Use the overload of Assert.Single that accepts a filtering function. (https://xunit.net/xunit.analyzers/rules/xUnit2031) [/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Lidarr.Plugin.Bandcamp.Test.csproj]
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Indexers/Bandcamp/BandcampIndexerFixture.cs(136,26): warning xUnit2031: Do not use a Where clause to filter before calling Assert.Single. Use the overload of Assert.Single that accepts a filtering function. (https://xunit.net/xunit.analyzers/rules/xUnit2031) [/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Lidarr.Plugin.Bandcamp.Test.csproj]
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Indexers/Bandcamp/BandcampIndexerFixture.cs(142,23): warning xUnit2031: Do not use a Where clause to filter before calling Assert.Single. Use the overload of Assert.Single that accepts a filtering function. (https://xunit.net/xunit.analyzers/rules/xUnit2031) [/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Lidarr.Plugin.Bandcamp.Test.csproj]
+  Lidarr.Plugin.Bandcamp.Test -> /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.Test.dll
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.Test.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.1 (arm64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.Test.dll
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 10.0.3)
+[xUnit.net 00:00:00.05]   Discovering: Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.09]   Discovered:  Lidarr.Plugin.Bandcamp.Test
+[xUnit.net 00:00:00.09]   Starting:    Lidarr.Plugin.Bandcamp.Test
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadSettingsFixture.DefaultDownloadPath_IsEmpty [5 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadSettingsFixture.NamedConfigurationRequiresNoDuplicateSecretsAndKeepsLegacyFields [32 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadSettingsFixture.Validate_VerificationCodeIsOptional [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadSettingsFixture.Validate_DefaultSettings_ReturnsErrors [6 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadSettingsFixture.SharedSelectionDoesNotEraseIncompleteLegacyCredentials(email: "", password: "legacy-password", field: "Email") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadSettingsFixture.SharedSelectionDoesNotEraseIncompleteLegacyCredentials(email: "legacy@example.test", password: "", field: "Password") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampHttpDispatcherFixture.AddRequestHeaders_AllowsCustomUserAgent_InsteadOfThrowing [55 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampHttpDispatcherFixture.AddRequestHeaders_StillThrowsForUnimplementedHeaders [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampHttpDispatcherFixture.AddRequestHeaders_HandlesNonUserAgentHeaders_Normally [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadSettingsFixture.LegacyJsonKeepsIndependentAuthAndDowngradeReadableSecrets [11 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadSettingsFixture.Validate_EmptyDownloadPath_ReturnsError [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampHttpDispatcherFixture.Subclasses_ManagedHttpDispatcher [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampHttpDispatcherFixture.Implements_IHttpDispatcher [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadSettingsFixture.PartialCredentialsAreRejectedEvenWithCookie(email: "", password: "password", field: "Email") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadSettingsFixture.PartialCredentialsAreRejectedEvenWithCookie(email: "fan@example.com", password: "", field: "Password") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadSettingsFixture.DefaultCredentials_AreEmpty [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadSettingsFixture.Validate_EmptyCookies_ReturnsError [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadSettingsFixture.DefaultCookies_IsEmpty [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadSettingsFixture.Validate_AllFieldsSet_ReturnsNoErrors [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadSettingsFixture.Validate_EmailWithoutPasswordOrCookie_ReturnsPasswordError [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadSettingsFixture.Validate_PasswordWithoutEmailOrCookie_ReturnsEmailError [4 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadSettingsFixture.Validate_EmailAndPasswordWithoutCookie_ReturnsNoErrors [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.NormalizeUrl_ShouldReplaceBackslashesWithForwardSlashes(input: "https://bandcamp.com/album\\test?param=value", expected: "https://bandcamp.com/album/test?param=value") [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.NormalizeUrl_ShouldReplaceBackslashesWithForwardSlashes(input: "https://bandcamp.com/album/test", expected: "https://bandcamp.com/album/test") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.NormalizeUrl_ShouldReplaceBackslashesWithForwardSlashes(input: "", expected: "") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.NormalizeUrl_ShouldReplaceBackslashesWithForwardSlashes(input: "https://bandcamp.com\\artist\\album\\track", expected: "https://bandcamp.com/artist/album/track") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.NormalizeUrl_ShouldReplaceBackslashesWithForwardSlashes(input: "https://bandcamp.com/album/test#fragment", expected: "https://bandcamp.com/album/test#fragment") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.NormalizeUrl_ShouldReplaceBackslashesWithForwardSlashes(input: "https://bandcamp.com\\album\\test", expected: "https://bandcamp.com/album/test") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.NormalizeUrl_ShouldReplaceBackslashesWithForwardSlashes(input: "https://bandcamp.com\\album/test", expected: "https://bandcamp.com/album/test") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.NormalizeUrl_ShouldHandleJsonEscapedSlashes(url: "https://bandcamp.com\\/album\\/test") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.NormalizeUrl_ShouldHandleJsonEscapedSlashes(url: "https://bandcamp.com\\\\album\\\\test") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.ResolveFanIdAsync_NoFanIdInPage_ReturnsNull [75 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampSessionHealthCheckFixture.Monitor_UnrecognizedPage_ReportsHealthWithoutImmediateSecondValidation [75 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampSessionHealthCheckFixture.Monitor_RevalidatesEachSessionHourly [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.ResolveFanIdAsync_EmptyPage_ReturnsNull [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampLoginClientFixture.Login_PostsFormWithCredentialsAndCrumbFromLoginPage [78 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.NoCookieValuesInSourceFiles [4 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampLoginClientFixture.Login_Success_ReturnsIdentityCookieFromResponse [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.GetDownloadPageDataAsync_MultipleDownloadItems_ParsesAll [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampLoginClientFixture.Login_RejectedResponse_ReturnsTypedOutcomeWithoutCookie(fixture: "login_cb_bad_credentials.json", expected: BadCredentials) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampLoginClientFixture.Login_RejectedResponse_ReturnsTypedOutcomeWithoutCookie(fixture: "login_cb_verification_required.json", expected: VerificationRequired) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampLoginClientFixture.Login_RejectedResponse_ReturnsTypedOutcomeWithoutCookie(fixture: "login_cb_captcha_required.json", expected: CaptchaRequired) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampSessionHealthCheckFixture.Check_ExpiredCookie_WarnsNamingClientAndCause_ThenClearsOnceSessionRestored [11 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampLoginClientFixture.Login_RequestThrows_ReturnsGenericMessageWithoutExceptionText [5 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.ResolveStatdownloadUrlAsync_JsonWithEscapedSlashes_UnescapesCorrectly [6 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampLoginClientFixture.Login_OkWithoutIdentityCookie_ReturnsError [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadClientSessionRenewalFixture.InvalidNamedSelectionRefusesRatherThanUsingAnotherAccountsLegacyCookie(scenario: "chain") [90 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampLoginClientFixture.Login_SendsCsrfTokenFromLoginPageMeta [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadClientSessionRenewalFixture.InvalidNamedSelectionRefusesRatherThanUsingAnotherAccountsLegacyCookie(scenario: "duplicate") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampLoginClientFixture.Login_ServerError_ReturnsError [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadClientSessionRenewalFixture.InvalidNamedSelectionRefusesRatherThanUsingAnotherAccountsLegacyCookie(scenario: "missing") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampParserFixture.ParseResponse_ValidHtml_ReturnsReleaseInfoList [28 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampParserFixture.ParseResponse_ResultWithNoDate_UsesCurrentDate [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampParserFixture.ParseResponse_SingleResult_ReturnsOneRelease [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.GetCollectionAsync_EmptyItems_ReturnsEmptyList [6 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.ResolveFanIdAsync_ValidPagedata_ReturnsFanId [2 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Path=/; Secure; HttpOnly=") [6 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Secure") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Path=/; Secure=") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.CredentialFieldsUsePrivacyLevelPassword(property: "VerificationCode") [2 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated\n; Path=/; Secure") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.CredentialFieldsUsePrivacyLevelPassword(property: "Password") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.CredentialFieldsUsePrivacyLevelPassword(property: "Email") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "tracking=unrelated; Domain=.bandcamp.com; Path=/; "···) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Path=/; Secure; Max-Age=invalid") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Path=/; Secure; Unknown=attribut"···) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Path=/; Secure; Max-Age=0") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampParserFixture.ParseResponse_MalformedHtml_SkipsBadResults [7 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampParserFixture.ParseResponse_EmptyContent_ReturnsEmptyList [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.DownloadFileAsync_HtmlResponse_ThrowsDownloadException [2 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampParserFixture.ParseResponse_EmptyResults_ReturnsEmptyList [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Domain=artist.bandcamp.com; Path"···) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampParserFixture.ParseResponse_NonOkStatus_ThrowsIndexerException [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampParserFixture.ParseResponse_ReleaseInfo_HasExpectedDefaults [7 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Path=/") [8 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Path=/; Secure; Expires=Thu, 01 "···) [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Path=/; Secure; HttpOnly=invalid") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.GetDownloadableCollectionAsync_SkipsNonDownloadable_AndDeduplicatesByDownloadPage [10 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Path=/; Secure; SameSite=invalid") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=bad,value; Path=/; Secure") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.GetDownloadPageDataAsync_ValidPagedata_ReturnsDownloadItems [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Path=/api; Secure") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=prior; Path=/; Secure") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.GetCollectionAsync_ValidResponse_ReturnsItems [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampUserAgentRoundTripFixture.Lidarr_built_in_dispatcher_rejects_the_same_request [28 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Domain=bandcamp.com.evil.test; P"···) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=bad value; Path=/; Secure") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Path=/; Secure; Expires=invalid") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=rotated; Path=/; Secure; Domain=bandcamp."···) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadClientAuthGateFixture.Download_ValidSession_EnqueuesItem [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnchangedUnrelatedOrRejectedHeadersLeaveTheValidatedIdentityUntouched(header: "identity=; Path=/; Secure") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadClientAuthGateFixture.Download_DeadCookie_ThrowsClientLevelFailureAndEnqueuesNothing [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnsuccessfulResponsesCannotAuthorizeRotation(status: 401) [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnsuccessfulResponsesCannotAuthorizeRotation(status: 302) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnsuccessfulResponsesCannotAuthorizeRotation(status: 500) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.GetAlbumDurationSecondsAsync_DataTralbum_ReturnsSummedDurations [5 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadClientAuthGateFixture.Download_ValidationSucceeded_IsReusedFor15Minutes [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnsuccessfulResponsesCannotAuthorizeRotation(status: 403) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.ExecuteDownloadAsync_ExtractionFails_RemovesEmptyOutputFolderAndTempFile [50 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnsuccessfulResponsesCannotAuthorizeRotation(status: 429) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnauthorizedOriginsReceiveNoIdentityAndCannotRotateIt(url: "https://bcbits.com/archive", raw: True) [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.GetCollectionAsync_UsesInitialOlderThanTokenWhenNotProvided [2 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnauthorizedOriginsReceiveNoIdentityAndCannotRotateIt(url: "https://bandcamp.com.evil.test/api", raw: False) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.GetCollectionAsync_TralbumsKey_ReturnsItems [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnauthorizedOriginsReceiveNoIdentityAndCannotRotateIt(url: "https://artist.bandcamp.com/api", raw: False) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.CookieFieldUsesPrivacyLevelPassword [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnauthorizedOriginsReceiveNoIdentityAndCannotRotateIt(url: "https://bandcamp.com:444/api", raw: False) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.ResolveFanIdAsync_TransportFailure_DoesNotReportSignedOutToLegacyCallers [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnauthorizedOriginsReceiveNoIdentityAndCannotRotateIt(url: "http://bandcamp.com/api", raw: False) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.GetDownloadPageDataAsync_NoPagedata_ReturnsNull [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.CleanUpFailedOutput_KeepsFolderWithFiles [2 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.AuthenticatedRequestsDoNotUseHostCookieStorageOrAutomaticRedirects(raw: False) [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.NormalizeUrl_WithValidForwardSlashUrls_ShouldReturnUnchanged(url: "https://bandcamp.com/album/test") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.NormalizeUrl_WithValidForwardSlashUrls_ShouldReturnUnchanged(url: "https://s3.amazonaws.com/bucket/path/to/file.zip?A"···) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.NormalizeUrl_WithValidForwardSlashUrls_ShouldReturnUnchanged(url: "https://bandcamp.com/album/test?param=value&other="···) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.NormalizeUrl_WithValidForwardSlashUrls_ShouldReturnUnchanged(url: "https://bandcamp.com/album/test#fragment") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.AuthenticatedRequestsDoNotUseHostCookieStorageOrAutomaticRedirects(raw: True) [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.ResolveStatdownloadUrlAsync_DirectUrl_ReturnsUrl [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampDispatcherRegistrationFixture.Lidarr_container_resolves_BandcampHttpDispatcher_when_plugin_is_loaded [128 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.CredentialBearingUrlsAreRejectedByTheHostRequestBoundary [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.ResolveStatdownloadUrlAsync_JsonWithUrl_ReturnsResolvedUrl [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.MultipleResponseCookiesNeverBroadenTheStoredIdentity(extraCookie: "tracking=unrelated; Path=/; Secure", expected: "identity=rotated") [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.GetDownloadPageDataAsync_RootDownloadUrl_Parsed [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.MultipleResponseCookiesNeverBroadenTheStoredIdentity(extraCookie: "identity=ambiguous; Path=/; Secure", expected: "identity=prior") [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.ResolveStatdownloadUrlAsync_InvalidResponse_ReturnsNull [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.ResolveStatdownloadUrlAsync_BinaryArchiveResponse_ReturnsStatdownloadUrl [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.FailedCandidateRetainsPriorIdentityInBothConsumersAndAfterReread(storageFailure: False) [5 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampClearCredentialsFixture.IndexerClearRemovesOnlyItsLegacyCookieAndPreservesSharedSelection(storageFails: True) [8 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.GetDownloadPageDataAsync_MalformedPagedata_ReturnsNull [4 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampClearCredentialsFixture.IndexerClearRemovesOnlyItsLegacyCookieAndPreservesSharedSelection(storageFails: False) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.FailedCandidateRetainsPriorIdentityInBothConsumersAndAfterReread(storageFailure: True) [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.GetCollectionAsync_RedownloadUrls_Metadata_AndDownloadableState_AreParsed [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.ResolveFanIdAsync_LargeFanId_ParsesCorrectly [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_ValidCookieAndCredentials_UsesCookieWithoutLogin [20 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.NoCredentialValuesLoggedInSourceFiles [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampClearCredentialsFixture.ClearActionErasesOnlySelectedLocalSavedCopiesAndReportsStorageFailure(consumer: False, storageFails: True) [6 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampClearCredentialsFixture.ClearActionErasesOnlySelectedLocalSavedCopiesAndReportsStorageFailure(consumer: True, storageFails: False) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampClearCredentialsFixture.ClearActionErasesOnlySelectedLocalSavedCopiesAndReportsStorageFailure(consumer: False, storageFails: False) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.ResolveStatdownloadUrlAsync_JsonWithEscapedAmpersands_UnescapesCorrectly [2 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampClearCredentialsFixture.ClearedOwnerCannotSupplyCachedIdentityOrAcceptStaleRecoveryAfterRestart [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.GetCollectionAsync_InvalidJson_ReturnsEmptyList [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.RateLimit_WaitsUntilAdvertisedTimeWithoutLoginOrValidationLoop(retryAfter: "Thu Jan  1 12:02:00 2026", waitSeconds: 120) [5 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.IdentityOnlyFlowsToAccountHttpsOrigin(url: "https://unrelated.test", allowed: False) [2 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.IdentityOnlyFlowsToAccountHttpsOrigin(url: "http://bandcamp.com", allowed: False) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.IdentityOnlyFlowsToAccountHttpsOrigin(url: "https://bandcamp.com/api/fancollection/1/collectio"···, allowed: True) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.CancelledRotationRetainsPriorIdentityWithoutPublishingCandidate [11 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.IdentityOnlyFlowsToAccountHttpsOrigin(url: "https://artist.bandcamp.com/album/title", allowed: False) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.IdentityOnlyFlowsToAccountHttpsOrigin(url: "https://bandcamp.com:444", allowed: False) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.IdentityOnlyFlowsToAccountHttpsOrigin(url: "https://bandcamp.com.evil.test", allowed: False) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.IdentityOnlyFlowsToAccountHttpsOrigin(url: "https://bcbits.com/archive.zip", allowed: False) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.RateLimit_WaitsUntilAdvertisedTimeWithoutLoginOrValidationLoop(retryAfter: "Thu, 01 Jan 2026 11:00:00 GMT", waitSeconds: 1) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.ResponseFromAnUnauthorizedOriginCannotRotateAnAuthenticatedRequest [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.AuthenticatedRotationIsValidatedSavedMinimallyAndSurvivesProcessReread [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.SuccessfullyValidatedHomepageCanRotateTheIdentityWithoutRecursiveRotation [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.RateLimit_WaitsUntilAdvertisedTimeWithoutLoginOrValidationLoop(retryAfter: "120", waitSeconds: 120) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.AmbiguousHostFoldedCookieHeadersAreRejectedWithoutGuessingCookieBoundaries [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadClientSessionRenewalFixture.NamedOwnerRecoveryRepairsSearchAndRealDownloadWithoutConsumerCookieWrites(passiveRotation: True, downloadRotation: True) [71 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.RateLimit_WaitsUntilAdvertisedTimeWithoutLoginOrValidationLoop(retryAfter: "Thu, 01 Jan 2026 12:02:00 GMT", waitSeconds: 120) [7 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.ConcurrentReplacementCannotBeOverwrittenByAnOlderResponse [7 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.RateLimit_WaitsUntilAdvertisedTimeWithoutLoginOrValidationLoop(retryAfter: "1.5", waitSeconds: 300) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.RotationBelongsOnlyToTheSelectedOwnerEvenWhenAnotherOwnerHasTheSameCookie [2 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.ResponseOutsideTheSelectedSessionScopeCannotRotateItsIdentity [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampIdentityRotationFixture.UnvalidatedIdentityCannotAuthorizeRotation [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.RateLimit_WaitsUntilAdvertisedTimeWithoutLoginOrValidationLoop(retryAfter: "-1", waitSeconds: 300) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.RateLimit_WaitsUntilAdvertisedTimeWithoutLoginOrValidationLoop(retryAfter: "Thursday, 01-Jan-26 12:02:00 GMT", waitSeconds: 120) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampUserAgentRoundTripFixture.HttpClient_request_reaches_server_with_browser_user_agent [61 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.RateLimit_WaitsUntilAdvertisedTimeWithoutLoginOrValidationLoop(retryAfter: "0", waitSeconds: 1) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.RateLimit_WaitsUntilAdvertisedTimeWithoutLoginOrValidationLoop(retryAfter: null, waitSeconds: 300) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.DownloadFailureDoesNotExposeSignedAlbumUrlInLogsOrException [32 ms]
+  Standard Output Messages:
+ Bandcamp download proxy [safe-id]: Phase 1 — Resolving fan_id 
+ Bandcamp download proxy [safe-id]: Resolved fan_id 1 
+ Bandcamp download proxy [safe-id]: Phase 2 — Resolving download page 
+ Bandcamp API: Searching collection for album URL 
+ Bandcamp API: Querying collection for fan_id (token=initial) 
+ Bandcamp request: POST 
+ Bandcamp response: 200 (12 bytes) 
+ Bandcamp API: Parsed 0 collection items 
+ Bandcamp API: No more collection items after page 0 
+ Bandcamp API: Purchase not found in collection NzbDrone.Core.Download.Clients.Bandcamp.DownloadException: Failed to resolve purchase for the requested album. The album may not be in your Bandcamp collection.
+    at NzbDrone.Core.Download.Clients.Bandcamp.BandcampDownloadProxy.ExecuteFromPhase2Async(BandcampDownloadItem item, BandcampSession session, CancellationToken cancellationToken) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/src/Lidarr.Plugin.Bandcamp/Download/Clients/Bandcamp/BandcampDownloadProxy.cs:line 173
+    at NzbDrone.Core.Download.Clients.Bandcamp.BandcampDownloadProxy.ExecuteDownloadCoreAsync(BandcampDownloadItem item, CancellationToken cancellationToken) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/src/Lidarr.Plugin.Bandcamp/Download/Clients/Bandcamp/BandcampDownloadProxy.cs:line 99
+    at NzbDrone.Core.Download.Clients.Bandcamp.BandcampDownloadProxy.ExecuteDownloadCoreAsync(BandcampDownloadItem item, CancellationToken cancellationToken) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/src/Lidarr.Plugin.Bandcamp/Download/Clients/Bandcamp/BandcampDownloadProxy.cs:line 110
+    at NzbDrone.Core.Download.Clients.Bandcamp.BandcampDownloadProxy.ExecuteDownloadAsync(BandcampDownloadItem item, CancellationToken cancellationToken) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/src/Lidarr.Plugin.Bandcamp/Download/Clients/Bandcamp/BandcampDownloadProxy.cs:line 51
+    at Xunit.Record.ExceptionAsync(Func`1 testCode) in /_/src/xunit.core/Record.cs:line 76
+
+
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.RateLimit_WaitsUntilAdvertisedTimeWithoutLoginOrValidationLoop(retryAfter: "garbage", waitSeconds: 300) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampUserAgentRoundTripFixture.Indexer_search_request_reaches_server_with_browser_user_agent [7 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.TransportFailureNeverExposesRequestOrUpstreamException(raw: False) [1 ms]
+  Standard Output Messages:
+ Bandcamp request: GET 
+ Bandcamp request failed; check network and service availability System.IO.IOException: Bandcamp request failed; check network and service availability
+    at NzbDrone.Core.Http.Bandcamp.BandcampHttpClient.ExecuteAsync(HttpRequest request, Boolean observeIdentity) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/src/Lidarr.Plugin.Bandcamp/Http/BandcampHttpClient.cs:line 136
+    at Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.<>c__DisplayClass6_0.<<TransportFailureNeverExposesRequestOrUpstreamException>b__2>d.MoveNext() in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Http/BandcampSecretHygieneFixture.cs:line 90
+ --- End of stack trace from previous location ---
+    at Xunit.Record.ExceptionAsync(Func`1 testCode) in /_/src/xunit.core/Record.cs:line 76
+
+
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.TransportFailureNeverExposesRequestOrUpstreamException(raw: True) [< 1 ms]
+  Standard Output Messages:
+ Bandcamp request: GET 
+ Bandcamp request failed; check network and service availability System.IO.IOException: Bandcamp request failed; check network and service availability
+    at NzbDrone.Core.Http.Bandcamp.BandcampHttpClient.ExecuteRawAsync(HttpRequest request) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/src/Lidarr.Plugin.Bandcamp/Http/BandcampHttpClient.cs:line 199
+    at Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.<>c__DisplayClass6_0.<<TransportFailureNeverExposesRequestOrUpstreamException>b__2>d.MoveNext() in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1c42d4af-0485183dd9368b0c/tests/Lidarr.Plugin.Bandcamp.Test/Http/BandcampSecretHygieneFixture.cs:line 90
+ --- End of stack trace from previous location ---
+    at Xunit.Record.ExceptionAsync(Func`1 testCode) in /_/src/xunit.core/Record.cs:line 76
+
+
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadClientSessionRenewalFixture.NamedOwnerRecoveryRepairsSearchAndRealDownloadWithoutConsumerCookieWrites(passiveRotation: False, downloadRotation: False) [24 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.ImportedCandidateFailureUsesTypedDiagnosisAndRetainsIdentity(status: 429, problem: "RateLimited") [7 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Http.BandcampSecretHygieneFixture.LoginAndSessionDiagnosticsNeverEchoSentinelResponseBodiesOrCredentials [6 ms]
+  Standard Output Messages:
+ Bandcamp request: GET 
+ Bandcamp response: 200 (89 bytes) 
+ Bandcamp request: POST 
+ Bandcamp response: 200 (89 bytes) 
+ Bandcamp login: login_cb response was not JSON 
+ Bandcamp request: GET 
+ Bandcamp response: 200 (89 bytes) 
+ Bandcamp API: Searching collection for album URL 
+ Bandcamp API: Querying collection for fan_id (token=initial) 
+ Bandcamp request: POST 
+ Bandcamp response: 200 (89 bytes) 
+ Bandcamp API: Failed to parse collection response 
+ Bandcamp API: No more collection items after page 0 
+ Bandcamp API: Purchase not found in collection 
+ Bandcamp API: Fetching download page pagedata 
+ Bandcamp request: GET 
+ Bandcamp response: 200 (89 bytes) 
+ Bandcamp API: Failed to extract pagedata from download page Unrecognised login response from Bandcamp{"Status":5,"LastSuccessfulValidationUtc":null,"EffectiveAuthMode":"Web identity (password fallback configured)","Description":"Bandcamp returned a challenge or unrecognized page; check Bandcamp in your browser and renew manually if required; the saved identity has been retained. Auth mode: Web identity (password fallback configured). Last successful validation: never","CheckedAtUtc":"2026-11-14T21:01:52.155307Z","Problem":{"Code":"ChallengeOrUnrecognized","Description":"Bandcamp returned a challenge or unrecognized page; check Bandcamp in your browser and renew manually if required; the saved identity has been retained"}}
+
+
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.ImportedCandidateFailureUsesTypedDiagnosisAndRetainsIdentity(status: 503, problem: "Unavailable") [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadClientQueueFixture.Download_SessionCookieChangedAfterGrab_QueuedItemRunsWithCurrentCookie [48 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadClientQueueFixture.Download_QueuedByOneClient_IsVisibleFromAnotherClientInstance [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadClientQueueFixture.RemoveItem_DeletesEmptyOutputFolderOnlyForFailedItems(status: Downloading, folderKept: True) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadClientQueueFixture.RemoveItem_DeletesEmptyOutputFolderOnlyForFailedItems(status: Failed, folderKept: False) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.ImportedCandidateFailureUsesTypedDiagnosisAndRetainsIdentity(status: 200, problem: "ChallengeOrUnrecognized") [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperCommitRaceReportsUncertaintyThenReconcilesWithoutRollback(loseResponse: True) [16 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadClientSessionRenewalFixture.NamedOwnerRecoveryRepairsSearchAndRealDownloadWithoutConsumerCookieWrites(passiveRotation: True, downloadRotation: False) [27 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadClientSessionRenewalFixture.DistinctNamedOwnersKeepSeparateSessionsEvenWhenBothAreValid [2 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadClientSessionRenewalFixture.ChangingOwnerToReferenceDuringRecoveryRetainsItsLegacySecrets [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.ApplyCanonicalTagsToFile_WritesCanonicalAlbumAndMusicBrainzMetadata [93 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperCommitRaceReportsUncertaintyThenReconcilesWithoutRollback(loseResponse: False) [5 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.ExecuteDownloadAsync_DownloadPageUrlWithFormatFragment_DoesNotQueryCollection [2 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HomepageEvidence_DeterminesWhetherPasswordLoginIsAllowed(fixture: "homepage_malformed.html", status: 200, problem: "ChallengeOrUnrecognized", expectedLogins: 0, valid: False) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.ExecuteDownloadAsync_FileDownloadFails_RemovesEmptyOutputFolderAndTempFile [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HomepageEvidence_DeterminesWhetherPasswordLoginIsAllowed(fixture: "homepage_logged_out.html", status: 403, problem: null, expectedLogins: 1, valid: True) [6 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.ExecuteDownloadAsync_StatdownloadStreamsArchiveDirectly_ExtractsWithoutResponseData [4 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HomepageEvidence_DeterminesWhetherPasswordLoginIsAllowed(fixture: "homepage_logged_out.html", status: 503, problem: "Unavailable", expectedLogins: 0, valid: False) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HomepageEvidence_DeterminesWhetherPasswordLoginIsAllowed(fixture: "homepage_logged_out.html", status: 401, problem: null, expectedLogins: 1, valid: True) [4 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.ExecuteDownloadAsync_ArchiveStreamedIntoResponseStream_ExtractsWithoutResponseData [6 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.PrepareOutputDirectory_RecreatesDirectoryAndRemovesStaleFiles [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.NormalizeExtractedPermissions_Unix_MakesFilesReadable [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadProxyFixture.NormalizeUrl_WithNull_ShouldReturnNull [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HomepageEvidence_DeterminesWhetherPasswordLoginIsAllowed(fixture: "homepage_redesigned.html", status: 200, problem: "ChallengeOrUnrecognized", expectedLogins: 0, valid: False) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadClientSessionRenewalFixture.GetItems_SessionDiesAfterPhase1AndCannotBeRenewed_ItemFails [23 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HomepageEvidence_DeterminesWhetherPasswordLoginIsAllowed(fixture: "homepage_logged_out.html", status: 200, problem: null, expectedLogins: 1, valid: True) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HomepageEvidence_DeterminesWhetherPasswordLoginIsAllowed(fixture: "homepage_challenge.html", status: 200, problem: "ChallengeOrUnrecognized", expectedLogins: 0, valid: False) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HomepageEvidence_DeterminesWhetherPasswordLoginIsAllowed(fixture: "homepage_logged_in.html", status: 403, problem: "ChallengeOrUnrecognized", expectedLogins: 0, valid: False) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HomepageEvidence_DeterminesWhetherPasswordLoginIsAllowed(fixture: "homepage_challenge.html", status: 401, problem: "ChallengeOrUnrecognized", expectedLogins: 0, valid: False) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HomepageEvidence_DeterminesWhetherPasswordLoginIsAllowed(fixture: "homepage_empty.html", status: 200, problem: "ChallengeOrUnrecognized", expectedLogins: 0, valid: False) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HomepageEvidence_DeterminesWhetherPasswordLoginIsAllowed(fixture: "homepage_logged_in.html", status: 200, problem: null, expectedLogins: 0, valid: True) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadClientSessionRenewalFixture.GetItems_SessionDiesAfterPhase1AndRenews_ItemRetriesAndCompletes [22 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HomepageEvidence_DeterminesWhetherPasswordLoginIsAllowed(fixture: "homepage_challenge.html", status: 403, problem: "ChallengeOrUnrecognized", expectedLogins: 0, valid: False) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.WrongVerificationCode_IsNotResubmitted [7 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.CaptchaStillSuppressesRetryWhenCodePersistenceFails [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.VerificationRequired_ReportsAgainstVerificationCodeAndHealthNamesCause [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperDoesNotFollowANameReassignedBetweenSelectionAndReplacement [4 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadClientSessionRenewalFixture.GetItems_RetryAfterRenewalAlsoFails_ItemFailsWithoutSecondRenewal [24 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.VerificationCode_SubmittedOnceThenClearedAndPersisted [8 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.EmptyImportedIdentityCannotReplacePriorSession(candidate: "") [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampIndexerFixture.ReleaseTitle_ShouldFollowExpectedPattern(title: "Artist Name - Album Title [WEB] [FLAC]", isValid: True) [190 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampIndexerFixture.ReleaseTitle_ShouldFollowExpectedPattern(title: "Artist Name - Album Title [WEB] [Vorbis Q6]", isValid: True) [1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.EmptyImportedIdentityCannotReplacePriorSession(candidate: " ") [2 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.LoginRateLimit_ExposesWaitAndSuppressesFurtherLoginAttempts(onLoginPage: True) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.LoginRateLimit_ExposesWaitAndSuppressesFurtherLoginAttempts(onLoginPage: False) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampDownloadClientSessionRenewalFixture.GetItems_NonAuthFailureWithLiveSession_ItemFailsWithoutRetry [23 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.StaleVerificationMetadataCannotOverridePendingCaptcha [6 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampIndexerFixture.ReleaseTitle_ShouldFollowExpectedPattern(title: "Artist Name - Album Title WEB FLAC", isValid: False) [15 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_BadCredentials_ReportsAgainstPassword [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampIndexerFixture.ReleaseTitle_ShouldFollowExpectedPattern(title: "Artist Name - Album Title [WEB] [MP3 VBR V0]", isValid: True) [4 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampIndexerFixture.ReleaseTitle_ShouldFollowExpectedPattern(title: "Artist Name [WEB] [FLAC]", isValid: False) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampIndexerFixture.ReleaseTitle_ShouldFollowExpectedPattern(title: "Artist Name - Album Title", isValid: False) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampIndexerFixture.ReleaseTitle_ShouldFollowExpectedPattern(title: "- Album Title [WEB] [FLAC]", isValid: False) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampIndexerFixture.ReleaseTitle_ShouldFollowExpectedPattern(title: "Artist Name - Album Title [FLAC]", isValid: False) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampIndexerFixture.ReleaseTitle_ShouldFollowExpectedPattern(title: "Artist Name - Album Title [WEB] [MP3 320]", isValid: True) [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.RateLimit_AfterWait_RevalidatesBeforeReusingAnEarlierCachedSession [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_DeadCookieAndCredentials_LogsInOnce [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampIndexerFixture.Fetch_AlbumSearch_WithMultipleReleasesSameTitle_FiltersByTrackCount [5 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampIndexerFixture.BuildReleaseTitle_ShouldProduceParserFriendlyTitles(artistName: "Artist Name", albumTitle: "\"Album Title\"", formatLabel: "FLAC", expectedTitle: "Artist Name - Album Title [WEB] [FLAC]", expectedArtist: "Artist Name", expectedAlbum: "Album Title") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampIndexerFixture.BuildReleaseTitle_ShouldProduceParserFriendlyTitles(artistName: "Troye Sivan", albumTitle: "We're My OTP", formatLabel: "MP3 320", expectedTitle: "Troye Sivan - We're My OTP [WEB] [MP3 320]", expectedArtist: "Troye Sivan", expectedAlbum: "We're My OTP") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampIndexerFixture.BuildReleaseTitle_ShouldProduceParserFriendlyTitles(artistName: "Artist Name", albumTitle: "Album Title (EP)", formatLabel: "FLAC", expectedTitle: "Artist Name - Album Title [WEB] [FLAC]", expectedArtist: "Artist Name", expectedAlbum: "Album Title") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampIndexerFixture.BuildReleaseTitle_ShouldProduceParserFriendlyTitles(artistName: "Artist Name", albumTitle: "Artist Name - Album Title", formatLabel: "FLAC", expectedTitle: "Artist Name - Album Title [WEB] [FLAC]", expectedArtist: "Artist Name", expectedAlbum: "Album Title") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampIndexerFixture.BuildReleaseTitle_ShouldProduceParserFriendlyTitles(artistName: "Bartees Strange", albumTitle: "Province / Ever New", formatLabel: "FLAC", expectedTitle: "Bartees Strange - Province / Ever New [WEB] [FLAC]", expectedArtist: "Bartees Strange", expectedAlbum: "Province / Ever New") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampIndexerFixture.BuildReleaseTitle_ShouldProduceParserFriendlyTitles(artistName: "Artist Name", albumTitle: "Album Title - Single", formatLabel: "FLAC", expectedTitle: "Artist Name - Album Title [WEB] [FLAC]", expectedArtist: "Artist Name", expectedAlbum: "Album Title") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampIndexerFixture.Fetch_AlbumSearch_NormalizesParserHostileBandcampTitles [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampIndexerFixture.NormalizeAlbumTitle_ShouldStripParserHostileNoise(artistName: "Artist Name", albumTitle: "\"Album Title\"", expected: "Album Title") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampIndexerFixture.NormalizeAlbumTitle_ShouldStripParserHostileNoise(artistName: "Artist Name", albumTitle: "Album Title [EP]", expected: "Album Title") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampIndexerFixture.NormalizeAlbumTitle_ShouldStripParserHostileNoise(artistName: "Artist Name", albumTitle: "Artist Name - Album Title", expected: "Album Title") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampIndexerFixture.NormalizeAlbumTitle_ShouldStripParserHostileNoise(artistName: "Artist Name", albumTitle: "Album Title - Single", expected: "Album Title") [< 1 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.CancellationBeforeSubmissionAndUnknownOrOtherOwnerIdsNeverCommit [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Indexers.Bandcamp.BandcampIndexerFixture.Fetch_AlbumSearch_UsesCollectionRedownloads_AndReturnsOneReleasePerSizedFormat [2 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperAcceptedCancellationDuringValidationPreservesPriorIdentity [4 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperActionValidatesExpectedAccountBeforeSharedCommit(expectedFan: "12345678", success: True, storageFails: False) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperActionValidatesExpectedAccountBeforeSharedCommit(expectedFan: "99", success: False, storageFails: False) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperActionValidatesExpectedAccountBeforeSharedCommit(expectedFan: "12345678", success: False, storageFails: True) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperHttpWorkflowCancelsSubmittedValidationAndReconcilesReceipt(loseCancelResponse: False) [11 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperHttpWorkflowCancelsSubmittedValidationAndReconcilesReceipt(loseCancelResponse: True) [4 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.AfterChallenge_AtMostOneLoginPerSixHours(fixture: "login_cb_captcha_required.json") [14 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.AfterChallenge_AtMostOneLoginPerSixHours(fixture: "login_cb_verification_required.json") [12 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.ConcurrentCallerWithDifferentCredentials_DoesNotShareAnotherLogin [116 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Download_PreGrabRefusalNamesValidationCauseWithoutLogin(status: 503, problem: "Unavailable") [4 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Download_PreGrabRefusalNamesValidationCauseWithoutLogin(status: 429, problem: "RateLimited") [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Download_PreGrabRefusalNamesValidationCauseWithoutLogin(status: 200, problem: "ChallengeOrUnrecognized") [2 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.RestartedMonitorRetainsCaptchaCooldownEvenWithVerificationCode [6 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.AvailabilityHealth_ReportsModeAndLastProvenValidationWithoutDiscardingCache(challenge: False) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.AvailabilityHealth_ReportsModeAndLastProvenValidationWithoutDiscardingCache(challenge: True) [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_UnrecognizedHomepage_RetainsIdentityWithoutPasswordLogin [2 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.DownloadRefusalReportsStorageFailureAndRetainsIdentity [4 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.StorageFailureLeavesPriorIdentityAndReportsStorageProblem [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.CancellationDuringCandidateValidationRetainsPriorIdentity [4 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.IndependentRecoveryProvidersCannotOverwriteAnAlreadyCommittedIdentity [8 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.SettingsChangedDuringLoginDoesNotGetOverwrittenByOldCandidate [4 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_CookieOnly_InvalidCookie_ReportsAgainstCookiesWithoutLogin [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.InvalidLoginCandidateLeavesPriorIdentityUntouched [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.ConcurrentCallers_ShareOneLogin [14 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.NamedConsumersCoalesceTheExistingLoginAndPersistOneOwner [2 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.BadCredentials_NotRetriedUntilSettingsChange [9 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.CandidateBecomesActiveOnlyAfterPersistenceAndSurvivesReRead [6 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.MissingSession_HasVisibleActionableHealth [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Test_CredentialsOnly_LogsInAndWritesCookieBackToSettings [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.AfterCaptcha_VerificationCodeDoesNotSkipCooldown [9 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.Download_RefusalNamesTheActualCause [4 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.TransportFailure_PreservesIdentityAndShowsAvailabilityAction [3 ms]
+[xUnit.net 00:00:00.77]   Finished:    Lidarr.Plugin.Bandcamp.Test
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.FailureToPersistConsumedCodeDoesNotPublishCandidate [3 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.CaptchaRequired_NoRetryAndHealthPointsToCookiePaste [7 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.OwnerChangedToConsumerCannotReceiveAnotherAccountsChallengeMetadata [4 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.ImportedCandidateIsValidatedAndPersistedWithoutPasswordLogin [4 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.AfterCaptcha_PastedCookieRestoresSessionAndClearsHealth [6 ms]
+  Passed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.GetSession_CancelledToken_ThrowsWithoutLoggingIn [3 ms]
+
+Test Run Successful.
+Total tests: 285
+     Passed: 285
+ Total time: 1.0428 Seconds

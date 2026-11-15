@@ -1,0 +1,192 @@
+Issue #51 verification, 2026-11-14; no live account/browser action.
+Base integration/46-bandcamp-auth = 849e619b2974010af871edfed25c1fc766b2695c.
+Approved seams: #46 Testing Decisions 7, 8, 9; HTTP/API, Playwright API and session-provider public actions.
+Reused #40/#41 sources selectively, not historical plugin implementations.
+SDK 10.0.103; copied local Lidarr references from plugins source e42a7ca4fd633e021d69da7daa0368b870b0282e.
+The initial dependency symlink encountered shared output contention and upstream NU190x-as-error restore refusal.
+Switched to a checkout-local ignored copy of Lidarr sources, excluding .git and _temp; retained original dependency.
+Repo-documented -p:TreatWarningsAsErrors=false used; no dependency suppressions or upgrades.
+All test cookies, key strings and error contents are synthetic sentinels.
+Compilation/setup errors were corrected before claiming behavioral red; event-raise fixture corrected for sender+args before green.
+
+1: secret-output refusal
+RED command: dotnet test tests/Lidarr.Plugin.Bandcamp.CookiePush.Test -c Release --filter <test named below> --nologo
+Actual RED output (excerpt):
+[xUnit.net 00:00:00.09]     Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Secret_print_option_is_rejected_without_output_or_requests [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Secret_print_option_is_rejected_without_output_or_requests [8 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: 2
+Actual:   0
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Secret_print_option_is_rejected_without_output_or_requests() in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1a6cff32-5ace8a4f32c2aa3f/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/RenewalWorkflowFixture.cs:line 12
+--- End of stack trace from previous location ---
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 8 ms - Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (net10.0)
+Actual GREEN output (excerpt):
+Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 7 ms - Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (net10.0)
+
+2: single owner HTTP transaction
+RED command: dotnet test tests/Lidarr.Plugin.Bandcamp.CookiePush.Test -c Release --filter <test named below> --nologo
+Actual RED output (excerpt):
+[xUnit.net 00:00:00.08]     Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Manual_import_sends_only_candidate_to_named_owner_transaction_never_puts_settings [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Manual_import_sends_only_candidate_to_named_owner_transaction_never_puts_settings [8 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: 0
+Actual:   2
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Manual_import_sends_only_candidate_to_named_owner_transaction_never_puts_settings() in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1a6cff32-5ace8a4f32c2aa3f/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/RenewalWorkflowFixture.cs:line 23
+--- End of stack trace from previous location ---
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 8 ms - Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (net10.0)
+Actual GREEN output (excerpt):
+Passed!  - Failed:     0, Passed:     2, Skipped:     0, Total:     2, Duration: 13 ms - Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (net10.0)
+
+3: host expected-fan transaction
+RED command: dotnet test tests/Lidarr.Plugin.Bandcamp.Test -c Release --filter <test named below> --nologo -p:TreatWarningsAsErrors=false -m:1
+Actual RED output (excerpt):
+[xUnit.net 00:00:00.22]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperActionValidatesExpectedAccountBeforeSharedCommit(expectedFan: "12345678", success: True) [FAIL]
+[xUnit.net 00:00:00.22]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperActionValidatesExpectedAccountBeforeSharedCommit(expectedFan: "99", success: False) [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperActionValidatesExpectedAccountBeforeSharedCommit(expectedFan: "12345678", success: True) [102 ms]
+  Error Message:
+   System.NullReferenceException : Object reference not set to an instance of an object.
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperActionValidatesExpectedAccountBeforeSharedCommit(String expectedFan, Boolean success) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1a6cff32-5ace8a4f32c2aa3f/tests/Lidarr.Plugin.Bandcamp.Test/Download/Clients/Bandcamp/BandcampCredentialLoginFixture.cs:line 291
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+  Failed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperActionValidatesExpectedAccountBeforeSharedCommit(expectedFan: "99", success: False) [4 ms]
+  Error Message:
+   System.NullReferenceException : Object reference not set to an instance of an object.
+Actual GREEN output (excerpt):
+Passed!  - Failed:     0, Passed:     2, Skipped:     0, Total:     2, Duration: 122 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+4: cookie extraction scope
+RED command: dotnet test tests/Lidarr.Plugin.Bandcamp.CookiePush.Test -c Release --filter <test named below> --nologo
+Actual RED output (excerpt):
+[xUnit.net 00:00:00.13]     Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Capture_rejects_unscoped_insecure_and_ambiguous_identity_from_browser_api [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Capture_rejects_unscoped_insecure_and_ambiguous_identity_from_browser_api [54 ms]
+  Error Message:
+   Assert.Null() Failure: Value is not null
+Expected: null
+Actual:   "sentinel"
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Capture_rejects_unscoped_insecure_and_ambiguous_identity_from_browser_api() in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1a6cff32-5ace8a4f32c2aa3f/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/BrowserBoundaryFixture.cs:line 15
+   at Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Capture_rejects_unscoped_insecure_and_ambiguous_identity_from_browser_api() in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1a6cff32-5ace8a4f32c2aa3f/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/BrowserBoundaryFixture.cs:line 15
+--- End of stack trace from previous location ---
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 54 ms - Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (net10.0)
+Actual GREEN output (excerpt):
+Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 44 ms - Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (net10.0)
+
+5: browser navigation boundary
+RED command: dotnet test tests/Lidarr.Plugin.Bandcamp.CookiePush.Test -c Release --filter <test named below> --nologo
+Actual RED output (excerpt):
+[xUnit.net 00:00:00.16]     Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Browser_boundary_blocks_navigation_outside_exact_https_bandcamp(url: "https://bandcamp.com/login", blocked: False) [FAIL]
+[xUnit.net 00:00:00.17]     Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Browser_boundary_blocks_navigation_outside_exact_https_bandcamp(url: "https://evil.example/", blocked: True) [FAIL]
+[xUnit.net 00:00:00.17]     Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Browser_boundary_blocks_navigation_outside_exact_https_bandcamp(url: "https://artist.bandcamp.com/", blocked: True) [FAIL]
+[xUnit.net 00:00:00.17]     Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Browser_boundary_blocks_navigation_outside_exact_https_bandcamp(url: "http://bandcamp.com/login", blocked: True) [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Browser_boundary_blocks_navigation_outside_exact_https_bandcamp(url: "https://bandcamp.com/login", blocked: False) [77 ms]
+  Error Message:
+   Assert.NotNull() Failure: Value is null
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Browser_boundary_blocks_navigation_outside_exact_https_bandcamp(String url, Boolean blocked) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1a6cff32-5ace8a4f32c2aa3f/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/BrowserBoundaryFixture.cs:line 23
+   at Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Browser_boundary_blocks_navigation_outside_exact_https_bandcamp(String url, Boolean blocked) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1a6cff32-5ace8a4f32c2aa3f/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/BrowserBoundaryFixture.cs:line 32
+--- End of stack trace from previous location ---
+  Failed Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Browser_boundary_blocks_navigation_outside_exact_https_bandcamp(url: "https://evil.example/", blocked: True) [< 1 ms]
+Actual GREEN output (excerpt):
+Passed!  - Failed:     0, Passed:     4, Skipped:     0, Total:     4, Duration: 89 ms - Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (net10.0)
+
+6: closed login window
+RED command: dotnet test tests/Lidarr.Plugin.Bandcamp.CookiePush.Test -c Release --filter <test named below> --nologo
+Actual RED output (excerpt):
+[xUnit.net 00:00:00.18]     Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Closing_login_page_stops_capture_instead_of_polling_forever [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Closing_login_page_stops_capture_instead_of_polling_forever [95 ms]
+  Error Message:
+   Assert.Throws() Failure: No exception was thrown
+Expected: typeof(Lidarr.Plugin.Bandcamp.CookiePush.BrowserWindowClosedException)
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Closing_login_page_stops_capture_instead_of_polling_forever() in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1a6cff32-5ace8a4f32c2aa3f/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/BrowserBoundaryFixture.cs:line 43
+   at Lidarr.Plugin.Bandcamp.CookiePush.Test.BrowserBoundaryFixture.Closing_login_page_stops_capture_instead_of_polling_forever() in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1a6cff32-5ace8a4f32c2aa3f/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/BrowserBoundaryFixture.cs:line 43
+--- End of stack trace from previous location ---
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 95 ms - Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (net10.0)
+Actual GREEN output (excerpt):
+Passed!  - Failed:     0, Passed:     2, Skipped:     0, Total:     2, Duration: 95 ms - Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (net10.0)
+
+7: redirect/cookie transport isolation
+RED command: dotnet test tests/Lidarr.Plugin.Bandcamp.CookiePush.Test -c Release --filter <test named below> --nologo
+Actual RED output (excerpt):
+[xUnit.net 00:00:00.10]     Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Real_http_transport_disables_redirect_and_cookie_forwarding_before_use [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Real_http_transport_disables_redirect_and_cookie_forwarding_before_use [8 ms]
+  Error Message:
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Real_http_transport_disables_redirect_and_cookie_forwarding_before_use() in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1a6cff32-5ace8a4f32c2aa3f/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/RenewalWorkflowFixture.cs:line 49
+--- End of stack trace from previous location ---
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 8 ms - Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (net10.0)
+Actual GREEN output (excerpt):
+Passed!  - Failed:     0, Passed:     2, Skipped:     0, Total:     2, Duration: 95 ms - Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (net10.0)
+
+8: safe storage status output
+RED command: dotnet test tests/Lidarr.Plugin.Bandcamp.CookiePush.Test -c Release --filter <test named below> --nologo
+Actual RED output (excerpt):
+[xUnit.net 00:00:00.10]     Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Storage_refusal_reports_only_known_status_never_server_secret_details [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Storage_refusal_reports_only_known_status_never_server_secret_details [14 ms]
+  Error Message:
+   Assert.Contains() Failure: Sub-string not found
+String:    "Renewal did not confirm success. Check ow"···
+Not found: "StorageFailure"
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.CookiePush.Test.RenewalWorkflowFixture.Storage_refusal_reports_only_known_status_never_server_secret_details() in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1a6cff32-5ace8a4f32c2aa3f/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/RenewalWorkflowFixture.cs:line 40
+--- End of stack trace from previous location ---
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 14 ms - Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (net10.0)
+Actual GREEN output (excerpt):
+Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 16 ms - Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (net10.0)
+
+9: owner-name reassignment race
+RED command: dotnet test tests/Lidarr.Plugin.Bandcamp.Test -c Release --filter <test named below> --nologo -p:TreatWarningsAsErrors=false -m:1
+Actual RED output (excerpt):
+[xUnit.net 00:00:00.23]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperDoesNotFollowANameReassignedBetweenSelectionAndReplacement [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperDoesNotFollowANameReassignedBetweenSelectionAndReplacement [124 ms]
+  Error Message:
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampCredentialLoginFixture.HelperDoesNotFollowANameReassignedBetweenSelectionAndReplacement() in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1a6cff32-5ace8a4f32c2aa3f/tests/Lidarr.Plugin.Bandcamp.Test/Download/Clients/Bandcamp/BandcampCredentialLoginFixture.cs:line 290
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 124 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+Actual GREEN output (excerpt):
+Passed!  - Failed:     0, Passed:     4, Skipped:     0, Total:     4, Duration: 150 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+Final serial Release verification (build completed before the following test run):
+dotnet build Lidarr.Plugin.Bandcamp.slnx -c Release -p:TreatWarningsAsErrors=false -m:1 --nologo
+/Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1a6cff32-5ace8a4f32c2aa3f/tests/Lidarr.Plugin.Bandcamp.Test/Lidarr.Plugin.Bandcamp.Test.csproj : warning NU1903: Package 'System.Security.Cryptography.Pkcs' 9.0.4 has a known high severity vulnerability, https://github.com/advisories/GHSA-846f-f764-76mx
+    36 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:31.15
+dotnet test Lidarr.Plugin.Bandcamp.slnx -c Release --no-build --no-restore -p:TreatWarningsAsErrors=false -m:1 --nologo
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1a6cff32-5ace8a4f32c2aa3f/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    18, Skipped:     0, Total:    18, Duration: 261 ms - Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (net10.0)
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-1a6cff32-5ace8a4f32c2aa3f/tests/Lidarr.Plugin.Bandcamp.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.Test.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:   213, Skipped:     0, Total:   213, Duration: 566 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
+
+Build warnings include existing upstream ImageSharp/PKCS vulnerability advisories; zero errors.
+Regression coverage includes expected/wrong fan, storage refusal, named-owner reassignment, redirect isolation,
+minimal cookie scope, safe error output, cancellation/window close and profile removal on success/error.
+Existing #49/#50 fixtures retain cancellation, concurrency, reread, shared indexer/download and retry coverage.
+Not qualified: real browser/OS packaging on Windows/macOS/Linux, live Bandcamp login/CAPTCHA/2FA,
+live Lidarr API-host registration, account parity, or credential lifetime. #47 remains INCONCLUSIVE; web stays primary.
+Cancellation after submitting the host action cannot establish rollback; reconcile server state before retrying.

@@ -1,0 +1,60 @@
+{
+  "album": "Pocket",
+  "artist": "Pocket",
+  "archive": "/srv/docker-state/bandcamp-lossless-qualification-20261115T122307Z/pocket-flac.zip",
+  "bytes": 211636371,
+  "sha256": "9b4a6b37b9ae3a01a041d1c8839f8e49ae036c70583c9fc15e9ee08400084641",
+  "zip_crc": "PASS",
+  "flac_tracks": [
+    {
+      "sample_rate": 44100,
+      "channels": 2,
+      "bits_per_sample": 24,
+      "samples": 4436897
+    },
+    {
+      "sample_rate": 44100,
+      "channels": 2,
+      "bits_per_sample": 24,
+      "samples": 5647726
+    },
+    {
+      "sample_rate": 44100,
+      "channels": 2,
+      "bits_per_sample": 24,
+      "samples": 4384237
+    },
+    {
+      "sample_rate": 44100,
+      "channels": 2,
+      "bits_per_sample": 24,
+      "samples": 6927921
+    },
+    {
+      "sample_rate": 44100,
+      "channels": 2,
+      "bits_per_sample": 24,
+      "samples": 3018790
+    },
+    {
+      "sample_rate": 44100,
+      "channels": 2,
+      "bits_per_sample": 24,
+      "samples": 4349286
+    },
+    {
+      "sample_rate": 44100,
+      "channels": 2,
+      "bits_per_sample": 24,
+      "samples": 6006182
+    },
+    {
+      "sample_rate": 44100,
+      "channels": 2,
+      "bits_per_sample": 24,
+      "samples": 6769214
+    }
+  ],
+  "library_import": false,
+  "native_download_client_execution": false
+}

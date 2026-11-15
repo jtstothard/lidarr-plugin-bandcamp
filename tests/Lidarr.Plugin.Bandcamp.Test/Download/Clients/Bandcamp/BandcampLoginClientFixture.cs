@@ -103,23 +103,23 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         }
 
         [Fact]
-        public async Task Login_ServerError_ReturnsError()
+        public async Task Login_ServerError_ReturnsCallbackRejected()
         {
             SetupLogin("login_cb_bad_credentials.json", HttpStatusCode.InternalServerError);
 
             var result = await CreateClient().LoginAsync("fan@example.com", "hunter2");
 
-            Assert.Equal(BandcampLoginOutcome.Error, result.Outcome);
+            Assert.Equal(BandcampLoginOutcome.LoginCallbackRejected, result.Outcome);
         }
 
         [Fact]
-        public async Task Login_OkWithoutIdentityCookie_ReturnsError()
+        public async Task Login_OkWithoutIdentityCookie_ReturnsSessionNotIssued()
         {
             SetupLogin("login_cb_success.json", identity: null);
 
             var result = await CreateClient().LoginAsync("fan@example.com", "hunter2");
 
-            Assert.Equal(BandcampLoginOutcome.Error, result.Outcome);
+            Assert.Equal(BandcampLoginOutcome.SessionNotIssued, result.Outcome);
             Assert.Null(result.Cookies);
         }
 
@@ -131,7 +131,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
 
             var result = await CreateClient().LoginAsync("fan@example.com", "hunter2");
 
-            Assert.Equal(BandcampLoginOutcome.Error, result.Outcome);
+            Assert.Equal(BandcampLoginOutcome.RequestFailed, result.Outcome);
             Assert.DoesNotContain("hunter2", result.Message ?? string.Empty);
             Assert.DoesNotContain("connect failed", result.Message ?? string.Empty);
         }
