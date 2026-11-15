@@ -1,0 +1,14 @@
+{
+  "mode": "METADATA_PROBE",
+  "transport": "Python urllib, not native Lidarr",
+  "requests": 2,
+  "page_status": 200,
+  "resolver_status": 302,
+  "location_count": 1,
+  "location_kind": "AccountHttps",
+  "body_kind": "Other",
+  "contains_login_field": false,
+  "contains_download_items_marker": false,
+  "contains_challenge_marker": false,
+  "result": "OBSERVED_NO_ARCHIVE_FOLLOW"
+}

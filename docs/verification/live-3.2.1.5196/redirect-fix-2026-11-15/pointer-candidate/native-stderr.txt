@@ -1,0 +1,6 @@
+Running as unit: bandcamp-resolver-pointer-probe-20261115.service
+Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+Service runtime: 339ms
+CPU time consumed: 322ms
+Memory peak: 25.8M (swap: 0B)

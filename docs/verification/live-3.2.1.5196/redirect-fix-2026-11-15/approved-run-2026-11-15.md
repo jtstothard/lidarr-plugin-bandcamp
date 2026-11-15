@@ -68,6 +68,10 @@ retained separately from the earlier e91694e0 deployment packet.
 
 ## Prepared next observation, not executed
 
+The following describes preparation at the end of that run. The separately approved
+execution is recorded in [resolver-probe-result.json](resolver-probe-result.json)
+and the [pointer-candidate follow-up](pointer-candidate/README.md).
+
 [resolver-probe.py](resolver-probe.py) compiles and has been run only in PLAN_ONLY
 mode. With separate approval, it performs at most two bounded HTTPS GETs: the saved
 owned download page and one FLAC resolver request. It never follows redirect/returned
