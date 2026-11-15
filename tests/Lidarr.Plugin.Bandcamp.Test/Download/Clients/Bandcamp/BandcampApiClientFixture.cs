@@ -318,6 +318,47 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         #region ResolveStatdownloadUrlAsync Tests
 
         [Fact]
+        public async Task ResolveStatdownloadUrlAsync_RedirectPreservesTrustedArchiveLocationInsteadOfFallingBack()
+        {
+            const string target = "https://popplers5.bandcamp.com/archive?signature=sentinel";
+            _innerHttpClientMock.Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
+                .ReturnsAsync((HttpRequest request) => new HttpResponse(request,
+                    new HttpHeader { { "Location", target } }, "<html>redirect</html>", HttpStatusCode.Found));
+            using var destination = new System.IO.MemoryStream();
+            var result = await CreateClient().ResolveStatdownloadUrlAsync("identity=sentinel",
+                "https://bandcamp.com/statdownload/album?id=123", "flac", destination);
+            Assert.NotNull(result);
+            Assert.Equal(target, result.DownloadUrl);
+            Assert.False(result.ArchiveWrittenToDestination);
+            Assert.Empty(destination.ToArray());
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("http://popplers5.bandcamp.com/archive")]
+        [InlineData("https://bandcamp.com.evil.test/archive")]
+        [InlineData("https://127.0.0.1/archive")]
+        [InlineData("https://user@popplers5.bandcamp.com/archive")]
+        [InlineData("https://popplers5.bandcamp.com:444/archive")]
+        public async Task ResolveStatdownloadUrlAsync_RejectsUnsafeRedirectWithoutReturningFallback(string? location)
+        {
+            var calls = 0;
+            _innerHttpClientMock.Setup(c => c.ExecuteAsync(It.IsAny<HttpRequest>()))
+                .ReturnsAsync((HttpRequest request) =>
+                {
+                    calls++;
+                    var headers = new HttpHeader();
+                    if (location != null) headers.Add("Location", location);
+                    return new HttpResponse(request, headers, "", HttpStatusCode.Found);
+                });
+            var error = await Assert.ThrowsAsync<DownloadException>(() => CreateClient().ResolveStatdownloadUrlAsync(
+                "identity=sentinel", "https://bandcamp.com/statdownload/album?id=123", "flac"));
+            Assert.Equal(1, calls);
+            Assert.DoesNotContain("sentinel", error.Message);
+            if (location != null) Assert.DoesNotContain(location, error.Message);
+        }
+
+        [Fact]
         public async Task ResolveStatdownloadUrlAsync_JsonWithUrl_ReturnsResolvedUrl()
         {
             // Arrange — statdownload response with JSON containing URL

@@ -1,0 +1,9 @@
+[xUnit.net 00:00:00.20]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.ResolveStatdownloadUrlAsync_RedirectPreservesTrustedArchiveLocationInsteadOfFallingBack [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.ResolveStatdownloadUrlAsync_RedirectPreservesTrustedArchiveLocationInsteadOfFallingBack [71 ms]
+  Error Message:
+   Assert.NotNull() Failure: Value is null
+  Stack Trace:
+     at Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.ResolveStatdownloadUrlAsync_RedirectPreservesTrustedArchiveLocationInsteadOfFallingBack() in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-212bdad1-14c5abb378a0d146/tests/Lidarr.Plugin.Bandcamp.Test/Download/Clients/Bandcamp/BandcampApiClientFixture.cs:line 330
+--- End of stack trace from previous location ---
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 71 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)

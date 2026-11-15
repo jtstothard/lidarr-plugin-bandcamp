@@ -1,5 +1,10 @@
 # Native download failure and prepared redirect correction
 
+This records preparation and the first failed native run. See the
+[subsequent approved deployment/run](approved-run-2026-11-15.md) for the current
+installed DLL and the guarded HTML-response failure. Preparation receipts below
+retain their original state; they are not claims that deployment is still pending.
+
 ## Live outcome and containment
 
 The user authorized continued native download/import qualification while preserving

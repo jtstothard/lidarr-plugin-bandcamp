@@ -409,6 +409,19 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
 
             var response = await _httpClient.ExecuteAsync(request);
 
+            if ((int)response.StatusCode is 301 or 302 or 303 or 307 or 308)
+            {
+                var locations = response.Headers?.GetValues("Location");
+                if (locations?.Length != 1 || !Uri.TryCreate(new Uri(url), locations[0], out var target) ||
+                    !IsArchiveRedirect(target))
+                    throw new DownloadException("Bandcamp statdownload redirect refused; inspect the resolver response without retrying credentials.");
+
+                // A resolver redirect is an archive pointer, not a reason to fall
+                // back to the original endpoint without its resolution parameters.
+                // The file-transfer boundary validates any subsequent redirect hops.
+                return new BandcampResolvedDownload { DownloadUrl = target.AbsoluteUri };
+            }
+
             string content;
             if (response.ResponseData != null)
             {
@@ -564,8 +577,8 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             {
                 _logger.Debug("Bandcamp API: Received HTML instead of expected ZIP — download URL may be expired");
                 throw new DownloadException(
-                    "Received HTML response instead of expected audio archive. " +
-                    "The download URL may have expired or the session cookies may be invalid.");
+                    $"Received HTML response instead of expected audio archive (HTTP {(int)response.StatusCode}). " +
+                    "Inspect the resolver response; this alone does not establish an expired session.");
             }
 
             if (response.StatusCode != System.Net.HttpStatusCode.OK)
