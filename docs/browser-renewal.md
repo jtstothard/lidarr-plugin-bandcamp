@@ -20,8 +20,10 @@ Linux also needs Playwright's documented Chromium OS dependencies. No desktop br
 on the headless Lidarr host. The source targets Windows, macOS and Linux. A local Mac ARM64 self-contained package,
 its bundled .NET 8 runtime, fresh Chromium installation and production browser capture cancellation
 have now passed [native checks](verification/live-3.2.1.5196/helper-native-2026-11-15/README.md).
-That does not qualify Windows/Linux or completed ordinary-package HTTPS renewal. No prebuilt helper
-release is claimed. The server must run this plugin version with the renewal begin/cancel/status protocol; older one-shot `renewIdentity` clients are refused.
+The [later HTTPS checks](verification/live-3.2.1.5196/helper-https-2026-11-15/README.md)
+completed ordinary-package manual renewal/status and a fresh visible login-to-commit through the
+production helper components with an autofill harness. Windows/Linux native execution and
+changed-cookie rotation remain unqualified. No prebuilt helper release is claimed. The server must run this plugin version with the renewal begin/cancel/status protocol; older one-shot `renewIdentity` clients are refused.
 
 ### Mac ARM64 without a global .NET 8 runtime
 
@@ -36,7 +38,7 @@ artifacts/bandcamp-cookie-push/osx-arm64/bandcamp-cookie-push --help
 
 Use that executable in place of `dotnet .../bandcamp-cookie-push.dll` below. Keep the whole
 published directory together. The local qualification did not establish notarization, a public
-release, Windows/Linux native support or a changed-cookie renewal.
+release, Windows/Linux native support or rotation to a different cookie.
 
 Create/save a Bandcamp download client as the authentication owner, using a distinct, unique
 Lidarr Name and an empty Shared Authentication selector. It may be disabled. Explicitly select
@@ -99,11 +101,11 @@ Authelia automatically, refresh its session or bypass its access policy. An expi
 proxy session can prevent cancellation acknowledgement: retain the operation ID, sign
 in again and reconcile status rather than resubmitting the Bandcamp identity.
 
-On the tested Mac, only .NET 10 was installed. Explicit `DOTNET_ROLL_FORWARD=Major`
-allowed the net8.0 helper to authenticate through Authelia, open the real isolated
-Bandcamp browser and cancel before submission with profile cleanup. This is bounded
-pre-login runtime evidence, not completed renewal qualification or a platform support
-guarantee. The normal invocation still expects the .NET 8 runtime.
+On the tested Mac, only .NET 10 was globally installed. The initial explicit
+`DOTNET_ROLL_FORWARD=Major` probe provided bounded pre-login evidence only. The later
+self-contained Mac ARM64 package instead used its bundled .NET 8 runtime and completed
+the [native and HTTPS checks](verification/live-3.2.1.5196/helper-https-2026-11-15/README.md)
+without major-version roll-forward. Framework-dependent invocation still expects .NET 8.
 
 ## Login and transaction
 

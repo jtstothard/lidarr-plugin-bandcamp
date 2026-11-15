@@ -1,0 +1,8 @@
+FIRST_FACTOR_HTTP=200
+PROTECTED_LOGIN_COMPLETE
+Opening isolated Bandcamp login. Complete login and verification personally.
+Renewal did not confirm success. Check owner selection, expected fan ID, HTTPS/API access and Lidarr status. If submitted, reconcile saved status before retrying.
+ORDINARY_PACKAGE_BROWSER_CANCEL_RECONCILED
+Renewal operation: bebd3216-4910-43d0-aad9-5f47c569cbcc
+Shared identity validated and saved. The commit boundary was crossed; cancellation cannot undo it. Search and downloads use the selected owner.
+Shared identity validated and saved. The commit boundary was crossed; cancellation cannot undo it. Search and downloads use the selected owner.

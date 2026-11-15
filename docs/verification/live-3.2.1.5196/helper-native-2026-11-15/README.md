@@ -1,5 +1,7 @@
 # Mac ARM64 helper package and saved-owner restart checks
 
+**Later HTTPS result:** [ordinary package import/status and browser cancellation passed](../helper-https-2026-11-15/README.md). The access blocker below is retained history.
+
 Completed after the user confirmed continuing authorization for the remaining work. This is actual Mac ARM64 / .NET 8 runtime evidence; it does not convert a partial renewal into a completed one.
 
 ## Locally published package

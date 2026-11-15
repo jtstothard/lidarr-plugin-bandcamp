@@ -1,0 +1,10 @@
+FIRST_FACTOR_HTTP=200
+PROTECTED_LOGIN_COMPLETE
+RUNTIME=.NET 8.0.24
+Opening isolated Bandcamp login. Complete login and verification personally.
+LOGIN_SUBMITTED_ONCE
+CAPTCHA_FRAME_VISIBLE=False
+TWO_FACTOR_VISIBLE=False
+Renewal operation: c32a5a01-b2ed-46d0-9521-5121fe63bc1d
+Shared identity validated and saved. The commit boundary was crossed; cancellation cannot undo it. Search and downloads use the selected owner.
+Shared identity validated and saved. The commit boundary was crossed; cancellation cannot undo it. Search and downloads use the selected owner.
