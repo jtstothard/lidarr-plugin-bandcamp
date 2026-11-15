@@ -19,7 +19,7 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         /// <summary>The session is positively signed out, or credential login needs user action.</summary>
         Invalid,
 
-        /// <summary>The lookup or login failed because of temporary network/server availability.</summary>
+        /// <summary>The lookup or login failed; the typed problem identifies the failure without implying an outage.</summary>
         Error,
 
         /// <summary>The page does not prove a usable session or positive sign-out.</summary>

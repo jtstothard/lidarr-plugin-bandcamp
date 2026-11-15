@@ -209,7 +209,9 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             if (settings.ChallengeUntilUtc is DateTime until && until > Clock())
             {
                 var persistedProblem = settings.ChallengeProblem == BandcampSessionProblem.VerificationNeeded.Code
-                    ? BandcampSessionProblem.VerificationNeeded : BandcampSessionProblem.CaptchaRequired;
+                    ? BandcampSessionProblem.VerificationNeeded
+                    : settings.ChallengeProblem == BandcampSessionProblem.LoginResponseUnrecognized.Code
+                        ? BandcampSessionProblem.LoginResponseUnrecognized : BandcampSessionProblem.CaptchaRequired;
                 // A stale settings snapshot must never downgrade a pending CAPTCHA to
                 // verification (and thereby let a code bypass CAPTCHA suppression).
                 if (challenge == null || Clock() - challenge.AtUtc >= ChallengeCooldown ||
@@ -254,14 +256,20 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
                 BandcampLoginOutcome.BadCredentials => BandcampSessionProblem.BadCredentials,
                 BandcampLoginOutcome.VerificationRequired => BandcampSessionProblem.VerificationNeeded,
                 BandcampLoginOutcome.CaptchaRequired => BandcampSessionProblem.CaptchaRequired,
-                BandcampLoginOutcome.Error => BandcampSessionProblem.Unavailable,
+                BandcampLoginOutcome.Error => BandcampSessionProblem.LoginFailed,
+                BandcampLoginOutcome.LoginPageRejected => BandcampSessionProblem.LoginPageRejected,
+                BandcampLoginOutcome.LoginCallbackRejected => BandcampSessionProblem.LoginCallbackRejected,
+                BandcampLoginOutcome.SessionNotIssued => BandcampSessionProblem.LoginSessionMissing,
+                BandcampLoginOutcome.RequestFailed => BandcampSessionProblem.LoginTransportFailure,
+                BandcampLoginOutcome.UnrecognizedResponse => BandcampSessionProblem.LoginResponseUnrecognized,
                 _ => null
             };
             if (result.Outcome == BandcampLoginOutcome.BadCredentials)
             {
                 _rejectedCredentials = credentials;
             }
-            else if (problem == BandcampSessionProblem.VerificationNeeded || problem == BandcampSessionProblem.CaptchaRequired)
+            else if (problem == BandcampSessionProblem.VerificationNeeded || problem == BandcampSessionProblem.CaptchaRequired ||
+                problem == BandcampSessionProblem.LoginResponseUnrecognized)
             {
                 _challenge = new ChallengeRecord(problem, Clock());
                 settings.ChallengeUntilUtc = Clock() + ChallengeCooldown;
@@ -287,14 +295,17 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
             }
 
             if (hasCode && problem != BandcampSessionProblem.VerificationNeeded &&
-                problem != BandcampSessionProblem.CaptchaRequired && !ClearVerificationCode(settings))
+                problem != BandcampSessionProblem.CaptchaRequired &&
+                problem != BandcampSessionProblem.LoginResponseUnrecognized && !ClearVerificationCode(settings))
             {
                 return null;
             }
 
             if (problem != null)
             {
-                SetState(result.Outcome == BandcampLoginOutcome.Error ? BandcampSessionStatus.Error : BandcampSessionStatus.Invalid, problem);
+                SetState(result.Outcome is BandcampLoginOutcome.Error or BandcampLoginOutcome.LoginPageRejected or
+                    BandcampLoginOutcome.LoginCallbackRejected or BandcampLoginOutcome.SessionNotIssued or BandcampLoginOutcome.RequestFailed
+                    ? BandcampSessionStatus.Error : BandcampSessionStatus.Invalid, problem);
             }
 
             if (result.Outcome != BandcampLoginOutcome.Success || result.Cookies == null)

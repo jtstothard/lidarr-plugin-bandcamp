@@ -47,6 +47,24 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp.Session
         public static readonly BandcampSessionProblem Unavailable = new(
             "Unavailable", "Bandcamp is temporarily unavailable; check network and service availability and try later; the saved identity has been retained");
 
+        public static readonly BandcampSessionProblem LoginResponseUnrecognized = new(
+            "LoginResponseUnrecognized", "Bandcamp returned a challenge or unrecognized login response; check Bandcamp in your browser and paste an identity cookie if needed; no replacement identity was obtained (login is retried at most every " + CooldownText + ")");
+
+        public static readonly BandcampSessionProblem LoginPageRejected = new(
+            "LoginPageRejected", "Bandcamp could not load the login page; check Bandcamp in your browser for access restrictions or service errors; no replacement identity was obtained");
+
+        public static readonly BandcampSessionProblem LoginCallbackRejected = new(
+            "LoginCallbackRejected", "Bandcamp login submission returned an unsuccessful HTTP status; check Bandcamp in your browser for challenges or service errors; no replacement identity was obtained");
+
+        public static readonly BandcampSessionProblem LoginSessionMissing = new(
+            "LoginSessionMissing", "Bandcamp accepted login but issued no identity cookie; check Bandcamp in your browser and renew manually; no replacement identity was obtained");
+
+        public static readonly BandcampSessionProblem LoginTransportFailure = new(
+            "LoginTransportFailure", "Bandcamp login request could not be completed; check connectivity and try later; no replacement identity was obtained");
+
+        public static readonly BandcampSessionProblem LoginFailed = new(
+            "LoginFailed", "Bandcamp login failed for an unclassified reason; check Bandcamp in your browser; no replacement identity was obtained");
+
         public static BandcampSessionProblem RateLimited(System.DateTime untilUtc) => new(
             "RateLimited", $"Bandcamp rate limited requests; wait until {untilUtc:yyyy-MM-dd HH:mm:ss} UTC before trying again; do not change credentials");
 
