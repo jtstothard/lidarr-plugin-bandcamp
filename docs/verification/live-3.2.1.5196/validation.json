@@ -1,0 +1,8 @@
+{
+  "host_assemblies_and_native_libraries_identical_to_live": 388,
+  "backup_parent_mode": "0700",
+  "backup_file_hashes_and_modes_valid": true,
+  "sqlite_integrity": "ok",
+  "plugin_directory_files_valid": 1,
+  "candidate_sha256": "4333fbc799674d80a06882d478072ce7c9a67348ee0dba4dffe2da8414dc1fd4"
+}

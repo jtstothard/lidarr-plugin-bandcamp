@@ -1,0 +1,11 @@
+<Project>
+  <!-- Opt-in references to a copied deployed host. Never modify ext/Lidarr. -->
+  <ItemGroup>
+    <Reference Include="$(LidarrBinaryPath)/Lidarr.Core.dll;$(LidarrBinaryPath)/Lidarr.Common.dll;$(LidarrBinaryPath)/NLog.dll;$(LidarrBinaryPath)/Newtonsoft.Json.dll;$(LidarrBinaryPath)/FluentValidation.dll;$(LidarrBinaryPath)/NodaTime.dll;$(LidarrBinaryPath)/DryIoc.dll">
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+  <Target Name="RequireDeployedLidarr" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(LidarrBinaryPath)/Lidarr.Core.dll')" Text="LidarrBinaryPath must contain the copied deployed Lidarr.Core.dll." />
+  </Target>
+</Project>

@@ -1,0 +1,7 @@
+Running as unit: lidarr-metadata-probe-20261115T0920c.service
+Could not load ICU data. UErrorCode: 2
+Finished with result: signal
+Main processes terminated with: code=killed, status=6/ABRT
+Service runtime: 89ms
+CPU time consumed: 57ms
+Memory peak: 5.7M (swap: 0B)

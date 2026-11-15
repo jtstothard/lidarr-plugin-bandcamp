@@ -1,0 +1,58 @@
+{
+  "backup_root": "/srv/docker-state/rollback-preparation/lidarr-20261115T092035Z",
+  "version": "3.2.1.5196",
+  "old_plugin_sha256": "dbb8637f1760756f87caf5b2dcc0b3e728fe49d2b9fd2576155e57f46e505cf9",
+  "sqlite_integrity": "ok",
+  "files": [
+    {
+      "name": "lidarr.db",
+      "sha256": "8c6bfeaa819033a9e2568cd9e953cfcc3f4efc5b0c6ac1ee6836e85194362c80",
+      "source_uid": 99,
+      "source_gid": 100,
+      "source_mode": "0o644",
+      "backup_uid": 99,
+      "backup_gid": 100,
+      "backup_mode": "0o644"
+    },
+    {
+      "name": "logs.db",
+      "sha256": "b27e98a4727aed4edfbfe3cd14183186d73ab9f415cd0f749af091d1bd8416b1",
+      "source_uid": 99,
+      "source_gid": 100,
+      "source_mode": "0o664",
+      "backup_uid": 99,
+      "backup_gid": 100,
+      "backup_mode": "0o664"
+    },
+    {
+      "name": "config.xml",
+      "sha256": "1259b4efdafc562ff0b89c8d10f2b8e466550c699f439f0266215edf53ed5472",
+      "source_uid": 99,
+      "source_gid": 100,
+      "source_mode": "0o664",
+      "backup_uid": 99,
+      "backup_gid": 100,
+      "backup_mode": "0o664"
+    },
+    {
+      "name": "Lidarr.Plugin.Bandcamp.dll",
+      "sha256": "dbb8637f1760756f87caf5b2dcc0b3e728fe49d2b9fd2576155e57f46e505cf9",
+      "source_uid": 99,
+      "source_gid": 100,
+      "source_mode": "0o644",
+      "backup_uid": 99,
+      "backup_gid": 100,
+      "backup_mode": "0o644"
+    },
+    {
+      "name": "compose.yaml",
+      "sha256": "6a28acf94c2065ff2089bdcda6b51409824d97bbbf67c210d76cce589d44edc4",
+      "source_uid": 1000,
+      "source_gid": 1000,
+      "source_mode": "0o600",
+      "backup_uid": 1000,
+      "backup_gid": 1000,
+      "backup_mode": "0o600"
+    }
+  ]
+}

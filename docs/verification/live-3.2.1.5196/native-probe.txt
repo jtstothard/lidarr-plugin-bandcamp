@@ -1,0 +1,6 @@
+Running as unit: lidarr-metadata-probe-20261115T0920.service
+libc.musl-x86_64.so.1: cannot open shared object file: No such file or directoryFinished with result: exit-code
+Main processes terminated with: code=exited, status=1/FAILURE
+Service runtime: 86ms
+CPU time consumed: 69ms
+Memory peak: 2.5M (swap: 0B)

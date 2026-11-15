@@ -1,0 +1,12 @@
+  Determining projects to restore...
+  Restored /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-f92ef155-ca51c297e3171bc9/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/Lidarr.Plugin.Bandcamp.CookiePush.Test.csproj (in 143 ms).
+  1 of 2 projects are up-to-date for restore.
+  Lidarr.Plugin.Bandcamp.CookiePush -> /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-f92ef155-ca51c297e3171bc9/src/Lidarr.Plugin.Bandcamp.CookiePush/bin/Release/net8.0/bandcamp-cookie-push.dll
+  Lidarr.Plugin.Bandcamp.CookiePush.Test -> /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-f92ef155-ca51c297e3171bc9/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.CookiePush.Test.dll
+Test run for /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-f92ef155-ca51c297e3171bc9/tests/Lidarr.Plugin.Bandcamp.CookiePush.Test/bin/Release/net10.0/Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.1 (arm64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    30, Skipped:     0, Total:    30, Duration: 263 ms - Lidarr.Plugin.Bandcamp.CookiePush.Test.dll (net10.0)

@@ -1,0 +1,5 @@
+74ff691a2093787611291f926db2149304d68c356668504b5d33405e39d561c7  /srv/docker-state/lidarr-native-probe-20261115T0920/rootfs/host/Lidarr.Plugin.Bandcamp.dll
+8d00f1103fb97800517d8e0877eda564e5a32ccbab4c348935d1b73652af6283  /app/lidarr/bin/Lidarr.Core.dll
+ffa877080d5de67953dae518625ec95dbfb0df74f468f3512bec1e70609e5b27  /app/lidarr/bin/Lidarr.Common.dll
+dbb8637f1760756f87caf5b2dcc0b3e728fe49d2b9fd2576155e57f46e505cf9  /srv/docker-state/stacks/media/lidarr/plugins/jtstothard/lidarr-plugin-bandcamp/Lidarr.Plugin.Bandcamp.dll
+2026-11-14T18:42:37.252678008Z 0 sha256:5618a549ba6ef21318d24f869764fa58f51629b063a1a1ebf11cf8f32d1f5b8a

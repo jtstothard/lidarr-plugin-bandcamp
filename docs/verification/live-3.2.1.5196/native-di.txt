@@ -1,0 +1,13 @@
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+Running as unit: lidarr-metadata-probe-20261115T0920e.service
+Unhandled exception. System.IO.FileNotFoundException: Could not load file or assembly 'Moq, Version=4.21.0.0, Culture=neutral, PublicKeyToken=69f491c39445e920'. The system cannot find the file specified.
+
+File name: 'Moq, Version=4.21.0.0, Culture=neutral, PublicKeyToken=69f491c39445e920'
+Finished with result: signal
+Main processes terminated with: code=killed, status=6/ABRT
+Service runtime: 77ms
+CPU time consumed: 58ms
+Memory peak: 5.8M (swap: 0B)

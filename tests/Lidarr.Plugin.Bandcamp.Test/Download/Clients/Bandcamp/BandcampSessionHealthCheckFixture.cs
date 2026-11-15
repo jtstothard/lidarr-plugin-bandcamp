@@ -49,6 +49,7 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             await provider.ValidateAsync();
 
             var warning = check.Check();
+            Assert.Equal(typeof(BandcampSessionHealthCheck), warning.Source);
             Assert.Equal(HealthCheckResult.Warning, warning.Type);
             Assert.Contains("My Bandcamp", warning.Message);
             Assert.Contains(BandcampSessionProblem.CookieExpired.Description, warning.Message);
