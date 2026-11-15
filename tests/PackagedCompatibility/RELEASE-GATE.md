@@ -121,3 +121,14 @@ Extra-payload, scanner, transported-byte/receipt and four topology controls all 
 No GitHub Actions run or publication was performed here. Managed IL on host .NET 10 does
 not qualify the Linux native executable, .NET 8 hosting, plugin discovery or every runtime
 contract. No production instance, credentials or Bandcamp/media downloads were used.
+
+### Guard scope and download cache
+
+The workflow checker detects selected accidental topology and command edits. It is
+not a security boundary against arbitrary workflow changes: a workflow can remove
+its own checks or mutate artifacts after verification. Review and branch protection
+remain necessary. The current publication job depends on both successful checks.
+
+Downloaded inputs are cached by their pinned SHA-256, verified before atomic
+installation, and downloaded with a 60-second socket timeout. Refreshing a pin uses
+a new cache entry automatically. Legacy role-named cache files are unused.

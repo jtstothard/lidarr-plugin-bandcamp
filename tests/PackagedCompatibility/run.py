@@ -25,13 +25,26 @@ def verify(path, expected):
 
 def fetch(key, filename, pins=PINS):
     pin = pins[key]
-    path = CACHE / filename
-    if not path.exists():
-        with urllib.request.urlopen(pin['url']) as response, path.open('xb') as output:
-            while chunk := response.read(1024 * 1024):
-                output.write(chunk)
-    verify(path, pin['sha256'])  # Never trust a cache hit or a mutable release URL.
+    CACHE.mkdir(exist_ok=True)
+    path = CACHE / pin['sha256']
+    if path.exists():
+        verify(path, pin['sha256'])
+        return path
+    # A failed or interrupted transfer must never become a cache entry.
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=CACHE, prefix='.download-', delete=False) as output:
+            temporary = Path(output.name)
+            with urllib.request.urlopen(pin['url'], timeout=60) as response:
+                while chunk := response.read(1024 * 1024):
+                    output.write(chunk)
+        verify(temporary, pin['sha256'])
+        os.replace(temporary, path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
     return path
+
 
 
 def main():
