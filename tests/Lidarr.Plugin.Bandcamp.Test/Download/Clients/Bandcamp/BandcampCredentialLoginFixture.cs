@@ -46,6 +46,9 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
         private string? _retryAfter;
         private HttpStatusCode _loginStatus = HttpStatusCode.OK;
         private HttpStatusCode _loginPageStatus = HttpStatusCode.OK;
+        private string? _loginResponse;
+        private bool _loginTransportFailure;
+        private bool _omitIdentity;
         private string _loginCbFixture = "login_cb_success.json";
         private Func<Task>? _homepageDelay;
         private Func<Task>? _loginDelay;
@@ -102,16 +105,17 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
                         {
                             headers.Add("Retry-After", _retryAfter);
                         }
-                        if (fixture == "login_cb_success.json")
+                        if (!_omitIdentity && fixture == "login_cb_success.json")
                         {
                             headers.Add("Set-Cookie", $"identity={FreshIdentity}; domain=.bandcamp.com; path=/; secure; HttpOnly");
                         }
 
-                        return new HttpResponse(request, headers, LoginFixtures.Read(fixture), _loginStatus);
+                        return new HttpResponse(request, headers, _loginResponse ?? LoginFixtures.Read(fixture), _loginStatus);
                     }
 
                     if (url == "https://bandcamp.com/login")
                     {
+                        if (_loginTransportFailure) throw new System.Net.Http.HttpRequestException("private-response-sentinel");
                         var headers = new HttpHeader();
                         if (_retryAfter != null)
                         {
@@ -934,6 +938,73 @@ namespace Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp
             Assert.Equal("identity=prior", settings.Cookies);
             Assert.Equal("ChallengeOrUnrecognized", registry.Find(7)!.State.Problem?.Code);
             Assert.Contains("browser", HealthMessage(registry), StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("identity=prior")]
+        public void Test_UnrecognizedCredentialResponse_ReportsBrowserHandoffWithoutPasswordReplay(string cookies)
+        {
+            _loginResponse = "<html>bot challenge private-response-sentinel</html>";
+            var settings = Settings(cookies: cookies);
+            var registry = CreateRegistry();
+            var client = CreateClient(settings, registry);
+            var result = client.Test();
+
+            Assert.False(result.IsValid);
+            var message = string.Join("; ", result.Errors.Select(e => e.ErrorMessage));
+            Assert.Contains("unrecognized login response", message);
+            Assert.DoesNotContain("temporarily unavailable", message);
+            Assert.DoesNotContain("saved identity", message);
+            Assert.DoesNotContain("private-response-sentinel", message + HealthMessage(registry));
+            Assert.Contains("unrecognized login response", HealthMessage(registry));
+            Assert.Equal("LoginResponseUnrecognized", registry.Find(7)!.State.Problem?.Code);
+            Assert.Equal(cookies, settings.Cookies);
+            Assert.False(client.Test().IsValid);
+            Assert.Equal(1, _loginPosts);
+            // A restart and a submitted code cannot turn an unknown challenge into a password replay.
+            settings.VerificationCode = "123456";
+            var restarted = CreateRegistry();
+            Assert.False(CreateClient(settings, restarted).Test().IsValid);
+            Assert.Contains("unrecognized login response", HealthMessage(restarted));
+            Assert.Equal(1, _loginPosts);
+            _now = _now.AddHours(6);
+            Assert.False(CreateClient(settings, restarted).Test().IsValid);
+            Assert.Equal(2, _loginPosts);
+        }
+
+        [Theory]
+        [InlineData("page", "LoginPageRejected", "could not load the login page", 0)]
+        [InlineData("callback", "LoginCallbackRejected", "login submission returned an unsuccessful HTTP status", 1)]
+        [InlineData("no-session", "LoginSessionMissing", "accepted login but issued no identity cookie", 1)]
+        [InlineData("transport", "LoginTransportFailure", "login request could not be completed", 0)]
+        [InlineData("json-array", "LoginResponseUnrecognized", "unrecognized login response", 1)]
+        [InlineData("json-fields", "LoginResponseUnrecognized", "unrecognized login response", 1)]
+        public void Test_CredentialFailures_PreserveSanitizedReasonInTestAndHealth(string failure, string code, string reason, int posts)
+        {
+            if (failure == "page") _loginPageStatus = HttpStatusCode.Forbidden;
+            if (failure == "callback") _loginStatus = HttpStatusCode.ServiceUnavailable;
+            if (failure == "no-session") _omitIdentity = true;
+            if (failure == "transport") _loginTransportFailure = true;
+            if (failure == "json-array") _loginResponse = "[\"private-response-sentinel\"]";
+            if (failure == "json-fields") _loginResponse = "{\"errors\":[null,3,\"private-response-sentinel\"]}";
+            var settings = Settings();
+            var registry = CreateRegistry();
+            var result = CreateClient(settings, registry).Test();
+            Assert.False(result.IsValid);
+            var message = string.Join("; ", result.Errors.Select(e => e.ErrorMessage));
+            Assert.Contains(reason, message);
+            Assert.Contains(reason, HealthMessage(registry));
+            Assert.Equal(code, registry.Find(7)!.State.Problem?.Code);
+            Assert.DoesNotContain("saved identity", message + HealthMessage(registry));
+            Assert.DoesNotContain("private-response-sentinel", message + HealthMessage(registry));
+            Assert.DoesNotContain("fan@example.com", message + HealthMessage(registry));
+            Assert.DoesNotContain("hunter2", message + HealthMessage(registry));
+            Assert.DoesNotContain(FreshIdentity, message + HealthMessage(registry));
+            Assert.Equal("", settings.Cookies);
+            Assert.Equal(posts, _loginPosts);
+            _repository.Verify(r => r.SetFields(It.IsAny<DownloadClientDefinition>(), It.IsAny<Expression<Func<DownloadClientDefinition, object>>[]>()),
+                failure.StartsWith("json") ? Times.Once() : Times.Never());
         }
 
         [Fact]
