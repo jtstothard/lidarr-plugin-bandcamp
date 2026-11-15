@@ -120,3 +120,13 @@ retain partial output/history, reconcile terminal state, and restore the prior r
 setting only after closure. Verify actual FLAC output and native import before claiming
 qualification. Plugin-only inverse restores the backed-up DLL after identity checks;
 do not restore DB/config merely to undo a DLL. #55 stays draft pending native success.
+
+[deploy.py](deploy.py) is the pinned, reviewable deployment/inverse payload. Its
+Python source compiles, and both default and `--rollback` invocations were run in
+PLAN_ONLY mode on the desktop; neither accesses the server. `--apply` is required
+for effects on media-vm, after separate approval. It checks image, installed/source/
+backup hashes, Compose/config identity and saved provider equality before dispatch,
+preserves spent dispatch receipts with O_EXCL, stages uid99/gid100 mode0644, confirms
+the stopped container before atomic replacement, and checks readiness/hash after
+start. Failure stops without a blind inverse. It performs no account operation,
+download, DB/config restoration or retry-setting edit.
