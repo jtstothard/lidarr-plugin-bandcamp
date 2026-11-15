@@ -1,0 +1,19 @@
+{
+  "rootfs": "/srv/docker-state/rollback-preparation/lidarr-auth-redirect-20261115T130557Z/redirect-probe-rootfs",
+  "candidate_sha256": "e91694e0fe1304cab7fb87e61243e5bba050fe8682ac0cd1b994dc42d00d7f9d",
+  "backup_root": "/srv/docker-state/rollback-preparation/lidarr-auth-redirect-20261115T130557Z",
+  "installed_sha256": "9e109bdd7d8b0c8ff417a8e5e4af36b393d1b2c6635ea58ae126f80bfbbd447c",
+  "backup_sqlite_integrity": "ok",
+  "runtime": "3.2.1.5196 / .NET 8.0.27",
+  "source_release_package_sha256": "06a5d5de6c243c0d0292446df152b88d8849a17a7dcdeb2e3dbc4bf3e826e419",
+  "source_release_dll_sha256": "f809425e7e2aa27ac7d75b74f6be59202e60c0dd7780ef973f486a0412377df3",
+  "exact_target_tests": 315,
+  "native_probe": {
+    "exit": 0,
+    "types": 149,
+    "prepared_methods": 803,
+    "business_methods_invoked": false
+  },
+  "deployment_performed": false,
+  "native_redirect_behavior_qualified": false
+}

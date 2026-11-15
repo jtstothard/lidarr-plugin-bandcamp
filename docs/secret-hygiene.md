@@ -46,6 +46,13 @@ hash prefixes. Global host logging and other HTTP clients are unchanged.
 
 The boundary retains host proxy/TLS configuration, timeout, streaming and rate limiting,
 but deliberately does not run host request interceptors, cookie storage or redirect processing.
+The final archive transfer handles at most three redirects itself, only to default-port
+HTTPS Bandcamp/bcbits hosts with no embedded credentials or fragments. A repeated URL,
+missing/ambiguous Location or untrusted destination refuses with a fixed diagnostic.
+Account cookies are dropped on any origin change and are not restored if the chain
+returns to the account host. Intermediate redirect bodies are not streamed into the
+archive; the managed dispatcher streams only the final HTTP 200 response. Other
+requests, including helper API actions and account validation, still refuse redirects.
 Errors cross the plugin boundary with fixed messages and no upstream inner exceptions.
 Collection/file 429 responses update the observed owner's shared wait; both consumers and
 already-issued session scopes stop new requests until due. Valid date/delta Retry-After values

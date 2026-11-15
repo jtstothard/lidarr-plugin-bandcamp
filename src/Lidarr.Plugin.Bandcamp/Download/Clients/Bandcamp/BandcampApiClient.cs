@@ -532,11 +532,31 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
         {
             _logger.Debug("Bandcamp API: Downloading file from resolved URL");
 
-            var builder = _httpClient.CreateRequestBuilder(fileUrl, cookies);
-            var request = builder.Build();
-            request.ResponseStream = destination;
+            var current = new Uri(fileUrl, UriKind.Absolute);
+            var sendCookies = true;
+            var visited = new HashSet<string>(StringComparer.Ordinal) { current.AbsoluteUri };
+            HttpResponse response;
+            for (var redirects = 0; ; redirects++)
+            {
+                var builder = _httpClient.CreateRequestBuilder(current.AbsoluteUri, sendCookies ? cookies : string.Empty);
+                var request = builder.Build();
+                // The managed dispatcher streams only HTTP 200 responses. Redirect
+                // bodies stay out of the destination; the final archive still streams.
+                request.ResponseStream = destination;
+                response = await _httpClient.ExecuteRawAsync(request);
+                if ((int)response.StatusCode is not (301 or 302 or 303 or 307 or 308)) break;
 
-            var response = await _httpClient.ExecuteRawAsync(request);
+                var locations = response.Headers?.GetValues("Location");
+                if (redirects >= 3 || locations?.Length != 1 ||
+                    !Uri.TryCreate(current, locations[0], out var next) || !IsArchiveRedirect(next) ||
+                    !visited.Add(next.AbsoluteUri))
+                    throw new DownloadException("Bandcamp archive redirect refused; check the download endpoint without retrying credentials.");
+
+                // Never carry account credentials across origins, or restore them
+                // later if a CDN sends the chain back to the account host.
+                sendCookies &= current.GetLeftPart(UriPartial.Authority) == next.GetLeftPart(UriPartial.Authority);
+                current = next;
+            }
 
             // Verify content type — Bandcamp should return application/zip or similar
             var contentType = response.Headers?.ContentType ?? string.Empty;
@@ -563,6 +583,12 @@ namespace NzbDrone.Core.Download.Clients.Bandcamp
             _logger.Debug("Bandcamp API: File download response received");
             return response;
         }
+
+        private static bool IsArchiveRedirect(Uri url) =>
+            url.Scheme == Uri.UriSchemeHttps && url.IsDefaultPort &&
+            url.UserInfo.Length == 0 && url.Fragment.Length == 0 &&
+            (url.Host == "bandcamp.com" || url.Host.EndsWith(".bandcamp.com", StringComparison.Ordinal) ||
+             url.Host == "bcbits.com" || url.Host.EndsWith(".bcbits.com", StringComparison.Ordinal));
 
         private static double? ParseAlbumDurationSeconds(string content)
         {

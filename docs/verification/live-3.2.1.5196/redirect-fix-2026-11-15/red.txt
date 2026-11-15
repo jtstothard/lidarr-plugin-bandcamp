@@ -1,0 +1,10 @@
+[xUnit.net 00:00:00.20]     Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.DownloadFileAsync_FollowsTrustedArchiveRedirectWithoutForwardingIdentity [FAIL]
+  Failed Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.DownloadFileAsync_FollowsTrustedArchiveRedirectWithoutForwardingIdentity [75 ms]
+  Error Message:
+   NzbDrone.Core.Download.Clients.Bandcamp.DownloadException : Bandcamp file download failed with HTTP 302.
+  Stack Trace:
+     at NzbDrone.Core.Download.Clients.Bandcamp.BandcampApiClient.DownloadFileAsync(String cookies, String fileUrl, Stream destination) in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-212bdad1-14c5abb378a0d146/src/Lidarr.Plugin.Bandcamp/Download/Clients/Bandcamp/BandcampApiClient.cs:line 553
+   at Lidarr.Plugin.Bandcamp.Test.Download.Clients.Bandcamp.BandcampApiClientFixture.DownloadFileAsync_FollowsTrustedArchiveRedirectWithoutForwardingIdentity() in /Users/jay/.t3/worktrees/lidarr-plugin-bandcamp/t3-212bdad1-14c5abb378a0d146/tests/Lidarr.Plugin.Bandcamp.Test/Download/Clients/Bandcamp/BandcampApiClientFixture.cs:line 466
+--- End of stack trace from previous location ---
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 75 ms - Lidarr.Plugin.Bandcamp.Test.dll (net10.0)
