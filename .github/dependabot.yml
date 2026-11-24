@@ -21,6 +21,13 @@ updates:
           - "*"
         update-types:
           - major
+    ignore:
+      # NLog must match the major that Lidarr's host assemblies are built
+      # against. With NLog 6, Lidarr.Common's CleansingConsoleLogLayout fails
+      # to load ("parent type is sealed") and the test suite fails (#67).
+      - dependency-name: NLog
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: github-actions
     directory: /
