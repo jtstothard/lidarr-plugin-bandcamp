@@ -1,0 +1,9 @@
+[Unit]
+Description=Hourly tick for the bounded Bandcamp web canary (#53); self-disables at 2026-12-01T18:00Z
+
+[Timer]
+OnCalendar=*-*-* *:05:00 UTC
+Persistent=false
+
+[Install]
+WantedBy=timers.target
