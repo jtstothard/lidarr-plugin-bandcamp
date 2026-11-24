@@ -1,0 +1,4 @@
+Session status: Valid
+Auth mode: Shared named configuration; Web identity (password fallback configured)
+Last successful validation: 2026-11-24T17:11:21.7055514Z
+EXIT=0

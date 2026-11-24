@@ -1,0 +1,7 @@
+[Unit]
+Description=Bounded Bandcamp web canary for lidarr-plugin-bandcamp#53 (ends 2026-12-01T18:00Z)
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/bandcamp-web-canary-run

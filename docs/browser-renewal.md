@@ -7,7 +7,10 @@ solve CAPTCHA, collect passwords, disable 2FA, or revive expired cookies by savi
 ## Desktop installation and selection
 
 Run on your own graphical desktop, even when Lidarr runs on a headless server. Install the .NET 8
-runtime and an SDK capable of building net8.0, plus PowerShell 7; clone this repository, then build the standalone helper.
+runtime, the exact SDK that `global.json` pins (10.0.103, with roll-forward disabled, so an older
+or newer SDK refuses to build), and PowerShell 7; clone this repository, then build the standalone helper.
+The SDK can be a user-local copy from `dotnet-install` (`-Version 10.0.103 -InstallDir <dir>`); run
+the built helper with the .NET 8 runtime.
 A newer major runtime alone does not satisfy the helper's default net8.0 runtime selection.
 Use .NET 8 for the normal invocation below; explicit major-version roll-forward requires separate runtime qualification.
 
@@ -16,13 +19,19 @@ dotnet build src/Lidarr.Plugin.Bandcamp.CookiePush -c Release
 pwsh src/Lidarr.Plugin.Bandcamp.CookiePush/bin/Release/net8.0/playwright.ps1 install chromium
 ```
 
-Linux also needs Playwright's documented Chromium OS dependencies. No desktop browser belongs
+Linux also needs Playwright's documented Chromium OS dependencies. Without PowerShell, the bundled
+Node CLI installs both: `.playwright/node/linux-x64/node .playwright/package/cli.js install chromium`
+(as the desktop user) and `... install-deps chromium` (as root). No desktop browser belongs
 on the headless Lidarr host. The source targets Windows, macOS and Linux. A local Mac ARM64 self-contained package,
 its bundled .NET 8 runtime, fresh Chromium installation and production browser capture cancellation
 have now passed [native checks](verification/live-3.2.1.5196/helper-native-2026-11-15/README.md).
 The [later HTTPS checks](verification/live-3.2.1.5196/helper-https-2026-11-15/README.md)
 completed ordinary-package manual renewal/status and a fresh visible login-to-commit through the
-production helper components with an autofill harness. Windows/Linux native execution and
+production helper components with an autofill harness. On 2026-11-24 the
+[Windows and Linux runs](verification/platform-qualification-2026-11-24/README.md) qualified build,
+.NET 8 execution, HTTPS session status, isolated login launch, cancellation before and after the
+credential submission, and profile cleanup on Windows 10.0.26200 x64 and Ubuntu 24.04 x64. Both
+stopped at Bandcamp's reCAPTCHA image challenge, so a completed Windows/Linux login-to-commit and
 Bandcamp-issued token rotation remain unqualified. The [controlled invalid-to-valid recovery test](verification/live-3.2.1.5196/changed-identity-test-2026-11-15/README.md) also passed replacement, both shared consumers and restart persistence without changing the working owner. No prebuilt helper release is claimed. The server must run this plugin version with the renewal begin/cancel/status protocol; older one-shot `renewIdentity` clients are refused.
 
 ### Mac ARM64 without a global .NET 8 runtime

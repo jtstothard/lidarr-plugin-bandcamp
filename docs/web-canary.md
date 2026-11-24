@@ -34,3 +34,5 @@ Never attach private input files, browser profiles, HARs, screenshots of secrets
 HTTP headers/bodies or exception dumps. Host/OS/network instrumentation is outside the
 tool's output guarantee. Any account-changing or Subsonic revocation experiment needs
 its own authorization and the #47 parity protocol. Record unobserved cases as UNKNOWN.
+
+Authorised runs: [2026-11-24 to 2026-12-01](verification/platform-qualification-2026-11-24/README.md#53-bounded-web-canary).
