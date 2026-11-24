@@ -78,8 +78,8 @@ When there's no valid session, the plugin refuses new grabs instead of failing t
 |---|---|
 | Bad credentials | Fix the Email or Password and save. The plugin won't retry a rejected login until you change them. |
 | Verification needed | Bandcamp emailed you a code for a new device. Enter it in **Verification Code** and save. It's used once, then cleared. |
-| Captcha required | Bandcamp wants a captcha, which the plugin can't solve. A recorded November 2026 login required one; unattended password recovery cannot be promised. Log into bandcamp.com in a browser and paste the `identity` cookie into **Session Cookie**. |
-| Signed out | Paste a fresh cookie, or configure complete Email and Password credentials for a login attempt. |
+| Captcha required | Bandcamp wants a captcha, which the plugin can't solve. A recorded November 2026 login required one; unattended password recovery cannot be promised. Run the [desktop renewal helper](#browser-or-desktop-renewal-helper), or log into bandcamp.com in a browser and paste the `identity` cookie into **Session Cookie**. |
+| Signed out | Run the [desktop renewal helper](#browser-or-desktop-renewal-helper), paste a fresh cookie, or configure complete Email and Password credentials for a login attempt. |
 | No session configured | Enter complete Email and Password credentials or paste a browser identity cookie. |
 | Challenge or unrecognized response | Check Bandcamp in your browser; renew manually if needed. The saved identity is retained. |
 | Rate limited | Wait until the displayed UTC retry time. Do not change credentials. |
