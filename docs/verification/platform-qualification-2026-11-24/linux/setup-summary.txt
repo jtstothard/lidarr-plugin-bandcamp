@@ -1,0 +1,15 @@
+== 2026-11-24T17:18:25Z apt xvfb
+xvfb ok: /usr/bin/Xvfb
+== clone
+== documented build with no SDK (expected: dotnet missing)
+== dotnet-install
+== build helper
+    0 Error(s)
+== build harness
+    0 Error(s)
+== playwright chromium (bundled node; PowerShell not installed)
+== helper --help on .NET 8
+help exit=0
+== 2026-11-24T17:22:24Z playwright install-deps (root)
+== SETUP_DONE 2026-11-24T17:22:35Z
+

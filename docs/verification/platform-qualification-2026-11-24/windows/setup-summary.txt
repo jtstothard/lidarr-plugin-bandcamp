@@ -1,0 +1,14 @@
+Host: DESKTOP (Windows 10.0.26200, x64), interactive console session 1, PowerShell 7.6.9
+System .NET: SDK 8.0.419; runtimes Microsoft.NETCore.App 8.0.25 (also 6.0.31, 7.0.5, 8.0.8)
+
+Documented build with the system SDK, as written in docs/browser-renewal.md:
+  dotnet build src/Lidarr.Plugin.Bandcamp.CookiePush -c Release
+  -> exit -2147450735: "A compatible .NET SDK was not found. Requested SDK version: 10.0.103. Installed SDK: 8.0.419"
+  (global.json pins SDK 10.0.103 with rollForward disable)
+
+User-local SDK 10.0.103 (dotnet-install.ps1 -Version 10.0.103 -Architecture x64 -InstallDir <user dir> -NoPath;
+automatic architecture detection failed, -Architecture x64 was needed):
+  build src/Lidarr.Plugin.Bandcamp.CookiePush -c Release                          -> 0 Warning(s), 0 Error(s)
+  build docs/verification/platform-qualification-2026-11-24/QualCheck -c Release -> 0 Warning(s), 0 Error(s)
+pwsh .../bin/Release/net8.0/playwright.ps1 install chromium -> exit 0 (PLAYWRIGHT_BROWSERS_PATH set to a user dir)
+dotnet .../bandcamp-cookie-push.dll --help (system .NET 8.0.25 runtime) -> exit 0

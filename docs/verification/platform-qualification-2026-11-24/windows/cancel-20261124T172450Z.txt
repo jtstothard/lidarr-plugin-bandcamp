@@ -1,0 +1,18 @@
+UTC_START=2026-11-24T17:24:50.3950938Z
+MODE=cancel
+RUNTIME=.NET 8.0.25
+OS=Microsoft Windows 10.0.26200 X64
+DISPLAY_SET=False
+PREEXISTING_PROFILES=0
+Opening isolated Bandcamp login. Complete login and verification personally.
+HEADED_BROWSER_LAUNCHED
+LOGIN_PAGE_LOADED
+CANCEL_REQUESTED_BEFORE_LOGIN
+Renewal did not confirm success. Check owner selection, expected fan ID, HTTPS/API access and Lidarr status. If submitted, reconcile saved status before retrying.
+HELPER_EXIT=1
+PROFILE_SEEN_DURING_RUN=True
+NEW_PROFILES_REMAINING=0
+UTC_END=2026-11-24T17:25:01.3391963Z
+EXIT=1
+TEMP_PROFILE_COUNT=0
+CHROMIUM_WINDOW_FROM_RUN_STILL_OPEN=False

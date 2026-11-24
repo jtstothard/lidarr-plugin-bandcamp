@@ -1,0 +1,2 @@
+{"mode":"READ_ONLY_OBSERVATION","requests":1,"observations":[{"utc":"2026-11-24T17:27:15.953333+00:00","http_status":200,"outcome":"Valid","identity_set_cookie_seen":false,"different_identity_seen":false}],"limits":"No login, replacement, persistence, revocation or lifetime proof. Candidate scope/validity is unproven."}
+
